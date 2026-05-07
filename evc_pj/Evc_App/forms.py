@@ -169,6 +169,11 @@ class EvcEviListForm(forms.Form):
         required=False,
         widget=forms.widgets.Select
     )
+    account_choice = forms.fields.ChoiceField(
+        required=False,
+        widget=forms.widgets.Select
+    )
+
     # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))
     partner = forms.CharField(
         max_length=50,

@@ -60,6 +60,7 @@ function clear_all()
         document.getElementById('id_create_date').value = '';
     }
     document.getElementById('id_category').selectedIndex = 0;
+    document.getElementById('id_account_choice').selectedIndex = 0;
     document.getElementById('id_partner').value = '';
     document.getElementById('id_publisher').value = '';
     document.getElementById('id_process_date1').value = '';

@@ -19,6 +19,16 @@
       .button_swap {
         padding-left:0.5em;
       }
+      {% comment "下記の部分はコメントアウト" %}
+      .registration {
+        border-radius: 2em;
+        border: 1px solid rgba(225, 225, 225, 0.4);
+        margin-bottom: auto; /* 左側の余白を自動で最大化して右へ飛ばす */
+        background-color: rgb(233, 82, 82);
+        color: #fff;
+      	margin-top: 2em;
+      }
+      {% endcomment %}
 {% endblock %}
 
 {% block content %}
@@ -179,36 +189,56 @@
             </datalist>
           </label>
           {{ form.partner.errors }}
-          <label>発行元　
-            {% if form.detect_publisher.value %}
-            <span class="detect_warning">*未登録*</span>
-            {% endif %}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label>発行元　
+              {% if form.detect_publisher.value %}
+              <span class="detect_warning">*未登録*</span>
+              {% endif %}
+            </label>
             <button type="button" class="button_image button_swap" onclick="swapPartnerPublisher()">
               ⇅
             </button>
-            <!-- <span class="material-symbols-outlined">
-              swap_vert
-            </span> -->
-            {{ form.publisher }}
-            {{ form.publisher.errors }}
             {% comment "下記の部分はコメントアウト" %}
-            <div class="form-select">
-              <select name="publisher_cd">
-                {% for value, text in form.publisher_cd.field.choices %}
-                <option value="{{ value }}">{{ text }}</option>
-                {% endfor %}
-              </select>
-            </div>
+            <input type="text" class="registration" name="publisher" size="15" maxlength="15" id="id_publisher">
             {% endcomment %}
-            {% comment "下記の部分はコメントアウト" %}
-            <input type="search" list="Publisher" name="publisher" value="{{ form.publisher.value }}"  size="25">
-            <datalist id="Publisher">
+          </div>
+          {{ form.publisher }}
+          {{ form.publisher.errors }}
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="form-select">
+            <select name="publisher_cd">
               {% for value, text in form.publisher_cd.field.choices %}
-              <option value="{{ text }}">
+              <option value="{{ value }}">{{ text }}</option>
               {% endfor %}
-            </datalist>
-            {% endcomment %}
-          </label>
+            </select>
+          </div>
+          {% endcomment %}
+          {% comment "下記の部分はコメントアウト" %}
+          <input type="search" list="Publisher" name="publisher" value="{{ form.publisher.value }}"  size="25">
+          <datalist id="Publisher">
+            {% for value, text in form.publisher_cd.field.choices %}
+            <option value="{{ text }}">
+            {% endfor %}
+          </datalist>
+          {% endcomment %}
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="e-data">
+            <label>発行元　
+              <span class="detect_warning">*未登録*</span>
+              <button type="button" class="button_image button_swap" onclick="swapPartnerPublisher()">
+                ⇅
+              </button>
+              {{ form.publisher }}
+              {{ form.publisher.errors }}
+            </label>
+            <label style="padding-top: 0.3em;">登録番号
+              <p style="padding-top: 0.5em;">
+              {{ form.publisher }}
+              </p>
+            </label>
+          </div>
+          {% endcomment %}
+
           <div class="e-data">
             <label>取引日
               {% if not form.process_date.value %}

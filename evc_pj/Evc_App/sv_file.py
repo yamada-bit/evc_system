@@ -358,15 +358,16 @@ def is_line(y1, y2, pre_y1, pre_y2):
 
 # TextDatasデータを読み込む（行ごとに文字列を連結なし)
 # page_no : -1 で全ページ
-def sv_get_textdatalist(textdatas, page_no, area_no): 
-    textdatalist = []
+def sv_get_textdatas_area(textdatas, page_no, area_no): 
+    textdatas_area = []
     for pagedata in textdatas:
         if page_no == -1 or pagedata.page_no == page_no:
             if area_no != -1 and pagedata.area_no != area_no:
                 continue
-            for textdata in pagedata.textdata_list:
-                textdatalist.append(textdata.text)
-    return textdatalist
+            # for textdata in pagedata.textdata_list:
+            #     textdatas_area.append(textdata)
+            textdatas_area.extend(pagedata.textdata_list)
+    return textdatas_area
 
 # ユーザ権限
 def sv_get_user_authority(user_id):
@@ -708,16 +709,6 @@ def sv_get_partner_list(owner_id):
     lists = MtPartner.objects.filter(owner_id=owner_id).values('partner_id', 'partner_name').exclude(delete_flg=1).order_by('partner_name')
     for item in lists:
         partners.append((item.get('partner_id'), item.get('partner_name')))
-
-    return partners
-# 取引先のList 取引先名(略)を含む
-def sv_get_partner_ryaku_list(owner_id):
-    partners = []
-    lists = MtPartner.objects.filter(owner_id=owner_id).exclude(delete_flg=1).values('partner_id', 'partner_name', 'partner_ryaku_name').order_by('partner_name')
-    for item in lists:
-        if item and item.get('partner_id'):
-            ryaku = item.get('partner_ryaku_name') or ''
-            partners.append((item.get('partner_id'), item.get('partner_name'), ryaku))
 
     return partners
 

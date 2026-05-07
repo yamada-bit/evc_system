@@ -107,6 +107,7 @@ class EvcEviListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             form = EvcEviListForm(self.request.GET or None)
         # ChoiceFieldに選択肢の設定
         form.fields['category'].choices = self.get_category_choices(owner_id)
+        form.fields['account_choice'].choices = self.get_account_choices(owner_id)
         self.form = form 
         request_user = cast(EvcUser, self.request.user)
         user_id = request_user.user_id
@@ -293,6 +294,15 @@ class EvcEviListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         for list in lists:
             # if list != '注文請書':
             choices.append((list, list))
+        return choices
+    # 科目選択リストの設定
+    def get_account_choices(self, owner_id):
+        choices = []
+        choices.append(('0','科目を選択'))
+        lists = sv_get_account_list(owner_id)
+        for list in lists:
+            # if list != '注文請書':
+            choices.append(list)
         return choices
 
     # HTMLのテーブルに表示するデータを取得

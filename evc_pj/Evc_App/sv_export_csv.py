@@ -60,6 +60,10 @@ def sv_filter_evidence(owner_id, request, queryset):
     slip_number = request.GET.get('slip_number')
     if slip_number and 0 < len(slip_number):
         queryset = queryset.filter(slip_number=slip_number)
+    # 科目を選択
+    account = request.GET.get('account_choice')
+    if account and account != '0':
+        queryset = queryset.filter(account_id=account)
     # 取引先を入力
     partner = request.GET.get('partner')
     if partner:
