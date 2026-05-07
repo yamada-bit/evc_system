@@ -1,0 +1,68 @@
+FROM python:3.13.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# ---- OS依存パッケージ ----
+# Dockerイメージにpopplerを含める pdf2image
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- ユーザー作成 ----
+# RUN useradd -ms /bin/bash django
+# ホストと同じUIDでユーザー作成
+ARG UID=1001
+ARG GID=1001
+RUN groupadd -g $GID deploy \
+    && useradd -m -u $UID -g $GID deploy
+
+# 作業ディレクトリ
+WORKDIR /app
+
+# ---- 依存ファイルだけ先にコピー（キャッシュ最適化） ----
+COPY evc_pj/requirements.txt .
+# RUN pip install --upgrade pip
+# RUN pip install -r requirements.txt
+# Docker イメージ作成においてキャッシュが不要
+# 1行にまとめるとキャッシュ効率が上がります。
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
+# アプリコピー
+COPY evc_pj/ .
+# 静的ファイル収集（本番では必須）
+# RUN python manage.py collectstatic --noinput
+#failed to solve: process "/bin/sh -c python manage.py collectstatic --noinput" 
+#  did not complete successfully: exit code: 1
+# 本番テンプレでは Dockerfile内で collectstaticは実行しません。
+# collectstatic は コンテナ起動後に実行 します。
+# docker compose up -d --build
+# docker compose exec web python manage.py collectstatic
+########################################
+# entrypoint追加（重要）
+########################################
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+# ディレクトリ作成と権限設定
+# 所有者を django に指定
+# RUN chown -R django:django /app
+# /evc_pj はコンテナ内では /app にコピーされているので、 /app
+RUN mkdir -p /staticfiles /data_root \
+    && chown -R deploy:deploy /app /staticfiles /data_root
+# deploy ユーザーで動作
+USER deploy
+
+# コンテナは起動するだけ 何も自動実行しない
+# CMD ["sleep", "infinity"]
+# コンテナ起動＝Django起動
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# 本番用
+# CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4"]
+# Dockerfileには「最低限動くデフォルト値」を記述しておきます。
+# CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2"]
+########################################
+# 起動時処理
+########################################
+ENTRYPOINT ["/entrypoint.sh"]

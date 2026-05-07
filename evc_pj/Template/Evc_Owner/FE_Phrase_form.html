@@ -1,0 +1,33 @@
+{% extends "commons/Evc_base_phrase.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_PhraseList.css" %}'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+<form method="post">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        {{ form }}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <button class="btn btn-primary">保存</button>
+        <a href="{% url 'Evc_Owner:phrase_list' %}">キャンセル</a>
+      </div>
+    </div>
+  </div>
+  {% csrf_token %}
+</form>
+{% endblock %}
+

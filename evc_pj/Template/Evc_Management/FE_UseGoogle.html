@@ -1,0 +1,229 @@
+{% extends "commons/Evc_base_management.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_UseGoogle.css" %}?240930'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+    <div id="form-area">
+      <div class="search-header">
+        <h2>条件検索</h2>
+        <span id="search-wrap">
+          <input type="button" class='search' onclick="UseGoogle_List()" value="検索">
+        </span>
+      </div>
+
+      <form name="SearchForm" id="searchForm" method="get">
+      {% comment "下記の部分はコメントアウト" %}
+      {% csrf_token %}
+      {% endcomment%}
+        <div s-select>
+          <h3>契約会社</h3>
+          <div class="select-wrapper owner">
+            {{ form.owner }}
+          </div>
+        </div>
+
+        <div class="s-radio">
+          <h3>集計区分</h3>
+          <div class="s-radio-body">
+            {% for value, text in form.kubun.field.choices %}
+            <label for=""><input type='radio' name='{{ form.kubun.name }}' value='{{ value }}' {% if kbn == value %} checked="checked" {% endif %} />
+              {{ text }}
+            </label>
+            {% endfor %}
+            {% comment "下記の部分はコメントアウト" %}
+            <input type="radio"  checked="checked" name="kubun" value="none">
+            指定なし
+            <input type="radio" name="kubun"  value="summ">
+            集計
+            {% endcomment %}
+          </div>
+        </div>
+        <div class="s-date">
+          <h3>処理年月</h3>
+          {{ form.shori_date1 }}
+          <span>～</span>
+          {{ form.shori_date2 }}
+        </div>
+        <label id="export">
+          <a href="javascript:void(0)"
+            onclick="onCSVDownload(this, document.querySelector('.UseGoogle_table'), 'AI-OCR利用履歴.csv');">
+            <span class="material-symbols-outlined">download</span>
+            <div>AI-OCR利用履歴<br>ダウンロード</div>
+          </a>
+        </label>
+
+        {{ form.page_size }}
+      </form>
+    </div>
+
+    <script type="text/javascript">
+      function UseGoogle_List()
+      {
+        $("#searchForm").submit();
+      }
+
+      // テーブルデータのCSVダウンロード
+      function onCSVDownload(a, table, filename) {
+        var escaped = /,|\r?\n|\r|"/;
+        var e = /"/g;
+
+        // データ作成
+        var bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8BOMあり
+        var csv = [], row = [], field, r, c;
+        for (r=0;  r<table.rows.length; r++) {
+          row.length = 0;
+          for (c=0; c<table.rows[r].cells.length; c++) {
+            field = table.rows[r].cells[c].textContent;
+            row.push(escaped.test(field)? '"'+field.replace(e, '""')+'"': field);
+            // 区切り、改行、エスケープ文字を含む場合、エスケープ文字文字で囲む（エスケープ文字は二重にする）
+          }
+          csv.push(row.join(','));
+        }
+        //var blob = new Blob([/*bom, */csv.join('\n')], {'type': 'text/csv'}); // BOMなし
+        var blob = new Blob([bom, csv.join('\n')], {'type': 'text/csv'});
+
+        // 保存
+        if (window.navigator.msSaveBlob) {
+          // IE用(保存 or 開く保存)
+          window.navigator.msSaveBlob(blob, filename); 
+          //window.navigator.msSaveOrOpenBlob(blob, filename);
+        } else {
+          a.download = filename;
+          a.href = window.URL.createObjectURL(blob);
+        }
+        alert( "AI-OCR利用履歴ダウンロード完了");
+      }
+
+      // $(function(){
+      //    $('tr[data-href]').on('click', function(){
+      //     location.href = $(this).data('href');
+      //   });
+      // });
+      function change_page_size(){
+        num = document.getElementById( "select_page_size" ).value;
+        document.getElementById( "id_page_size" ).value = num;
+        $("#searchForm").submit();
+      }   
+      document.getElementById('id_owner').addEventListener('change', function() {changeColor(this);});
+
+    </script>
+
+    <table class="UseGoogle_table">
+      <tr>
+        <th>処理年月</th> 
+        <th>契約会社名</th>
+        <th>取引先名</th>
+        <th>カテゴリ</th>
+        <th>利用者</th>
+        <th>AI-OCR利用枚数</th>
+      </tr>
+      {% for item in object_list %}
+      <tr >
+        <td>{{item.processed_ym}}</td>
+        <td>{{item.owner_name}}</td>
+        <td>{{item.partner_name}}</td> 
+        <td>{{item.category_name}}</td>
+        <td>{{item.user_name}}</td>
+        <td>{{item.google_amount|intcomma }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <nav>
+      {% if is_paginated %}
+      <ul class="pagination">
+        <!-- 前へ の部分 -->
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.previous_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% endif %}
+        <!-- 数字の部分 -->
+        <!-- if 3 < page_obj.number -->
+        {% if 2 < page_obj.number %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' 1 %}">1</a>
+          </li>
+        {% endif %}
+        <!-- if 4 < page_obj.number -->
+        {% if 3 < page_obj.number %}
+          <li>…</li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range  %}
+        <!-- page_obj.number|add:-2 <= num and num <= page_obj.number|add:2 -->
+          {% if page_obj.number|add:-1 <= num and num <= page_obj.number|add:1 %}
+            {% if page_obj.number == num %}
+              <li class="page-num active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% else %}
+              <li class="page-num"><a class="page-link" href="?{% url_replace request 'page' num %}">{{ num }}</a></li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        <!-- add:3 -->
+        {% if page_obj.number|add:2 < page_obj.paginator.num_pages %}
+          <li>…</li>
+        {% endif %}
+        <!-- add:2  %} -->
+        {% if page_obj.number|add:1 < page_obj.paginator.num_pages %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.paginator.num_pages %}">{{ page_obj.paginator.num_pages }}</a>
+          </li>
+        {% endif %}
+
+        <!-- 次へ の部分 -->
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.next_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+      {% endif %}
+      <div class="page-select">
+        <label for="page_size_choice">表示件数</label>
+        <div class="select-wrapper">
+          <select id="select_page_size" name="page_size_choice" onchange="change_page_size();">
+            {% for value, text in form.page_size_choice.field.choices %}
+            <option value="{{ value }}" {% if value == page_size %} selected {% endif %}>{{ text }}</option>     
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </nav>
+  </main>
+
+{% endblock %}
+
+

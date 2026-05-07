@@ -1,0 +1,49 @@
+# version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    container_name: pg16
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    container_name: django_dev
+    # Dockerコンテナが起動した際に Djangoの「開発用サーバー」を立ち上げる
+    # 0.0.0.0: サーバーを「外部（ホストPCなど）からのアクセスをすべて受け付ける状態」
+    # command: python manage.py runserver 0.0.0.0:8000
+    command: sleep infinity  # コンテナを維持するだけの命令に変更
+    volumes:
+      - ./evc_pj:/app
+      - ./data_root:/data_root  # ホストの ./data_root をコンテナの /data_root に繋ぐ
+      - ./Google:/Google_data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - ENV_FILE=.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "2"
+# ---------------------------
+# データ永続化ボリューム
+# ---------------------------
+volumes:
+  pgdata:

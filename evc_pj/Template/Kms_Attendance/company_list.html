@@ -1,0 +1,26 @@
+{% extends "Kms_Attendance/header.html" %}
+
+{% block content_block %}
+<h2>会社一覧</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>会社名</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for company in company_list %}
+    <tr>
+      <td>{{ company.name }}</td>
+      <td><a href="detail/{{ company.id }}">詳細</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="container">
+  <p><a class='btn' href="{% url 'Kms_Attendance:create' %}">新規登録</a></p>
+  <br>
+</div>
+{% endblock %}

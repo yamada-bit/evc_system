@@ -1,0 +1,197 @@
+{% extends "commons/Evc_base_owner.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_ocrform %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_FolderList.css" %}'>
+{% endblock %}
+{% block script_block %}
+<!-- <script src='{% static "js/Evc_folderlist.min.js" %}' defer></script> -->
+<script src='{% static "js/Evc_folderlist.js" %}' defer></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div id="s-toggle" class="sp">
+      <span class="material-symbols-outlined">search</span>
+    </div>    
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+    </div>
+    <div id="form-area">
+      <form  action="" name="SearchForm" id="searchForm" method="post">
+      {% csrf_token %}
+      {% comment "下記の部分はコメントアウト" %}
+      {% endcomment%}
+        <div class="search-container">
+          <div class="select-box">
+            <span class="value-label">契約会社ID</span>
+            {{ form.owner }}
+          </div>
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="p-search">
+            {{ form.owner_id }}
+            <span class="material-symbols-outlined">search</span>
+          </div>
+          {% endcomment%}
+          {% comment "下記の部分はコメントアウト" %}
+          <span id="search-wrap">
+            <input type="button" class="search" onclick="PdfList()" value="検索">
+          </span>
+          <span id="search-wrap">
+            <input type="button" id="cancel" value="戻る">
+          </span>
+          {% endcomment%}
+          <span id="search-wrap">
+            <input type="button" id="commit" name="commit" value="保存">
+          </span>
+        </div>
+        {% comment "下記の部分はコメントアウト" %}
+        {% endcomment%}
+        {{ form.page_size }}
+        <input type="hidden" id="submit_action" name="submit_action" value="update">
+        <input type="hidden" id="object_list_json" name="object_list_json" value="">
+      </form>
+    </div>
+    <div class="table-area" style="overflow-y: auto; ">
+      <table id="table_item">
+        <thead>
+          <tr>
+            {% comment "下記の部分はコメントアウト" %}
+            <th>契約会社ID</th>
+            {% endcomment%}
+            <th>ユーザID</th>
+            <th>行削除</th>
+            <th>行挿入</th>
+          </tr>
+        </thead>
+        <tbody id = "table_tbody">
+        {% for item in object_list %}
+        <tr>
+          {% comment "下記の部分はコメントアウト" %}
+          <td class="t-partner">
+            <div class="pn-id">{{item.owner_id}}</div>
+            <div class="pn-id">{{item.user_id}}</div>
+            <!-- <div class="pn-name">{{item.folder_path}}</div> -->
+          </td>
+          {% endcomment%}
+          {% comment "下記の部分はコメントアウト" %}
+          <td>
+            <input type="search" name="{{ item.owner_id }}" id="owner_id_{{ forloop.counter }}" value="{{ item.owner_id }}">
+          </td>
+          {% endcomment%}
+          <td>
+            <input type="search" name="{{ item.user_id }}" id="user_id_{{ forloop.counter }}" value="{{ item.user_id }}">
+          </td>
+          {% comment "下記の部分はコメントアウト" %}
+          <td>
+            <input type="search" name="{{ item.folder_path }}" id="folder_path_{{ forloop.counter }}" value="{{ item.folder_path }}">
+          </td>
+          {% endcomment%}
+          <td>
+            <p  class="del-item">ー</p>
+          </td>
+          <td>
+            <p  class="ins-item">＋</p>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div hidden>
+      <span>
+        <input id="csv_file" type="file">
+      </span>
+      <span id="search-wrap">
+        <input type="button" id="csv_load" name="csv" value="CSV読み込み">
+      </span>
+    </div>
+    {% comment "下記の部分はコメントアウト" %}
+    <nav>
+      {% if is_paginated %}
+      <ul class="pagination">
+        <!-- 前へ の部分 -->
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.previous_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% endif %}
+        <!-- 数字の部分 -->
+        <!-- if 3 < page_obj.number -->
+        {% if 2 < page_obj.number %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' 1 %}">1</a>
+          </li>
+        {% endif %}
+        <!-- if 4 < page_obj.number -->
+        {% if 3 < page_obj.number %}
+          <li>…</li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range  %}
+        <!-- page_obj.number|add:-2 <= num and num <= page_obj.number|add:2 -->
+          {% if page_obj.number|add:-1 <= num and num <= page_obj.number|add:1 %}
+            {% if page_obj.number == num %}
+              <li class="page-num active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% else %}
+              <li class="page-num"><a class="page-link" href="?{% url_replace request 'page' num %}">{{ num }}</a></li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        <!-- add:3 -->
+        {% if page_obj.number|add:2 < page_obj.paginator.num_pages %}
+          <li>…</li>
+        {% endif %}
+        <!-- add:2  %} -->
+        {% if page_obj.number|add:1 < page_obj.paginator.num_pages %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.paginator.num_pages %}">{{ page_obj.paginator.num_pages }}</a>
+          </li>
+        {% endif %}
+
+        <!-- 次へ の部分 -->
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.next_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+      {% endif %}
+      <div class="page-select">
+        <label for="page_size_choice">表示件数</label>
+        <div class="select-wrapper">
+          <select id="select_page_size" name="page_size_choice" onchange="change_page_size();">
+            {% for value, text in form.page_size_choice.field.choices %}
+            <option value="{{ value }}" {% if value == page_size %} selected {% endif %}>{{ text }}</option>     
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </nav>
+    {% endcomment%}
+  </main>
+{% endblock %}
+

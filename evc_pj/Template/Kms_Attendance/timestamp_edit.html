@@ -1,0 +1,39 @@
+{% extends "commons/Kms_base_kintai.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+    <link rel="stylesheet" type="text/css" href='{% static "Kms_Attendance/css/FE_Monthly.css" %}?250213'>
+{% endblock %}
+{% block script_block %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+    <main>
+      <div class="container">
+        <form method="post" action="{% url 'Kms_Attendance:timestamp_edit' year month day %}">
+        {% csrf_token %}
+          {{ form.as_p| linebreaksbr }}
+          {{ form2.as_p| linebreaksbr }}
+        <!--<p>
+          <label for="kbn" class="sr-only">勤務区分:</label>
+              <select  id="kbn" name="kbn" required>
+          {% for kbn in kbns %}
+              <option  {% if kbn.selected == 1 %} selected="selected" {% endif %} value="{{ kbn.KBN }}">{{  kbn.KBN_NAME }}</option>
+          {% endfor %}
+              </select>
+        </p>-->
+          <input class="btn-image" type="submit" name="commit" value="登録">
+          <input class="btn-image" type="submit" name="add" value="申請">
+          <input class="btn-image" type="submit" name="cancel" value="戻る">
+        </form>
+      </div>
+    </main>
+{% endblock  %}

@@ -1,0 +1,197 @@
+{% extends "commons/Fms_base_ocrform.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_ocrform %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Fms_Ocrform/css/FE_EntryList.css" %}'>
+{% endblock %}
+{% block script_block %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+<script src='{% static "js/dialog.min.js" %}' defer></script>
+<!-- <script src="{% static 'Fms_Ocrform/js/Fms_entrylist.js' %}?250526" defer></script> -->
+<script src="{% static 'Fms_Ocrform/js/Fms_entrylist.min.js' %}?250610" defer></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div id="s-toggle" class="sp" style="display:none;">
+      <span class="material-symbols-outlined">search</span>
+    </div>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+
+    <div id="form-area" style="display:none;">
+      <div class="search-header">
+        <h2>条件検索</h2>
+        <input type="button" value='全クリア' class="chk" id="chkid" onClick="clear_all();">
+        <span id="search-wrap">
+          <input type="button" class='search' onclick="PdfList()" value="検索">
+        </span>
+        <!-- <input type="submit" value="検索" > -->
+        <!-- <input type="submit" onclick="EviHistoryList()" value="検索" > -->
+        {% comment "下記の部分はコメントアウト" %}
+        <label id="export" class="sp-hidden">
+          <a href="{% url 'Evc_App:export_evi_csv' %}?{{ request.GET.urlencode }}">
+            <span class="material-symbols-outlined">download</span>
+            CSVダウンロード
+          </a>
+        </label> 
+        {% endcomment%}
+      </div>
+      <form name="SearchForm" id="searchForm" method="get">
+      {% comment "下記の部分はコメントアウト" %}
+      {% csrf_token %}
+      {% endcomment%}
+        <div class="s-file">
+          <h3>ファイル情報</h3>
+          <div class="s-flex">
+            {{ form.pdf_name }}
+            <div class="date-wrapper">
+              <label for="id_shori_date" class="s-label date">処理年月</label>
+              {{ form.shori_date }}
+            </div>
+          </div>
+        </div>
+
+        <p class="s-note">*テキスト入力欄には、検索したいキーワードを入力して下さい。</p>
+        <input type="hidden" id="ocrdata_id" name="ocrdata_id">
+        <input type="hidden" id="act" name="act">
+        {{ form.page_size }}
+      </form>
+    </div>
+    <dialog id="del-record">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p>このレコード（行）を削除します。<br>よろしいですか？</p>
+      <div class="btn-area">
+        <button id="close">キャンセル</button>
+        <button id="delete">削除</button>
+      </div>
+    </dialog>
+
+    <table class="ev-table tablesorter"  id="ev_table">
+	    <thead>
+      <tr>
+        <th class="th-pointer">No.<span class="arrow"></span></th>
+        <th>ファイル名</th>
+        <th>処理年月</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for item in object_list %}
+      {% comment "下記の部分はコメントアウト" %}
+      <tr data-href="{% url 'Fms_Ocrform:ocrdata_edit' 'entry' item.ocrdata_id 1 %}" {% if item.result == "処理中" %} class="prosessing" {% endif %}>
+      <tr data-href="" {% if item.result == "処理中" %} class="prosessing" {% endif %}>
+      {% endcomment%}
+      <tr data-href="{% url 'Fms_Ocrform:ocrdata_edit' 'entry' item.ocrdata_id 1 %}" {% if item.result == "処理中" %} class="prosessing" {% endif %}>
+        <td>
+          <p>{{item.item_no}}</p>
+          <div class="tooltip sp-hidden"  id="open">
+            <span class="material-symbols-outlined">
+              delete
+            </span>
+            <p class="description">削除</p>
+          </div>
+        </td>
+        <td>
+          <p>{{item.pdf_name}}</p>
+        </td>
+        <td>{{item.processed_ym}}
+        </td>
+        <td style="display:none;">{{item.processed_date}}</td>
+        <td style="display:none;" {% if item.result == "NG" %} class="result-red" {% endif %}>{{item.result}}</td> 
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <nav>
+      {% if is_paginated %}
+      <ul class="pagination">
+        <!-- 前へ の部分 -->
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% query_replace request 'page' page_obj.previous_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% endif %}
+        <!-- 数字の部分 -->
+        <!-- if 3 < page_obj.number -->
+        {% if 2 < page_obj.number %}
+          <li class="page-num">
+            <a class="page-link" href="?{% query_replace request 'page' 1 %}">1</a>
+          </li>
+        {% endif %}
+        <!-- if 4 < page_obj.number -->
+        {% if 3 < page_obj.number %}
+          <li>…</li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range  %}
+        <!-- page_obj.number|add:-2 <= num and num <= page_obj.number|add:2 -->
+          {% if page_obj.number|add:-1 <= num and num <= page_obj.number|add:1 %}
+            {% if page_obj.number == num %}
+              <li class="page-num active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% else %}
+              <li class="page-num"><a class="page-link" href="?{% query_replace request 'page' num %}">{{ num }}</a></li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        <!-- add:3 -->
+        {% if page_obj.number|add:2 < page_obj.paginator.num_pages %}
+          <li>…</li>
+        {% endif %}
+        <!-- add:2  %} -->
+        {% if page_obj.number|add:1 < page_obj.paginator.num_pages %}
+          <li class="page-num">
+            <a class="page-link" href="?{% query_replace request 'page' page_obj.paginator.num_pages %}">{{ page_obj.paginator.num_pages }}</a>
+          </li>
+        {% endif %}
+
+        <!-- 次へ の部分 -->
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% query_replace request 'page' page_obj.next_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+      {% endif %}
+      <div class="page-select">
+        <label for="page_size_choice">表示件数</label>
+        <div class="select-wrapper">
+          <select id="select_page_size" name="page_size_choice" onchange="change_page_size();">
+            {% for value, text in form.page_size_choice.field.choices %}
+            <option value="{{ value }}" {% if value == page_size %} selected {% endif %}>{{ text }}</option>     
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </nav>
+  </main>
+
+{% endblock %}

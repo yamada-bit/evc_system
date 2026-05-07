@@ -1,0 +1,162 @@
+@import url("FE_User.css");
+
+form {
+  max-width: 1000px;
+  padding-bottom: 2em;
+}
+.sub-title {
+  margin-block: 2em 1em;
+}
+.form-input, .form-zip1, .form-zip2 {
+  height: 42px;
+  padding-inline: 0.6em;
+}
+.form-zip1, .form-zip2 {
+  background-color: #fff;
+}
+.form-zip1:focus, .form-zip2:focus {
+  border-bottom: 1px solid #666;
+  border-top: 1px solid transparent;
+}
+.form-zip1 {
+  width: 60px;
+}
+.form-zip2 {
+  width: 70px;
+}
+.ad-note {
+  color: #999;
+}
+.pn-flex {
+  display: flex;
+  gap: 4%;
+}
+.form-flex {
+  justify-content: space-between;
+}
+.form-flex > * {
+  flex-grow: 1;
+}
+.pn-flex > * > * {
+  margin-bottom: 1em;
+}
+.pn-left,
+.pn-right {
+  width: 48%;
+}
+.name-wrapper {
+  width: 70%;
+}
+.pn-btn {
+  text-align: center;
+  background: var(--btn-dark);
+  color: #fff;
+  border-radius: 2em;
+  width: 26%;
+  position: relative;
+  align-self: flex-end;
+  height: 42px;
+  transition: .5s;
+}
+.kensaku {
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  display: inline-block;
+  width: 100%;
+  padding: 0.6em 0 0.6em 0.6em;
+}
+.pn-btn span {
+  position: absolute;
+  pointer-events: none;
+  left: 0.6em;
+  top: 0.4em;
+}
+.name-flex {
+  display: flex;
+  gap: 4%;
+}
+.pn-btn:hover {
+  background-color: rgb(13, 99, 94);
+  box-shadow: 0 0 10px 5px var(--btn-dark);
+}
+.form-Btn {
+  margin-bottom: 0;
+  position: relative;
+}
+.form-textarea {
+  height: 85px;
+}
+
+.partnerDialog .ui-widget-overlay {
+  background-color: #fff;
+}
+.partnerDialog {
+  /* background-color: #fff; */
+  padding: 1;
+  /* border:none; */
+}
+
+.partnerDialog .ui-dialog-titlebar {
+  display: none;
+  padding: 0.3rem !important;
+  font-size: 0.5rem;
+}
+
+.partnerDialog .ui-dialog-content {
+  border: none;
+  padding: 0;
+  /* background-color: #fff; */
+}
+.partnerDialog .ui-dialog-buttonpane {
+  border: none;
+  display: none;
+  /* background-color: #fff; */
+}
+
+.partner {
+  width: 100%;
+  height: 100%;
+  border: none;
+  /* border-radius: 5px; */
+}
+.dialog-close {
+  display: block;
+  margin: 0 0 0 auto;
+}
+
+@media (max-width: 767px) {
+  .sub-title {
+    margin: 0;
+  }
+
+  .pn-flex {
+    flex-direction: column;
+  }
+
+  .pn-flex > * {
+    width: 100%;
+  }
+
+  .form-input, .form-zip1, .form-zip2 {
+    height: 40px;
+  }
+
+  label {
+    font-size: 0.9em;
+  }
+  input[type="radio"]::before {
+    margin-right: 4px;
+  }
+
+  .kensaku {
+    padding-inline: 0;
+  }
+
+  .pn-btn span {
+    display: none;
+  }
+
+  .ad-note {
+    font-size: 13px;
+  }
+}

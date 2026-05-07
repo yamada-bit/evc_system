@@ -1,0 +1,183 @@
+@import url("FE_FileSave.css");
+
+.material-symbols-outlined {
+  font-variation-settings: "wght" 200;
+}
+
+header {
+  background-color: transparent;
+  position: fixed;
+  height: auto;
+  width: auto;
+  top: 30px;
+  left: 40px;
+  box-shadow: none;
+  z-index: 10;
+}
+
+.logo-area {
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: 1em;
+  border-radius: 17px;
+  background: #e0e0e0bd;
+  box-shadow: inset 10px 10px 9px #8e8e8e, inset -10px -10px 9px #ffffff;
+}
+
+.sub-title {
+  position: absolute;
+  top: 20px;
+  left: 50px;
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.sub-title img {
+  filter: drop-shadow(0 0 4px #fff);
+}
+
+.sub-title:before,
+.sub-title:after {
+  display: none;
+}
+
+main {
+  margin: 0;
+  height: 100vh;
+}
+
+form {
+  padding-block: 13vh;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.card {
+  width: 60%;
+}
+
+.card-contents {
+  transform: translateY(50%);
+  opacity: 0;
+  transition: 1s;
+}
+
+.card:hover .card-contents {
+  transform: none;
+  opacity: 1;
+}
+
+.card-contents {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h2 {
+  text-transform: uppercase;
+}
+
+.input-area {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  margin-bottom: 1.5em;
+  border-radius: 3em;
+  text-align: left;
+  width: 300px;
+  position: relative;
+}
+
+.input-area span {
+  position: absolute;
+  font-size: 34px;
+  top: 7px;
+  left: 12px;
+  color: #aaa;
+}
+
+input[type="email"],
+input[type="password"] {
+  padding: 0.8em 1em 0.8em 3.3em;
+  width: 100%;
+  font-weight: 300;
+}
+
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+  color: #aaa;
+}
+
+input[type="submit"] {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  margin-top: 1.5em;
+  width: fit-content;
+  padding-inline: 2em;
+}
+
+.lead {
+  font-size: 0.9em;
+  font-weight: 200;
+}
+li a {
+  display: block;
+  color: #bbb;
+  /* padding: 1.6em 1em; */
+  padding: 0.4em 0.5em;
+  transition: all 0.5s;
+  color: #aaa;
+}
+@media (max-width: 767px) {
+  header {
+    background-color: rgba(0, 0, 0, 0.7);
+    top: 0;
+    left: 0;
+    z-index: 10;
+    height: 53px;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    padding-left: calc(5% - 10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  header::before {
+    content: none;
+  }
+  .logo-area {
+    width: 100.48px;
+    background-color: transparent;
+    box-shadow: none;
+    padding: 4px;
+  }
+  .logo-area img {
+    width: 100%;
+  }
+  .card {
+    width: 100%;
+    height: 100%;
+  }
+  form {
+    padding-block: 5%;
+  }
+  .card-contents {
+    opacity: 1;
+    transform: none;
+    padding-bottom: 0;
+    width: 90%;
+  }
+  .input-area {
+    width: 100%;
+  }
+  .sub-title {
+    top: 10px;
+    left: calc(50% - 34.5px);
+  }
+  .sub-title img {
+    width: 80%;
+  }
+  .lead {
+    font-size: 0.8em;
+    text-align: left;
+  }
+}

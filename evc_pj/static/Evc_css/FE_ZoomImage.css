@@ -1,0 +1,35 @@
+#DIV_IMG {
+	overflow: auto;    /* スクロールバーが自動的に付く */
+	border: 1px solid #666;
+	/* width: 500px;
+	height: 400px; */
+
+	/* 画像が div より小さい場合は左右センタリング */
+	text-align: center;
+	/* 上下センタリング用。height と同じ値にする */
+	/* line-height: 400px; */
+}
+#DIV_IMG img {
+	vertical-align: middle;  /* 上下センタリング */
+}
+.imagebox {
+	/* width: 100px;
+	height: 100px; */
+	width: 90%;
+	height: 85%;
+	/* background-color: skyblue; */
+	border: 1px solid #666;	
+	transform-origin: top left;
+	overflow: auto;
+	margin-left: auto; /* 中央寄せにするため */
+	margin-right: auto; /* 中央寄せにするため */
+  }
+  
+  .button_image {
+	font-size: 18px;
+	height: 2em;
+	width: 2em;
+	border-radius: 2em;
+	color: #fff;
+	background: rgba(225, 225, 225, 0.2);
+  }

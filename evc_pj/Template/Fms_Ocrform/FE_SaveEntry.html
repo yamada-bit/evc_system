@@ -1,0 +1,186 @@
+{% extends "commons/Fms_base_ocrform.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href="{% static 'Fms_Ocrform/css/FE_FileSave.css' %}?250120">
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      {% if model_name == 'ocrdata' %}
+      <h1 class="sub-title">送り状をアップロード保存</h1>
+      {% elif model_name == 'timesheet' %}
+      <h1 class="sub-title">勤務表をアップロード保存</h1>
+      {% elif model_name == 'jafyame' %}
+      <h1 class="sub-title">JAふくおか八女文書をアップロード保存</h1>
+      {% else %}
+      <h1 class="sub-title">生産履歴票をアップロード保存</h1>
+      {% endif %}
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+
+    <form id="uploadform" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+      <div id="upload_area">
+        <div class="card-contents">
+          <h2 class="sp-hidden">file upload</h2>
+          <p id="msg" class="sp-hidden">
+            ファイルを選択するか、または<br>ここにドラッグ＆ドロップしてください！
+          </p>
+          <div id="thumb_area" class="thumb-area">
+            <canvas id="thumb_canvas"></canvas>
+          </div>
+          <div id="upload_area2">
+            <br>
+          </div>
+          <label class="upload-label" for="file_upload">
+            <span class="material-symbols-outlined">
+              folder_open
+            </span>
+            ファイルを選択
+            <input type="file" id="file_upload" name="file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff" multiple="multiple"
+              onchange="loadfile(this)" />
+          </label>
+          <p class="guid"><br>スマホは写真の背景を黒に近い色にして下さい</p>
+          <input type="hidden" required="required" id="file_photo" name="photo" value="" />
+          <canvas id="canvas"  style="display:none;"></canvas>
+        </div>
+        <div id="preview_area" class="preview-area" style="display:none;">
+          <p>プレビュー</p>
+          <img id="id_preview_img" src="" style="display:none;">
+          <iframe id="id_pdfthumb" src="" style="display:none;"></iframe>
+          <p id="id_msg" style="display:none;"><br>1MBを超えるファイルはプレビューできません。</p>
+        </div>
+      </div>
+      {{ form.file.errors }}
+      <div class="card-evidence">
+          <div class="s-flex">
+            <div class="select-wrapper ocrform">
+              <label for="id_ocrform_choice" >フォーム</label>
+              {{ form.ocrform }}
+              <!-- {{ form.ocrform.errors }} -->
+            </div>
+          </div>
+      </div>
+
+      <div class="card-evidence sp-hidden"   style="display:none;">
+        <!-- <h3>ファイル情報</h3> -->
+        <!-- <div class="s-divide  sp-hidden"> -->
+          <div class="evidence-kubun">
+            {% for kubun in form.evidence_kubuns %}
+              {{ kubun.tag }}
+              <label>
+                {{ kubun.choice_label }}
+              </label>
+            {% endfor %}
+          </div>
+          {{ form.specif }}
+          <!-- <input type="text" name="specif" placeholder="例 1,2,2-4" maxlength=20" id="id_specif"> -->
+      </div>
+      {% comment "下記の部分はコメントアウト" %}
+      {% endcomment%}
+
+      <span>
+        <input type="submit" class="upload-btn" name="btn_upload" value="実行" onclick="return check(this);" />
+        <input type="submit" class="upload-btn green sp-hidden" name="btn_area" id = "btn_area"  style="display:none;" value="画像分割" onclick="return area(this);" title="先頭ページのみ"/>
+        <input type="submit" class="upload-btn green seg" name="btn_cropimage" id = "btn_cropimage"  style="display:none;" value="スマホ" onclick="return area(this);" />
+        {% comment "下記の部分はコメントアウト" %}
+        <input type="submit" class="upload-btn" name="btn_upload" value="実行" onclick="return check(this);" />
+        <input type="submit" class="upload-btn green sp-hidden" name="btn_area" id = "btn_area" value="画像分割" onclick="return area(this);" />
+        {% endcomment%}
+      </span>
+      {% comment "下記の部分はコメントアウト" %}
+      <span class="guid">スマホは写真の背景を黒に近い色にして下さい</span>
+      <span class="area-msg sp-hidden"><br>画像分割は先頭ページのみ</span>
+      {% endcomment%}
+    </form>
+  </main>
+
+  <!-- ////////////////////////////////////// -->
+  <!-- <script src="{% static 'js/Evc_upload_script.js' %}"></script> -->
+  <script src="{% static 'js/Evc_upload_script.min.js' %}"></script>
+
+  {% comment "下記の部分はコメントアウト" %}
+  <script type="text/javascript">
+
+    // document.getElementById('file_upload').addEventListener('change', function () {
+    //   if (file_upload.files.length > 0) {
+    //   loadpdf(file_upload)}
+    // });
+    // function loadpdf(obj) {
+    //         let key = 0;
+    //         for (i = 0; i < obj.files.length; i++) {
+    //             var fileReader = new FileReader();
+    //             fileReader.onload = (function (e) {
+    //                 var field = document.getElementById("upload_area2");
+    //                 var figure = document.createElement("figure");
+    //                 var rmBtn = document.createElement("input");
+    //                 var PdfName =  obj.files[key].name
+    //                 var newElement = document.createTextNode(PdfName);
+    //                 // var img = new Image();
+    //                 // img.src = e.target.result;
+    //                 rmBtn.type = "button";
+    //                 rmBtn.name = key;
+    //                 rmBtn.value = "削除";
+    //                 rmBtn.onclick = (function () {
+    //                     var element = document.getElementById("img-" + String(rmBtn.name)).remove();
+    //                 });
+    //                 figure.setAttribute("id", "img-" + key);
+    //                 // figure.appendChild(img);
+    //                 figure.appendChild(newElement);
+    //                 figure.appendChild(rmBtn);
+    //                 field.appendChild(figure);
+
+    //                 key++;
+    //             });
+    //             fileReader.readAsDataURL(obj.files[i]);
+    //             // console.log((i + 1) + '番目のファイル');
+    //             // console.log('name: ' + obj.files[i].name);
+    //             // console.log('size: ' + obj.files[i].size);
+    //             // console.log('type: ' + obj.files[i].type); 
+    //         }
+    //     }
+
+        // document.getElementById('uploadform').onsubmit = function() {
+        // // console.log('クリックされました');
+        // const element = document.getElementById('upload_area2');
+        // element.remove();
+
+        // // reloadメソッドによりページをリロード
+        // // window.location.reload(true);
+        
+        // alert('アップロードに成功しました');
+
+        // }
+
+        // function uploadFile(file) { 
+        // const upload_uri = "./upload.php";
+        // const xhr = new XMLHttpRequest();
+        // const fd = new FormData();
+        // var p_element = document.getElementById("text_message");
+
+        // xhr.open("post", upload_uri, true);
+        // xhr.onreadystatechange = function() {
+        // if( xhr.readyState === 4 && xhr.status === 200) {
+
+        // if( xhr.responseText === 'true' ) {
+        // p_element.textContent = 'アップロードに成功しました';
+        // } else {
+        // p_element.textContent = 'アップロードに失敗しました';
+        // }
+        // }
+        // };
+        // fd.append('uploadFile', file);
+        // xhr.send(fd);
+        // }
+  </script>
+  {% endcomment%}
+{% endblock %}

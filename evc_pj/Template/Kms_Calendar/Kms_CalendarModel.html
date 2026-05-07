@@ -1,0 +1,115 @@
+{% extends "commons/Kms_base_calendar.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Kms_Calendar/css/FE_Calendar.css" %}?250213'>
+{% endblock %}
+{% block script_block %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div id="s-toggle" class="sp">
+      <span class="material-symbols-outlined">search</span>
+    </div>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+    </div>
+
+    <div id="form-area">
+      <form name="SearchForm" id="searchForm" method="get">
+      {% comment "下記の部分はコメントアウト" %}
+      {% csrf_token %}
+      {% endcomment%}
+        <div class="search-container">
+          <div class="calendar-nav">
+            {% comment "下記の部分はコメントアウト" %}
+            {% endcomment%}
+            {% if can_go_prev %}
+            <a href="{% url 'Kms_Calendar:calendar_model_ym' month_previous.year month_previous.month %}">前月</a>
+            {% else %}
+            <span class="disabled">前月</span>
+            {% endif %}            
+            <span class="calendar-month">{{ month_current | date:"Y年m月" }}</span>
+            {% if can_go_next %}
+            <a href="{% url 'Kms_Calendar:calendar_model_ym' month_next.year month_next.month %}">次月</a>
+            {% else %}
+            <span class="disabled">次月</span>
+            {% endif %}            
+          </div>
+          <span>【カレンダー連携を実行してください】</span>
+          <label id="export" class="sp-hidden">
+            <a href="{% url 'Kms_Calendar:export_calendar' year month %}">
+              <span class="material-symbols-outlined">download</span>
+              出退勤ダウンロード
+            </a>
+          </label> 
+        </div>
+        <input type="hidden" id="act" name="act">
+        {{ form.page_size }}
+      </form>
+    </div>
+
+    <table class="ev-table tablesorter calendar"  id="ev_table">
+	    <thead>
+        <tr>
+          <th>日付</th>
+          <th>開始時間</th>
+          <th>終了時間</th>
+          <th>勤務時間</th>
+          <th>場所</th>
+          <th>内容</th>
+          {% comment "下記の部分はコメントアウト" %}
+          <th>備考</th>
+          {% endcomment%}
+        </tr>
+      </thead>
+      <tbody>
+        {% for day in calendar_data %}
+        <tr class="row">
+          {% comment "下記の部分はコメントアウト" %}
+          <td>
+            <p>{{day.date}}</p>
+          </td>
+          {% endcomment%}
+          <td class="
+              {% if day.is_sunday %}sunday{% elif day.is_saturday %}saturday{% endif %}
+              {% if day.is_holiday %}holiday{% endif %}
+          ">
+            <p>{{day.date}}</p>
+          </td>
+          <td>
+            <p>{{day.start}}</p>
+          </td> 
+          <td>
+            <p>{{day.end}}</p>
+          </td>
+          <td>
+            <p>{{day.work_hours}}</p>
+          </td>
+          <td>
+            <p>{{day.location}}</p>
+          </td>
+          <td>
+            <p>{{day.title}}</p>
+          </td> 
+          {% comment "下記の部分はコメントアウト" %}
+          <td>
+            <p>{{day.description}}</p>
+          </td>
+          {% endcomment%}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+
+{% endblock %}

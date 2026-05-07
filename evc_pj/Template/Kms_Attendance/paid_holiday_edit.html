@@ -1,0 +1,102 @@
+{% extends "commons/Kms_base_kintai.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+    <link rel="stylesheet" type="text/css" href='{% static "Kms_Attendance/css/FE_Edit.css" %}?250213'>
+{% endblock %}
+{% block script_block %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block extrajs %}
+    <script src="{% static 'Kms_Attendance/js/request.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <main>
+      <div id="s-toggle" class="sp">
+        <span class="material-symbols-outlined">search</span>
+      </div>
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+      </div>
+      <div id="form-area">
+        <form method="post" id="selectform" class="form-user">
+          {% csrf_token %}
+          <table id="edit_table" class="edit-table">
+            <tbody>
+              <tr>
+                <th>氏名</th>
+                <td>{{ username }}</td>
+              </tr>
+              <tr>
+                <th>社員番号</th>
+                <td>{{ form.EMP_ID }}</td>
+              </tr>
+              <tr>
+                <th>年度</th>
+                <td>{{ form.NENDO }}</td>
+              </tr>
+              <tr>
+                <th>当年度付与数</th>
+                <td>
+                  {{ form.NEW_COUNT }}
+                </td>
+              </tr>
+              <tr>
+                <th>前年繰越日数</th>
+                <td>
+                  {{ form.CARRY_OVER }}
+                </td>
+              </tr>
+              <tr>
+                <th>当年度総数</th>
+                <td>
+                  {{ form.ALL_COUNT }}
+                </td>
+              </tr>
+              {% comment "下記の部分はコメントアウト" %}
+              <tr>
+                <th>当年度取得数</th>
+                <td>
+                    {{ form.USED_COUNT }}
+                </td>
+              </tr>
+              {% endcomment%}
+            </tbody>
+          </table>
+          <table hidden>
+          {% for field in form %}
+            {% if field.is_hidden %}
+              {{ field.as_hidden }}
+            {% endif %}
+          {% endfor %}
+          </table>
+          <div class="btn-area">
+            <input class="btn-image" type="submit" name="commit" value="登録">
+            <input class="btn-image" type="submit" name="cancel" value="戻る">
+            {% comment "下記の部分はコメントアウト" %}
+            <input class="btn-image" type="button" value="登録" onclick="commit();">
+            <a class="btn-image" href="{% url 'Kms_Attendance:paid_holiday' year 1 %}">戻る</a>
+            {% endcomment%}
+          </div>
+        </form>
+      </div>
+    </main>
+    <script type="text/javascript">
+      function commit() {
+        $('#selectform').submit();
+      }
+      function cancel() {
+        document.location.href = "{% url 'accounts:logout' %}";
+      }
+    </script>
+
+{% endblock  %}

@@ -1,0 +1,186 @@
+{% extends "commons/Evc_base_management.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/sunny/jquery-ui.css">
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_Partner.css" %}'>
+{% endblock %}
+
+{% block script_block %}
+  <!-- jQuery.js を読み込みます -->
+  <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <form id="id_form" method="POST">
+    {% csrf_token %}
+      <input type="hidden" id="id_url" data-url="{% url 'Evc_Management:get_partner_list' %}" />
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+        {% comment "下記の部分はコメントアウト" %}
+        <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+        {% endcomment%}
+      </div>
+      <div class="pn-flex">
+        <div class="pn-left">
+          <div class="form-radio">
+            <p class="form-label">登録区分<span class="form-require">*</span></p>
+            <div class="radio-label">
+            {% for kubun in form.kubuns %}
+              <label>
+                {{ kubun.tag }}
+                {{ kubun.choice_label }}
+              </label>
+            {% endfor %}
+            </div>
+          </div>
+          <div class="form-partner name-flex">
+            <div class="name-wrapper">
+              <p class="form-label">取引先名<span class="form-require">*</span></p>
+              {{ form.partner_name }}
+            </div>
+            <div class="modal-dialog" id="modal_dialog" style="display:none;">
+              <select id="id_partner" size="8" class="form-control partner" name="partner" onchange="change_partner()">
+              </select>
+            </div>
+            <div class="pn-btn" id="pn-btn"  {% if kubun == "new" %} style="visibility:hidden;" {% endif %} >
+              <span class="material-symbols-outlined">search</span>
+              <input type="button" class="kensaku" id="kensaku" onclick="PartnerPopup()" value="検索">
+            </div>
+          </div>
+          {{ form.partner_name.errors }}
+          <div class="form-radio">
+            <p class="form-label">取引先区分<span class="form-require">*</span></p>
+            <div class="radio-label">
+            {% for radio in form.partner_types %}
+              <label>
+                {{ radio.tag }}
+                {{ radio.choice_label }}
+              </label>
+            {% endfor %}
+            </div>
+          </div>
+          {{ form.partner_type.errors }}
+          <div class="form-partner">
+            <p class="form-label">取引先名（略称）</p>
+            {{ form.partner_ryaku_name }}
+          </div>
+          {{ form.partner_ryaku_name.errors }}
+          <div class="form-partner">
+            <p class="form-label">法人番号13桁</p>
+            {{ form.corporate_number }}
+          </div>
+          {{ form.corporate_number.errors }}
+
+          <div class="form-flex">
+            <div class="form-partner">
+              <p class="form-label">担当者部署</p>
+              {{ form.charge_dept }}
+            </div>
+            {{ form.charge_dept.errors }}
+
+            <div class="form-partner">
+              <p class="form-label">担当者</p>
+              {{ form.charge_name }}
+            </div>
+            {{ form.charge_name.errors }}
+          </div>
+          <div class="form-partner">
+            <p class="form-label">担当者メールアドレス</p>
+            {{ form.charge_email }}
+          </div>
+          {{ form.charge_email.errors }}
+        </div>
+        <div class="pn-right">
+          <!-- 郵便番号入力(3桁+4桁) -->
+          <div class="form-partner">
+            <p class="form-label">郵便番号</p>
+            {{ form.zip3 }} <span> － </span>
+            {{ form.zip4 }}
+            <span class="ad-note">（住所を自動取得）</span>
+          </div>
+          {{ form.zip_code.errors }}
+           <!-- 住所入力(都道府県+以降の住所) -->
+           <div class="form-partner">
+            <p class="form-label">住所</p>
+            {{ form.address1 }}
+          </div>
+          {{ form.address1.errors }}
+
+          <div class="form-partner">
+            <p class="form-label">ビル・棟名他</p>
+            {{ form.address2 }}
+          </div>
+          {{ form.address2.errors }}
+
+          <div class="form-partner">
+            <p class="form-label">電話番号</p>
+            {{ form.tel_no }}
+          </div>
+          {{ form.tel_no.errors }}
+
+          <div class="form-partner">
+            <p class="form-label">FAX番号</p>
+            {{ form.fax_no }}
+          </div>
+          {{ form.fax_no.errors }}
+
+          <div class="form-partner">
+            <p class="form-label">備考</p>
+            {{ form.notes }}
+          </div>
+          {{ form.notes.errors }}
+        </div>
+      </div>
+      <div class="form-Btn">
+        <span class="material-symbols-outlined">add_box</span>
+        <input type="submit" value="登録">
+      </div>
+    </form>
+  </main>
+
+  <!-- 郵便番号から「住所」を自動入力する -->
+  <script src="https://ajaxzip3.github.io/ajaxzip3.js" charset="UTF-8"></script>
+
+  <script type="text/javascript">
+    $(function(){
+      $( 'input[name="kubuns"]:radio' ).change( function() {
+        var radioval = $(this).val();
+        // var partner_name = document.getElementById('id_partner_name');
+        // var list = document.getElementById('id_partner');
+        if (radioval == 'new') {
+          visibility  = 'hidden';
+          // modal.style.display = 'block';     
+          // list.style.display = 'none';
+          // partner_name.autocomplete = 'off';
+          //list.children().remove();
+          var partnerElement = $('#id_partner');
+          partnerElement.children().remove();
+        } else {
+          visibility  = 'visible';
+          // modal.style.display = 'none';     
+          // list.style.display = 'block';     
+          //partner_name.attr('autocomplete', 'on');        
+          // partner_name.autocomplete = 'on';     
+        }
+        document.getElementById('pn-btn').style.visibility = visibility;        
+      });
+    });
+    function change_partner() {
+      partner_name = $('#id_partner').val();
+      // document.getElementById( "id_partner_name" ).value = partner_name;
+      url = "{% url 'Evc_Management:partner' '00000' %}".replace('00000', partner_name);
+      location.href = url;
+      // $('#modal_dialog').dialog('close');
+    }
+
+  </script>
+  <script src="{% static 'js/Evc_partner_script.min.js' %}"></script>
+
+{% endblock %}

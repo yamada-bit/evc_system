@@ -1,0 +1,152 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;300;400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_Menu.css" %}?250609'>
+
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  {% comment "下記の部分はコメントアウト" %}
+  <script src='{% static "js/Evc_history.min.js" %}' defer></script>
+  {% endcomment%}
+  <title>メニュー</title>
+</head>
+
+<body>
+
+  <!-- <header>
+    <div class="logo-area">
+      <img src='{% static "images/Companylogo-2.png" %}' class="Companylogo">
+    </div>
+  </header> -->
+
+  <main>
+    {% comment "下記の部分はコメントアウト" %}
+    {% endcomment%}
+    
+    <!-- <form method="post" action="{% url 'accounts:login' %}"> -->
+      <!-- {% csrf_token %} -->
+      <fieldset class="card">
+        <!-- <h1 class="sub-title"><img src='{% static "images/EVClogo-2.png" %}'></h1> -->
+        <div >
+
+          <h2>MENU</h2>
+            <nav id="g-menu">
+              <ul>
+                <li {% if process_title == "共有ファイル" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_fileshare:file_upload' %}" class="op"><span class="material-symbols-outlined">upload_file</span>共有ファイル</a>
+                </li>
+                {% if "system-bridge.jp" in user.user_id %}
+                <li {% if process_title == "勤怠管理" %}class="active"{% endif %}>
+                  <a href="{% url 'Kms_Calendar:calendar_model' %}" class="op"><span class="material-symbols-outlined">login</span>勤怠管理</a>
+                </li>
+                {% comment "下記の部分はコメントアウト" %}
+                <li {% if process_title == "出退勤" %}class="active"{% endif %}>
+                  <a href="{% url 'Kms_Attendance:index' %}" class="op"><span class="material-symbols-outlined">login</span>出退勤</a>
+                </li>
+                {% endcomment%}
+                {% else %}
+                <li {% if process_title == "出退勤サービス" %}class="active"{% endif %}>
+                  <a href=""><span class="material-symbols-outlined">upload_file</span>出退勤サービス</a>
+                </li>
+                {% endif %}
+                <li {% if process_title == "伝票処理（電帳法対応）" %}class="active"{% endif %}>
+                  <a href="{% url 'Evc_App:upload' %}" class="op"><span class="material-symbols-outlined">upload_file</span>伝票処理（電帳法対応）</a>
+                </li>
+                <li {% if process_title == "経費精算サービス" %}class="active"{% endif %}>
+                  <a href=""><span class="material-symbols-outlined">upload_file</span>経費精算サービス</a>
+                </li>
+                <li {% if process_title == "販売管理サービス" %}class="active"{% endif %}>
+                  <a href=""><span class="material-symbols-outlined">upload_file</span>販売管理サービス</a>
+                </li>
+                <li class="sp-hidden">
+                  <a href="{% url 'Fms_Ocrform:upload_ocrform' 1 %}" class="op"><span class="material-symbols-outlined">upload_file</span>フォームサービス</a>
+                </li>
+                {% comment "下記の部分はコメントアウト" %}
+                <li>
+                  <a href="{% url 'accounts:logout' %}" class="op"><span class="material-symbols-outlined">logout</span>ログアウト</a>
+                </li>
+                {% endcomment%}
+                <li>
+                  <form action="{% url 'accounts:logout' %}"  class="logout-form op" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">
+                      <span class="material-symbols-outlined">logout</span>ログアウト
+                    </button>
+                  </form>
+                </li>
+              </ul>
+            </nav>
+
+        </div>
+      </fieldset>
+    <!-- </form> -->
+  </main>
+  <!-- メッセージフレームワーク -->
+  {% if form.errors or messages or next %}
+    <dialog id="message_dialog">
+      <span class="material-symbols-outlined">
+        error
+      </span>
+      <!-- <div class="errorlist"> -->
+        {% if form.errors %}
+        <!-- {{ form.non_field_errors }} -->
+          <p>メールアドレスまたはパスワードが違っています。</p>
+        {% endif %}
+        {% if messages %}
+            {% for message in messages %}
+              <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                {{ message }}
+              </p>
+            {% endfor %}
+        {% endif %}
+        {% if next %}
+          {% if user.is_authenticated %}
+            <p>アクセスしようとしたページを表示する権限がありません。 表示するためには、
+              アクセス権限のあるアカウントでログインしてください。</p>
+          {% else %}
+            <p>このページを見るためにはログインしてください。</p>
+          {% endif %}
+        {% endif %}
+    
+      <!-- </div> -->
+      <div class="btn-dialog">
+        <button id="message_close">閉じる</button>
+      </div>
+    </dialog>
+    <script>
+      $(function() {
+        // var messagebox = document.querySelector('dialog');
+        let messagebox = document.getElementById("message_dialog");
+        let btn_close = document.getElementById("message_close");
+        btn_close.addEventListener("click", function() {
+          messagebox.close();
+        });
+        messagebox.showModal();
+      });
+    </script>  
+  {% endif %}
+  {% comment "下記の部分はコメントアウト" %}
+  <script>
+    $(function() {
+      history.pushState(null, null, null);
+      $(window).on("popstate", function(){
+        history.pushState(null, null, null);
+      });
+    });     
+  </script>
+  {% endcomment%}
+</body>
+
+</html>

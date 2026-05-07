@@ -1,0 +1,212 @@
+{% extends "commons/Evc_base_management.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_EviSummary.css" %}?241008'>
+{% endblock %}
+{% block script_block %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+<script src='{% static "js/dialog.min.js" %}' defer></script>
+<script src="{% static 'js/Evc_evilist.min.js' %}?241008" defer></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div id="s-toggle" class="sp">
+      <span class="material-symbols-outlined">search</span>
+    </div>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+
+    <div id="form-area">
+      <form name="SearchForm" id="searchForm" method="get">
+      {% comment "下記の部分はコメントアウト" %}
+      {% csrf_token %}
+      {% endcomment%}
+        <div class="search-container">
+          <label>取引年月
+            <div class="date-wrapper">
+              {{ form.trade_month }}
+            </div>
+          </label>
+          <label>カテゴリ
+            <div class="select-wrapper category">
+              {{ form.category }}
+              <!-- {{ form.category.errors }} -->
+            </div>
+          </label>
+          <label>取引先
+            <div>
+              <input type="search" list="Partner" name="partner" value="{{ form.partner.value }}"  size="25">
+              <datalist id="Partner">
+                {% for value, text in form.partner_cd.field.choices %}
+                <option value="{{ text }}"></option>
+                {% endfor %}
+              </datalist>
+            </div>
+          </label>
+          <label>発行元
+            <div>
+              <input type="search" list="Publisher" name="publisher" value="{{ form.publisher.value }}"  size="25">
+              <datalist id="Publisher">
+                {% for value, text in form.publisher_cd.field.choices %}
+                <option value="{{ text }}"></option>
+                {% endfor %}
+              </datalist>
+            </div>
+          </label>
+          <span id="search-wrap">
+            <!-- <input type="button" class='search' onclick="PdfList()" value="検索"> -->
+            <input type="submit" class='search'  value="検索">
+          </span>
+        </div>
+
+        {% comment "下記の部分はコメントアウト" %}
+        <div class="s-flex">
+          <!-- <label for="id_trade_month" class="s-label date">年月</label> -->
+          <div class="date-wrapper">
+            {{ form.trade_month }}
+          </div>
+          <div class="select-wrapper category">
+            {{ form.category }}
+            <!-- {{ form.category.errors }} -->
+          </div>
+          <div id="search-wrap">
+            <input type="submit" class='search'  value="検索">
+          </div>
+        </div>
+        {% endcomment%}
+
+        {% comment "下記の部分はコメントアウト" %}
+        ページ表示件数変更時に使用
+        <input type="hidden" name="user_kubuns" value="loginuser">
+        <input type="hidden" id="evi_id" name="evi_id">
+        {% endcomment%}
+        <input type="hidden" id="act" name="act">
+        {{ form.page_size }}
+      </form>
+    </div>
+
+    <table class="ev-table tablesorter"  id="ev_table">
+	    <thead>
+      <tr>
+        <th class="th-pointer">No.<span class="arrow"></span></th>
+        <th>取引年月</th>
+        <th>カテゴリ</th>
+        <th>件数</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for item in object_list %}
+      <tr data-href="{% url 'Evc_Management:evidence_inquiry' item.trade_month item.folder_id %}">
+        {% comment "下記の部分はコメントアウト" %}
+        <tr data-href="{% url 'Evc_Management:evidence_inquiry' item.trade_month item.category_name %}">
+        <tr>
+        {% endcomment%}
+        <td>{{item.item_no}}</td>
+        <td>
+          <p>{{item.trade_month}}</p>
+        </td>
+        <td>{{item.category_name}}
+        </td>
+        <td>{{ item.count|intcomma }}
+        </td>
+      </tr>
+      {% comment "下記の部分はコメントアウト" %}
+      <input type="hidden" name="trade_month" value="{{item.trade_month}}">
+      <input type="hidden" name="category_name" value="{{ item.count|intcomma }}">
+      {% endcomment%}
+      {% endfor %}
+      </tbody>
+    </table>
+    <nav>
+      {% if is_paginated %}
+      <ul class="pagination">
+        <!-- 前へ の部分 -->
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.previous_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% endif %}
+        <!-- 数字の部分 -->
+        <!-- if 3 < page_obj.number -->
+        {% if 2 < page_obj.number %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' 1 %}">1</a>
+          </li>
+        {% endif %}
+        <!-- if 4 < page_obj.number -->
+        {% if 3 < page_obj.number %}
+          <li>…</li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range  %}
+        <!-- page_obj.number|add:-2 <= num and num <= page_obj.number|add:2 -->
+          {% if page_obj.number|add:-1 <= num and num <= page_obj.number|add:1 %}
+            {% if page_obj.number == num %}
+              <li class="page-num active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% else %}
+            <li class="page-num"><a class="page-link" href="?{% url_replace request 'page' num %}">{{ num }}</a></li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        <!-- add:3 -->
+        {% if page_obj.number|add:2 < page_obj.paginator.num_pages %}
+          <li>…</li>
+        {% endif %}
+        <!-- add:2  %} -->
+        {% if page_obj.number|add:1 < page_obj.paginator.num_pages %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.paginator.num_pages %}">{{ page_obj.paginator.num_pages }}</a>
+          </li>
+        {% endif %}
+
+        <!-- 次へ の部分 -->
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.next_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+      {% endif %}
+      <div class="page-select">
+        <label for="page_size_choice">表示件数</label>
+        <div class="select-wrapper">
+          <select id="select_page_size" name="page_size_choice" onchange="change_page_size();">
+            {% for value, text in form.page_size_choice.field.choices %}
+            <option value="{{ value }}" {% if value == page_size %} selected {% endif %}>{{ text }}</option>     
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </nav>
+  </main>
+
+{% endblock %}

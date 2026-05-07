@@ -1,0 +1,217 @@
+{% load static %}
+<!DOCTYPE html>
+<html  lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% comment "下記の部分はコメントアウト" %}
+    <!-- Bootstrap CSS -->
+    <!-- <link rel="stylesheet" type="text/css" href='{% static "css/bootstrap/bootstrap.min.css" %}'/> -->
+    <!-- <script src="./js/bootstrap.bundle.min.js"></script> -->
+    {% endcomment%}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;300;400;500;700&display=swap"
+      rel="stylesheet">
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_Dialog.css" %}'>
+    {% if process_title == "検索条件編集" or process_title == "生産履歴票編集" or process_title == "勤務表編集" or process_title == "送り状編集" %} 
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    {% endif %}
+
+    {% block link_block %}
+    {% endblock %}
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src='{% static "js/script.min.js" %}' defer></script>
+    {% block script_block %}
+    {% endblock %}
+
+    <title>
+      {% block title %}{% endblock %}
+    </title>
+    <style>
+      {% block styles %}{% endblock %}
+    </style>
+  </head>
+
+  <body>
+    {% if process_title == "フォーム編集" or process_title == "検索条件編集" or process_title == "生産履歴票編集" or process_title == "勤務表編集" or process_title == "送り状編集" %}
+    <div class="bg"></div>
+    {% endif %}
+
+    <header>
+      {% if process_title == "抽出枠情報" or process_title == "フォーム編集"  or process_title == "検索条件編集" or process_title == "生産履歴票編集" or process_title == "勤務表編集" or process_title == "送り状編集" %}
+      <div class="logo-area">
+        <img src='{% static "images/Companylogo-2.png" %}' class="Companylogo" >
+        <h4>{{ user.user_name }}</h4>
+      </div>
+      {% else %}
+      <div id="nav-toggle" class="sp">
+        <div>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="header-area">
+        <div class="logo-area">
+          <img src='{% static "images/Companylogo.png" %}' class="Companylogo" >
+          <h4>{{ owner_ryaku_name }}</h4>
+          <h4>{{ user.user_name }}</h4>
+        </div>
+        {% if user.is_authenticated %}
+        <nav id="g-menu">
+          <ul>
+            <li {% if process_title == "フォーム登録" %}class="active"{% endif %}>
+              <a href="{% url 'Fms_Ocrform:upload_ocrform' 1 %}"><span class="material-symbols-outlined">upload_file</span>フォーム登録</a>
+            </li>
+            <li {% if process_title == "フォーム一覧" %}class="active"{% endif %}> 
+              <a href="{% url 'Fms_Ocrform:ocrform_list' 1 %}"><span class="material-symbols-outlined">list</span>フォーム一覧</a>
+            </li>
+            {% if process_title == "生産履歴票保存" or process_title == "勤務表保存" or process_title == "送り状保存" or process_title == "JAふくおか八女" %}
+            <li class="sp-hidden menu-toggle menu-num3 menu-sub open">
+            {% else %}
+            <li class="sp-hidden menu-toggle menu-num3 menu-sub">
+            {% endif %}
+              <a><span class="material-symbols-outlined">folder_managed</span>データ保存</a>
+              <ul>
+                {% comment "下記の部分はコメントアウト" %}
+                <li {% if process_title == "生産履歴票保存" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'entry' %}"><span class="material-symbols-outlined">upload_file</span>生産履歴票保存</a>
+                </li> 
+                {% endcomment%}
+                <li {% if process_title == "勤務表保存" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'timesheet' %}"><span class="material-symbols-outlined">upload_file</span>勤務表保存</a>
+                </li> 
+                <li {% if process_title == "送り状保存" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'ocrdata' %}"><span class="material-symbols-outlined">upload_file</span>送り状保存</a>
+                </li> 
+                <li {% if process_title == "JAふくおか八女" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'jafyame' %}"><span class="material-symbols-outlined">upload_file</span>JAふくおか八女</a>
+                </li> 
+              </ul>
+            </li>
+            {% if process_title == "生産履歴票一覧" or process_title == "勤務表一覧" or process_title == "送り状一覧" or process_title == "JAふくおか八女一覧" %}
+            <li class="sp-hidden menu-toggle menu-num3 menu-sub open">
+            {% else %}
+            <li class="sp-hidden menu-toggle menu-num3 menu-sub">
+            {% endif %}
+              <a><span class="material-symbols-outlined">folder_managed</span>データ一覧</a>
+              <ul>
+                {% comment "下記の部分はコメントアウト" %}
+                <li {% if process_title == "生産履歴票一覧" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:ocrdata_list' 'entry' %}"><span class="material-symbols-outlined">list</span>生産履歴票一覧</a>
+                </li>
+                {% endcomment%}
+                <li {% if process_title == "勤務表一覧" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:ocrdata_list' 'timesheet' %}"><span class="material-symbols-outlined">list</span>勤務表一覧</a>
+                </li>
+                <li {% if process_title == "送り状一覧" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:ocrdata_list' 'ocrdata' %}"><span class="material-symbols-outlined">list</span>送り状一覧</a>
+                </li>
+                <li {% if process_title == "JAふくおか八女一覧" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:ocrdata_list' 'jafyame' %}"><span class="material-symbols-outlined">list</span>JAふくおか八女一覧</a>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <a href="{% url 'accounts:mainmenu' %}"><span class="material-symbols-outlined">undo</span>メインメニュー</a>
+            </li>
+          </ul>
+        </nav>
+        {% endif %}
+      </div>
+      {% endif %}
+    </header>
+  
+  <!-- メッセージフレームワーク -->
+  {% if form.errors or messages %}
+    <dialog id="message_dialog">
+      <span class="material-symbols-outlined">
+        {% if form.errors %}
+        error
+        {% else %}
+        report
+        {% endif %}
+      </span>
+      <div>
+        {% if form.errors %}
+          {{ form.non_field_errors }}
+        {% endif %}
+        {% if messages %}
+          {% for message in messages %}
+            <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+              {{ message | linebreaksbr }}
+            </p>
+          {% endfor %}
+        {% endif %}
+        {% if process_title == "エビデンス一覧表示" %}
+          {% if form.errors %}
+            {% for errors in form.errors.values %}
+              {% for error in errors %}
+                {{ error }}<br>
+              {% endfor %}
+            {% endfor %}
+          {% endif %}
+        {% endif %}
+
+        {% comment "下記の部分はコメントアウト" %}
+          {% if messages %}
+          <ul class="messages">
+            {% for message in messages %}
+              <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                {{ message }}
+              </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        {% endcomment%}
+      </div>
+      <div class="btn-dialog">
+        <button id="message_close">閉じる</button>
+      </div>
+    </dialog>
+    <script>
+      $(function() {
+        let messagebox = document.getElementById('message_dialog');
+        let btn_close = document.getElementById('message_close');
+        btn_close.addEventListener('click', function() {
+          messagebox.close();
+        });
+        messagebox.showModal();
+      });
+    </script>  
+  {% endif %}
+  <!-- alertメッセージフレームワーク -->
+    <dialog id="alert_dialog">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p id="alert_msg"></p>
+      <div class="btn-dialog">
+        <button id="alert_close">閉じる</button>
+      </div>
+    </dialog>
+    <script>
+      function show_message(str) {
+        let messagebox = document.getElementById('alert_dialog');
+        document.getElementById('alert_msg').innerText = str;
+        let btn_close = document.getElementById('alert_close');
+        btn_close.addEventListener('click', function() {
+          messagebox.close();
+        });
+        messagebox.showModal();
+      }
+      // document.getElementsByClassName('nav')[0].setAttribute('ontouchstart', '');      
+    </script>
+
+    {% block content %}
+    {% endblock %}
+  </body>
+</html>

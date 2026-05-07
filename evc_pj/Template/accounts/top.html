@@ -1,0 +1,24 @@
+{% extends "commons/Evc_base.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_FileSave.css" %}?250501'>
+{% endblock %}
+
+{% block title %}メニュー{% endblock %}
+
+{% block headertitle %}メニュー画面{% endblock %}
+
+{% block content %}
+  {% if user.is_authenticated %}
+    <h1><font color="red">{{ request.user }}</font> さんようこそ！！</h1>
+  {% else %}
+  <p>You are not logged in</p>
+  <a href="{% url 'accounts:login' %}">login</a>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+</script>
+{% endblock %}

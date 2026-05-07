@@ -1,0 +1,36 @@
+{% extends "commons/Evc_base_phrase.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_PhraseList.css" %}'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="card card-default">
+        <div class="card-body">
+          {{ object.phrase|linebreaksbr }}
+        </div>
+        <div class="card-body">
+          {{ object.category_name|linebreaksbr }}
+        </div>
+        <div class="card-footer">
+          <a class="btn btn-primary" href="{% url 'Evc_Owner:phrase_update' object.pk %}">修正</a>
+          <a class="btn btn-danger" href="{% url 'Evc_Owner:phrase_delete' object.pk %}">削除</a>
+          <a href="{% url 'Evc_Owner:phrase_list' %}">キャンセル</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

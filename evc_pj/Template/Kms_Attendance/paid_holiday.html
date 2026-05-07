@@ -1,0 +1,225 @@
+{% extends "commons/Kms_base_kintai.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+    <link rel="stylesheet" type="text/css" href='{% static "Kms_Attendance/css/FE_Monthly.css" %}?250213'>
+{% endblock %}
+{% block script_block %}
+  {% comment "下記の部分はコメントアウト" %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+  {% endcomment%}
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block extrastyle %}
+  {% comment "下記の部分はコメントアウト" %}
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  {% endcomment%}
+{% endblock %}
+{% block extrajs %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="{% static 'Kms_Attendance/js/report.js' %}"></script>
+
+    <script>
+      if(window.matchMedia("(max-width:768px)").matches){
+        $(document).ready(function(){
+          $(".iframe").colorbox({
+            iframe:true,
+            scrolling:true,
+            closeButton:true,
+            fastIframe:false,
+            width:"90%",
+            height:"80%"
+          });
+        });
+      } else {
+        $(document).ready(function(){
+          $(".iframe").colorbox({
+            iframe:true,
+            scrolling:true,
+            closeButton:true,
+            maxWidth:"850",
+            fastIframe:false,
+            width:"80%",
+            height:"80%"
+          });
+        });
+      }
+      </script>
+      <script language="javascript">
+        $("#select_date").change(function() {
+          var date = $(this).val();
+          if (date.match(/\//)) {
+            date = date.replace(/\//g, "-");
+          }
+          var prev_date = "2021-12";
+          var prev_date2 = "";
+          var prev_year = "";
+            $.ajax({
+              url: "/ajax/check_period",
+              data: { date: date },
+              success: function(result) {
+                if (result == "no") {
+                  if (prev_date2 == "") {
+                    if (prev_year == "") {
+                      $("#select_date").val(prev_date);
+                    } else {
+                      $("#select_date").val(prev_year);
+                    }
+                  } else {
+                    $("#select_date").val(prev_date2);
+                  }
+                  $('[data-remodal-id="free_modal"]').remodal().open();
+                } else {
+                    window.location = "/aggregates/" + date + "?";
+                }
+              },
+              error: function() {
+                if (prev_date2 == "") {
+                  if (prev_year == "") {
+                    $("#select_date").val(prev_date);
+                  } else {
+                    $("#select_date").val(prev_year);
+                  }
+                } else {
+                  $("#select_date").val(prev_date2);
+                }
+                alert("情報取得に失敗しました。");
+              }
+            });
+        });
+      </script>
+
+      <!-- <script type="text/javascript">
+      // ページング
+      $("#per").change(function(){
+        $("select[form=search_form]#per").removeAttr("form")
+        var form = $("#search_form")
+        $("<input>").attr({
+          "type": "hidden",
+          "name": "per",
+          "value": $("#per").val()
+        }).appendTo(form);
+        $("#search_form").submit();
+      });
+    </script> -->
+    
+{% endblock %}
+
+{% block content %}
+    <main>
+      <div id="s-toggle" class="sp">
+        <span class="material-symbols-outlined">search</span>
+      </div>
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+      </div>
+
+      <div  id="form-area">
+        <form name="search_form" id="searchForm" method="get">
+          <input type="hidden" id="download_type" name="download_type" value="">
+          <div class="search-container">
+            <table class="search-table">
+              <tr>
+                <td class="custom-select">
+                  <select name="select_date" id="select_date">
+                    {% for year in years %}
+                    {% if year == target_year %}
+                    <option value="{{ year }}" selected>{{ year }}年度</option>
+                    {% else %}
+                    <option value="{{ year }}">{{ year }}年度</option>
+                    {% endif %}
+                    {% endfor %}
+                  </select>
+                </td>
+                <td class="custom-select">
+                  <select name="paid_holiday" id="paid_holiday">
+                    <option value="2" selected>有給</option>
+                    <option value="3">振休</option>
+                    <option value="5">夏休</option>
+                    <option value="7">公休</option>
+                </td>
+                <td></td>
+                <td></td>
+                <td class="href-link">
+                  <input class="btn-image" type="submit" name="cancel" value="戻る">
+                {% comment "下記の部分はコメントアウト" %}
+                  <input class="btn-image" type="button" value="戻る" onClick="javascript:history.go(-1);">
+                  <a class="btn-image" href="{{request.META.HTTP_REFERER}}">戻る</a>
+                  <input type="button" value="戻る" onClick="javascript:history.go(-1);">
+                {% endcomment%}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <input type="text" name="number" id="number" value="{{ number }}" placeholder="社員番号" />
+                </td>
+                <td>
+                  <input type="text" name="name" id="name" value="{{ name }}" placeholder="氏名" />
+                </td>
+              </tr>
+            </table>
+          </div>
+          <table>
+            <tr>
+              <th>入社年月日</th>
+              <td>{{ joined_date }}</td>
+            </tr>
+          </table>
+          <table class="approval-table">
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>繰越</th>
+                <th>付与</th>
+                <th>取得</th>
+                <th>失効</th>
+                <th>残数調整</th>
+                <th>残</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for report in reports %}
+                <tr>
+                  <td align="right">{{ report.date }}</th>
+                  <td align="right">
+                    {{ report.carry_over }}
+                  </td>
+                  <td align="right">
+                    {{ report.new_count }}
+                  </td>
+                  <td align="right">
+                    {{ report.used_count }}
+                  </td>
+                  <td align="right">
+                    {{ report.expiration_count }}
+                  </td>
+                  {% if forloop.first %}
+                  <td align="right" class="href-link">
+                    <a href="{% url 'Kms_Attendance:paid_holiday_edit' month_current.year %}">
+                    {{ report.adjust_count }}
+                    </a>
+                  </td>
+                  {% else %}
+                  <td align="right">
+                    {{ report.adjust_count }}
+                  </td>
+                  {% endif %}
+                  <td align="right">
+                    {{ report.remaining_count }}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </main>
+{% endblock  %}

@@ -1,0 +1,17 @@
+<!-- storage/file_confirm_delete.html -->
+<h2>ファイル削除確認</h2>
+
+<p>
+  以下のファイルを削除します。<br>
+  <strong>{{ object.original_name }}</strong>
+</p>
+
+<p style="color:red;">
+  ※ この操作は取り消せません
+</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">削除する</button>
+  <a href="{% url 'Fms_fileshare:list' %}">キャンセル</a>
+</form>

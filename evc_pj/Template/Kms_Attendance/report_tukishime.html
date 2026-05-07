@@ -1,0 +1,284 @@
+{% extends "commons/Kms_base_kintai.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+    <link rel="stylesheet" type="text/css" href='{% static "Kms_Attendance/css/FE_Monthly.css" %}?250213'>
+{% endblock %}
+{% block script_block %}
+  {% comment "下記の部分はコメントアウト" %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+  {% endcomment%}
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block extrastyle %}
+  {% comment "下記の部分はコメントアウト" %}
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  {% endcomment%}
+{% endblock %}
+{% block extrajs %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="{% static 'Kms_Attendance/js/report.js' %}"></script>
+
+    <script>
+      if(window.matchMedia("(max-width:768px)").matches){
+        $(document).ready(function(){
+          $(".iframe").colorbox({
+            iframe:true,
+            scrolling:true,
+            closeButton:true,
+            fastIframe:false,
+            width:"90%",
+            height:"80%"
+          });
+        });
+      } else {
+        $(document).ready(function(){
+          $(".iframe").colorbox({
+            iframe:true,
+            scrolling:true,
+            closeButton:true,
+            maxWidth:"850",
+            fastIframe:false,
+            width:"80%",
+            height:"80%"
+          });
+        });
+      }
+      </script>
+      <script language="javascript">
+        $("#select_date").change(function() {
+          var date = $(this).val();
+          if (date.match(/\//)) {
+            date = date.replace(/\//g, "-");
+          }
+          var prev_date = "2021-12";
+          var prev_date2 = "";
+          var prev_year = "";
+            $.ajax({
+              url: "/ajax/check_period",
+              data: { date: date },
+              success: function(result) {
+                if (result == "no") {
+                  if (prev_date2 == "") {
+                    if (prev_year == "") {
+                      $("#select_date").val(prev_date);
+                    } else {
+                      $("#select_date").val(prev_year);
+                    }
+                  } else {
+                    $("#select_date").val(prev_date2);
+                  }
+                  $('[data-remodal-id="free_modal"]').remodal().open();
+                } else {
+                    window.location = "/aggregates/" + date + "?";
+                }
+              },
+              error: function() {
+                if (prev_date2 == "") {
+                  if (prev_year == "") {
+                    $("#select_date").val(prev_date);
+                  } else {
+                    $("#select_date").val(prev_year);
+                  }
+                } else {
+                  $("#select_date").val(prev_date2);
+                }
+                alert("情報取得に失敗しました。");
+              }
+            });
+        });
+      </script>
+
+      <!-- <script type="text/javascript">
+      // ページング
+      $("#per").change(function(){
+        $("select[form=search_form]#per").removeAttr("form")
+        var form = $("#search_form")
+        $("<input>").attr({
+          "type": "hidden",
+          "name": "per",
+          "value": $("#per").val()
+        }).appendTo(form);
+        $("#search_form").submit();
+      });
+    </script> -->
+    
+{% endblock %}
+
+{% block content %}
+    <main>
+      <div id="s-toggle" class="sp">
+        <span class="material-symbols-outlined">search</span>
+      </div>
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+      </div>
+
+      <div  id="form-area">
+        <form name="search_form" id="searchForm" method="get">
+          <input type="hidden" id="download_type" name="download_type" value="">
+          <div class="search-container">
+            <table class="search-table">
+              <tr>
+                <td colspan="2">
+                  <div class="calendar-nav">
+                    {% comment "下記の部分はコメントアウト" %}
+                    {% endcomment%}
+                    <a href="{% url 'Kms_Attendance:report_tukishime' month_previous.year month_previous.month %}">前月</a>
+                    <span class="calendar-month">{{ month_current | date:"Y年m月" }}</span>
+                    <a href="{% url 'Kms_Attendance:report_tukishime' month_next.year month_next.month %}">次月</a>
+                  </div>
+                </td>
+                <td colspan="3">
+                  {% comment "下記の部分はコメントアウト" %}
+                  <a class="btn-image" data-confirm="CSV出力を実行しますか？" href="{% url 'Kms_Attendance:csv_export' month_current.year month_current.month %}">CSV出力</a>
+                  <a class="btn-image" data-confirm="PDF出力を実行しますか？" href="{% url 'Kms_Attendance:pdf_view' month_current.year month_current.month %}" target="_blank">PDF出力</a>
+                  <a class="btn-image" href="{{request.META.HTTP_REFERER}}">戻る</a>
+                  {% endcomment%}
+                  <a class="btn-image" id="work_csv_download" href="javascript:void(0);">勤怠CSV出力</a>
+                  <a class="btn-image" id="csv_add_work" href="javascript:void(0);">勤怠CSV登録</a>
+                  <a class="btn-image" id="work_pdf_download" href="javascript:void(0);">勤怠PDF出力</a>
+                </td>
+                {% comment "下記の部分はコメントアウト" %}
+                <td>
+                  <a class="btn-image" href="/kintai/report">戻る</a>
+                </td>
+                {% endcomment%}
+              </tr>
+              <tr>
+                <td>
+                  <input type="text" name="number" id="number" value="{{ number }}" placeholder="社員番号" />
+                </td>
+                <td>
+                  <input type="text" name="name" id="name" value="{{ name }}" placeholder="氏名" />
+                </td>
+                <td>
+                  <div class="custom-select">
+                    <select name="works_status" id="works_status">
+                      <option value="">申請状況</option>
+                      <option  {% if works_status == "0" %} selected {% endif %} value="0">申請待ち</option>
+                      <option  {% if works_status == "1" %} selected {% endif %} value="1">申請中</option>
+                      <option  {% if works_status == "2" %} selected {% endif %} value="2">承認済</option>
+                    </select>
+                  </div>
+                </td>
+                <td>
+                  <div class="custom-select">
+                    <select name="work_parent_status" id="work_parent_status">
+                      <option value="">月締状況</option>
+                      <option value="1">未申請</option>
+                      <option value="2">申請中</option>
+                      <option value="3">確定済</option>
+                    </select>
+                  </div>
+                </td>
+                <td>
+                  <div class="custom-select">
+                    <select name="manager_user" id="manager_user">
+                      <option value="">承認者</option>
+                      <option value="2">中村朋美</option>
+                      <option value="4">承認太郎</option>
+                      <option value="5">勤怠太郎</option>
+                      <option value="6">中村雅孝</option>
+                      <option value="8">藤原裕一</option>
+                    </select>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <table class="approval-table">
+            <thead>
+              <tr>
+                <th>社員番号</th>
+                <th>氏名</th>
+                <th colspan="5">{{ month}}月度</th>
+              </tr>
+              <tr>
+                <th></th>
+                <th></th>
+                <th>未申請</th>
+                <th>承認待ち</th>
+                <th>承認済み</th>
+                <th>月締状況</th>
+                <th>日報</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for report in reports %}
+              <tr>
+                <td>{{ report.number }}</td>
+                <td class="href-link">
+                  <a href="{% url 'Kms_Attendance:monthly' year month 5 forloop.counter %}">{{ report.name }}</a>
+                </td>
+                <td data-label="未申請">{{ report.misinsei  }}</td>
+                <td data-label="承認待ち">{{ report.mati  }}</td>
+                <td data-label="承認済み">{{ report.sumi  }}</td>
+                <td data-label="月締状況">
+                  <div id='2021-12_13'>
+                    <a href="/approvals/13/works/2021-12">要承認</a>
+                  </div>
+                </td>
+                <td data-label="日報" align="center">
+                  {{ report.nippou  }}&nbsp;
+                  <span class="href-link">
+                  <a href="{% url 'Kms_Attendance:daily' year month %}">日報</a>
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% comment "下記の部分はコメントアウト" %}
+          <div>
+            <div>
+              <ul>
+                <li>
+                  <button name="button" type="button" value="asc" class="active"></button>
+                </li>
+                <li>
+                  <button name="button" type="button" value="desc"></button>
+                </li>
+                <li>
+                  <div >
+                    <select name="order" id="order" form="search_form">
+                      <option selected="selected" value="id">社員ID順</option>
+                      <option value="number">社員番号順</option>
+                      <option value="full_name_kana">五十音順（カナ）</option>
+                      <option value="start_date">入社日順</option>
+                    </select>
+                  </div>
+                </li>
+                <li>
+                  <div >
+                    <select name="per" id="per" form="search_form">
+                      <option value="">表示件数</option>
+                      <option selected="selected" value="10">10件</option>
+                      <option value="20">20件</option>
+                      <option value="50">50件</option>
+                      <option value="100">100件</option>
+                      <option value="200">200件</option>
+                    </select>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+          {% endcomment%}
+        </form>
+        {% comment "下記の部分はコメントアウト" %}
+        <p>
+          <a href="#top">ページTOPへ</a>
+        </p>
+        {% endcomment%}
+      </div>
+    </main>
+{% endblock  %}

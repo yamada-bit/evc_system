@@ -1,0 +1,153 @@
+@import url("FE_Login.css");
+
+.material-symbols-outlined {
+  font-variation-settings: "wght" 300;
+}
+
+.sub-title {
+  font-size: 1.3em;
+  font-weight: 200;
+  color: #fff;
+  line-height: 2em;
+  margin-block: 1.95em;
+  position: relative;
+  display: inline-block;
+  padding-inline: 2.5em;
+  background-color: rgba(160, 160, 160, 0.3);
+  top: 0;
+  left: 0;
+}
+
+.sub-title::before {
+  display: block;
+  content: "";
+  position: absolute;
+  width: 40%;
+  height: 90%;
+  inset: 10px 6px;
+  border-left: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+}
+
+.sub-title::after {
+  display: block;
+  content: "";
+  position: absolute;
+  width: 40%;
+  height: 90%;
+  right: 6px;
+  top: -6px;
+  border-right: 1px solid #fff;
+  border-top: 1px solid #fff;
+}
+
+form {
+  padding-block: 0;
+  height: 70vh;
+}
+
+h2 {
+  text-transform: capitalize;
+}
+
+.input-area {
+  width: 400px;
+  display: inline-block;
+  position: relative;
+}
+
+.input-area::after {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  border-top: 1px solid;
+  border-left: 1px solid;
+  rotate: 225deg;
+  color: #999;
+  position: absolute;
+  right: 26px;
+  top: 18px;
+  pointer-events: none;
+}
+
+select {
+  padding: 0.8em 1em 0.8em 1.6em;
+  width: 100%;
+  font-weight: 300;
+  color: #999;
+}
+
+input[type="button"] {
+  display: inline;
+  padding: 0.6em 0 .6em 1.4em;
+  width: 160px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+.btn-area {
+  border-radius: 2em;
+  background: #fff;
+  transition: 0.5s;
+  position: relative;
+}
+
+.btn-area span {
+  position: absolute;
+  font-size: 30px;
+  top: 6px;
+  left: 1.1em;
+  pointer-events: none;
+}
+
+.btn-area:last-child {
+  margin-top: 1.4em;
+  background-color: rgba(0,0,0, 0.3);
+  color: #fff;
+}
+
+.btn-area:hover {
+  box-shadow: 0 0 10px 5px #fff;
+  background: rgba(225, 225, 225, 0.2);
+  color: white;
+}
+
+.btn-area:last-child:hover {
+  box-shadow: 0 0 10px 5px #fff inset;
+  background: rgba(225, 225, 225, 0.2);
+  color: #333;
+}
+
+@media (max-width: 767px) {
+  .sub-title {
+    background-color: transparent;
+    font-size: 1em;
+    padding: 10px 0;
+    margin: 0;
+  }
+
+  .sub-title::before,
+  .sub-title::after {
+    content: none;
+  }
+
+  form {
+    height: 100%;
+    padding-block: 5%;
+  }
+   .input-area {
+    width: 100%;
+    font-size: 14px;
+  }
+
+}
+
+@media (max-width: 374px) {
+  .input-area::after {
+    right: 14px;
+  }
+  select {
+    padding-inline: 14px;
+  }
+}

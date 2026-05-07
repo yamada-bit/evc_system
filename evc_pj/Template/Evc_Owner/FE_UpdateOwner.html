@@ -1,0 +1,90 @@
+{% extends "commons/Evc_base_owner.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/sunny/jquery-ui.css">
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_Partner.css" %}'>
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_Owner.css" %}'>
+{% endblock %}
+
+{% block script_block %}
+  <!-- jQuery.js を読み込みます -->
+  <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <form method="post">
+        {% csrf_token %}
+        <div class="h1-wrapper"><h1 class="sub-title">{{ process_title }}</h1></div>
+
+        <div class="pn-flex">
+          <div class="pn-left">
+            <div class="form-user">
+              <p class="form-label">会社名<span class="form-require">*</span></p>
+              {{ form.owner_name }}
+            </div>
+            {{ form.owner_name.errors }}
+            <div class="form-user">
+              <p class="form-label">会社名（略称）<span class="form-require">*</span></p>
+              {{ form.owner_ryaku_name }}
+            </div>
+            {{ form.owner_ryaku_name.errors }}
+            <div class="form-user">
+              <p class="form-label">担当者名<span class="form-require">*</span></p>
+              {{ form.charge_name }}
+            </div>
+            {{ form.charge_name.errors }}
+            <div class="form-user">
+              <p class="form-label">担当者メールアドレス<span class="form-require">*</span></p>
+              {{ form.charge_email }}
+            </div>
+            {{ form.charge_email.errors }}
+            {% comment "下記の部分はコメントアウト" %}
+            <div class="form-user">
+              <p class="form-label">選択可能ユーザ</p>
+              {{ form.selectable_users }}
+            </div>
+            {{ form.selectable_users.errors }}
+            {% endcomment%}
+          </div>
+          <div class="pn-right">
+            <div class="form-user">
+              <p class="form-label">電話番号</p>
+              {{ form.tel_no }}
+            </div>
+            {{ form.tel_no.errors }}
+      
+            <div class="form-user">
+              <p class="form-label"><span class="form-bikou"></span>備考</p>
+              {{ form.notes }}
+            </div>
+            {{ form.notes.errors }}
+            <div class="form-user">
+              <p class="form-label">利用者数<span class="form-require">*</span></p>
+              {{ form.users_number }}
+            </div>
+            {{ form.users_number.errors }}
+            </div>
+        </div>
+          
+        <div class="btn-flex">
+          <div class="form-Btn">
+            <span class="material-symbols-outlined">how_to_reg</span>
+            <input type="submit" name="btn_update" value={{ process_name }}>
+          </div>
+          <div class="form-Btn">
+            <span class="material-symbols-outlined">delete</span>
+            <input type="submit" name="btn_delete" value="削除 ">
+          </div>
+        </div>
+
+    </form>
+  </main>
+<!-- <button type="button" onclick="history.back()">キャンセル</button> -->
+{% endblock %}

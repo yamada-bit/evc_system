@@ -1,0 +1,109 @@
+{% extends "commons/Evc_base_management.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_User.css" %}'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <form method="POST">
+      {% csrf_token %}
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+        {% comment "下記の部分はコメントアウト" %}
+        <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+        {% endcomment%}
+      </div>
+      <div class="form-radio">
+        <p class="form-label">権限<span class="form-require">*</span></p>
+
+        <div class="radio-label">
+          {% for radio in form.user_authority %}
+          <label>
+            {{ radio.tag }}
+            {{ radio.choice_label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {{ form.user_authority.errors }}
+
+      <div class="form-user">
+        <p class="form-label">メールアドレス<span class="form-require">*</span></p>
+        {{ form.user_id }}
+      </div>
+      {{ form.user_id.errors }}
+    
+      <div class="form-user">
+        <p class="form-label">氏名<span class="form-require">*</span></p>
+        {{ form.user_name }}
+      </div>
+      {{ form.user_name.errors }}
+      {% if kubun == "新規" %}
+      <div class="form-flex">
+        <div class="form-user">
+          <p class="form-label">パスワード<span class="form-require">*</span></p>
+          {{ form.password1 }}
+        </div>
+        <div class="form-user">
+          <p class="form-label">パスワード(再)<span class="form-require">*</span></p>
+          {{ form.password2 }}
+        </div>
+      </div>
+      {{ form.password1.errors }}
+      {{ form.password2.errors }}
+      {% endif %}
+
+      <div class="form-radio">
+        <p class="form-label">登録区分<span class="form-require">*</span></p>
+        <div class="radio-label">
+          {% if kubun == "新規" %}
+          <label>
+            <input type="radio" name="kubun" value="新規" id="id_kubun_0" required checked>
+            新規
+          </label>
+          {% endif %}
+          {% if kubun == "変更" or kubun == "削除" %}
+          <label>
+            <input type="radio" name="kubun" value="変更" id="id_kubun_1" required {% if kubun == '変更' %}checked{% endif %}>
+            変更
+          </label>
+          <label>
+            <input type="radio" name="kubun" value="削除" id="id_kubun_2" required {% if kubun == '削除' %}checked{% endif %}>
+            削除
+          </label>
+          {% endif %}
+          {% comment "下記の部分はコメントアウト" %}
+          {% for radio in form.kubun %}
+          <label>
+            {{ radio.tag }}
+            {{ radio.choice_label }}
+          </label>
+          {% endfor %}
+          {% endcomment%}
+        </div>
+      </div>
+      {{ form.kubun.errors }}
+    
+      <div class="form-user">
+        <p class="form-label"><span class="form-bikou"></span>備考</p>
+        {{ form.notes }}
+        <!-- <textarea type="text" name="notes" maxlength="100" class="form-textarea" id="id_notes" placeholder="100文字まで"></textarea> -->
+      </div>
+      {{ form.notes.errors }}
+    
+      <div class="form-Btn">
+        <span class="material-symbols-outlined">how_to_reg</span>
+        <input type="submit" value={{ process_name }}>
+      </div>
+
+    </form>
+  </main>
+    <!-- <button type="button" onclick="history.back()">キャンセル</button> -->
+{% endblock %}

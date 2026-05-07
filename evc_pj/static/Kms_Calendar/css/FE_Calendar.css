@@ -1,0 +1,290 @@
+@import url("azborn.css");
+
+label {
+  color: #aaa;
+}
+label div {
+  color: #333;
+}
+
+/* form{
+display: inline-block;
+font-size: large;
+} */
+.select-wrapper.category {
+  display: initial;
+  /* width: 200px; */
+  color: #ccc;
+  /* margin-bottom: 0.8em; */
+}
+th:first-child,
+td:first-child {
+  width: 19%;
+  text-align: center;
+}
+th:nth-child(2),
+td:nth-child(2) {
+  width: 13%;
+  text-align: center;
+}
+th:nth-child(3),
+td:nth-child(3) {
+  width: 13%;
+  text-align: center;
+}
+th:nth-child(4),
+td:nth-child(4) {
+  width: 13%;
+  text-align: center;
+}
+th:nth-child(5),
+td:nth-child(5) {
+  width: 21%;
+  text-align: center;
+}
+th:nth-child(6),
+td:nth-child(6) {
+  width: 21%;
+  text-align: center;
+}
+/* th:nth-child(7),
+td:nth-child(7) {
+  width: 18%;
+  text-align: center;
+} */
+td:first-child,
+td:nth-child(2),
+td:nth-child(3),
+td:nth-child(4) {
+  text-align: right;
+}
+
+/* th:last-child,
+td:last-child {
+  width: 4%;
+  padding-inline: 0;
+} */
+/* td:nth-child(5) {
+  text-align: right;
+} */
+/* td:last-child {
+  align-self: center;
+  text-align: center;
+} */
+/* td:last-child:not(:empty) {
+  color: #fff;
+  background-color: rgb(233, 82, 82);
+  width: 4.2%;
+  padding: 0.6em 0;
+  display: inline-block;
+  border-radius: 1em;
+  line-height: 0.5;
+  font-size: 0.9em;
+} */
+td {
+  padding: 0em;
+  padding-right: 0;
+}
+
+/* td:first-child {
+  display: flex;
+  justify-content: space-between;
+} */
+.ev-table .material-symbols-outlined {
+  border: 1.6px solid;
+  border-radius: 4px;
+  color: var(--secondary-c);
+  opacity: 0;
+  font-size: 20px;
+  font-variation-settings: "wght" 400;
+  transition: 0.3s;
+}
+
+tr:hover td .material-symbols-outlined {
+  opacity: 0.7;
+}
+.search-container {
+  display: flex;
+  align-items: center;
+}
+
+#export {
+  position: absolute;
+  right: 0;
+}
+#export {
+  /* margin-left:auto; */
+  /* margin-right: auto; */
+  transition: 0.5s;
+  color: #666;
+  font-weight: bold;
+}
+#export span {
+  font-size: 2.4em;
+  vertical-align: middle;
+  padding-bottom: 0.1em;
+  margin-right: 0.1em;
+}
+#export:hover {
+  color: var(--secondary-c);
+}
+
+/* thead,tbody追加によりtr:first-childが違ってくるので再定義 */
+/* azborn.css での定義を初期化 */
+tr:first-child {
+  width: initial;
+  background-color: initial;
+}
+thead tr:first-child {
+  width: 100%;
+  background-color: #666;
+}
+/* azborn.css での定義を初期化 */
+tr:not(:first-child):nth-child(odd) {
+  background-color: initial;
+}
+tbody tr:nth-child(even) {
+  background-color: rgb(219, 247, 239);
+}
+/* azborn.css */
+/* table tr[data-href]:hover {
+  background: #f2f8fa;
+  cursor: pointer;
+} */
+
+/* first-childにも適用するため定義 */
+/* reset.css  tr:not(:first-child) */
+tbody tr {
+  display: flex;
+}
+
+.show {
+  visibility: visible;
+  /* opacity: 1; */
+  /* transform: translateY(0rem); */
+}
+.month a{
+  color: #888;
+}
+.calendar-month {
+  font-size: 1.5em;
+}
+ /* 各行の高さを指定 */
+.row {
+  height: 1.5em;
+}
+
+.calendar td {
+  /* padding: 8px; */
+  text-align: center;
+}
+
+.calendar td.sunday {
+  color: red;
+}
+.calendar td.saturday {
+  color: blue;
+}
+.calendar td.holiday {
+  background-color: #ffdddd;
+}
+.calendar td.not-in-month {
+  color: #ccc;
+}
+.calendar-nav {
+  /* margin-bottom: 10px; */
+  font-weight: bold;
+}
+.calendar-nav a {
+  text-decoration: none;
+  margin: 0 10px;
+  color: #3366cc;
+}
+.calendar-nav a:hover {
+  text-decoration: underline;
+}
+.disabled {
+  pointer-events: none;
+  color: gray;
+  text-decoration: none;
+}
+@media (max-width: 767px) {
+  #id_pdf_name {
+    grid-area: 2/1/3/3;
+  }
+  /* #searchForm .date-wrapper {
+    grid-row: 1;
+    width: 100px;
+  } */
+  .select-wrapper.category {
+    /* grid-column: 1/3; */
+    width: 200px;
+    margin-bottom: 0;
+  }
+  #id_partner {
+    grid-area: 3/1/4/3;
+  }
+  #id_publisher {
+    grid-area: 4/1/5/3;
+  }
+  .s-r-date {
+    grid-area: 6/1/7/3;
+  }
+
+  .ev-table td {
+    width: 100%;
+  }
+  /* FE_PartnerList.css */
+  /* tbody { */
+  /* 先頭行の上の余白のために応急処置 */
+  table {
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+  }
+
+  td {
+    padding: 0;
+    font-size: 0.9em;
+  }
+  td:not(:has(:not(:empty))) {
+    display: block;
+  }
+  
+  td:first-child {
+    grid-area: 1/1/2/3;
+    color: #999;
+    font-size: 0.8em;
+    position: relative;
+    height: 26px;
+    display: flex;
+    align-items: center;
+  }
+  td:nth-child(2),
+  td:nth-child(3) {
+    grid-row: 2;
+    /* grid-column: 1 / 3; */
+  }
+  td:nth-child(4) {
+    grid-row: 2;
+  }
+  td:nth-child(5),
+  td:nth-child(6) {
+    grid-row: 3;
+    /* grid-column: 1 / 3; */
+  }
+
+  /* td:nth-child(8) {
+    grid-row: 4;
+    font-size: 0.8em;
+    color: #999;
+  }
+  td:nth-child(8):not(:empty)::before {
+    content: "取引: ";
+  } */
+  
+  dialog[open] {
+    font-size: 0.9em;
+    padding: 1em;
+  }
+}

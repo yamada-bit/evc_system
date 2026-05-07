@@ -1,0 +1,164 @@
+{% extends "commons/Evc_base_management.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/sunny/jquery-ui.css">
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_Partner.css" %}'>
+{% endblock %}
+
+{% block script_block %}
+  <!-- jQuery.js を読み込みます -->
+  <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <form id="id_form" method="POST">
+    {% csrf_token %}
+      <input type="hidden" id="id_url" data-url="{% url 'Evc_Management:get_category_list' %}" />
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+        {% comment "下記の部分はコメントアウト" %}
+        <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+        {% endcomment%}
+      </div>
+      <div class="pn-flex">
+        <div class="pn-left">
+          <div class="form-radio">
+            <p class="form-label">登録区分<span class="form-require">*</span></p>
+            <div class="radio-label">
+            {% for kubun in form.kubuns %}
+              <label>
+                {{ kubun.tag }}
+                {{ kubun.choice_label }}
+              </label>
+            {% endfor %}
+            </div>
+          </div>
+          <div class="form-partner name-flex">
+            <div class="name-wrapper">
+              <p class="form-label">カテゴリ名<span class="form-require">*</span></p>
+              {{ form.category_name }}
+            </div>
+            <div class="modal-dialog" id="modal_dialog" style="display:none;">
+                <select id="id_folder" size="8" class="form-control partner" name="category" onchange="change_category()">
+                </select>
+              </div>
+              <div class="pn-btn" id="pn-btn"  {% if kubun == "new" %} style="visibility:hidden;" {% endif %} >
+                <span class="material-symbols-outlined">search</span>
+                <input type="button" class="kensaku" id="kensaku" onclick="CategoryPopup()" value="検索">
+              </div>
+          </div>
+          {{ form.category_name.errors }}
+        </div>
+        <div class="pn-right">
+          <div class="form-partner">
+            <p class="form-label">備考</p>
+            {{ form.notes }}
+          </div>
+          {{ form.notes.errors }}
+          <div class="form-partner">
+            <p class="form-label">表示順</p>
+            {{ form.display_order }}
+          </div>
+          値が大きいものを先に表示
+          {{ form.display_order.errors }}
+        </div>
+      </div>
+      <div class="form-Btn">
+        <span class="material-symbols-outlined">add_box</span>
+        <input type="submit" value="登録">
+      </div>
+    </form>
+  </main>
+
+  <script type="text/javascript">
+    $(function(){
+      $( 'input[name="kubuns"]:radio' ).change( function() {
+        var radioval = $(this).val();
+        // var partner_name = document.getElementById('id_partner_name');
+        // var list = document.getElementById('id_partner');
+        if (radioval == 'new') {
+          visibility  = 'hidden';
+          // modal.style.display = 'block';     
+          // list.style.display = 'none';
+          // partner_name.autocomplete = 'off';
+          //list.children().remove();
+          var folderElement = $('#id_folder');
+          folderElement.children().remove();
+        } else {
+          visibility  = 'visible';
+          // modal.style.display = 'none';     
+          // list.style.display = 'block';     
+          //partner_name.attr('autocomplete', 'on');
+          // partner_name.autocomplete = 'on';     
+        }
+        document.getElementById('pn-btn').style.visibility = visibility;
+      });
+    });
+    function change_category() {
+      folder_id = $('#id_folder').val();
+      // document.getElementById( "id_partner_name" ).value = partner_name;
+      url = "{% url 'Evc_Management:category_edit' '00000' %}".replace('00000', folder_id);
+      location.href = url;
+      // $('#modal_dialog').dialog('close');
+    }
+    function CategoryPopup() {
+        var url = $("#id_url").attr("data-url");
+        category_name = $('#id_category_name').val();
+        var partnerElement = $('#id_folder');
+        partnerElement.children().remove();
+        $.ajax({
+            'url': url,
+            'type': 'GET',
+            'data': {
+                'category_name': category_name,
+            },
+            'dataType': 'json'
+        })
+        .done(function(response){
+            for (var partner of response.category_list) {
+            var option = $('<option>');
+            option.val(partner['id']);
+            option.text(partner['name']);
+            partnerElement.append(option);
+            }
+            var w = $('#id_category_name').width();
+            $('#modal_dialog').dialog({
+            dialogClass: 'categoryDialog',
+            position: {my: "left top", at: "left bottom", of: "#id_category_name"},
+            width: w,   
+            buttons: {
+                "閉じる": function() {
+                $( this ).dialog( "close" );
+                }
+            }
+            });
+
+        }).fail( function(xhr, status, error) {
+            alert(status + ":" + error );
+        }); 
+        }
+        function CloseCategoryPopup() {
+        $('#modal_dialog').dialog('close');
+        }
+        // $( document ).on( "click", ".ui-widget-overlay", function(){
+        //   $('#modal_dialog').dialog('close');
+        // });
+        // ダイアログ外をクリックしたら閉じる
+        $(document).on('click', function(e) {
+            if(!$(e.target).closest('#modal_dialog').length){
+        $('#modal_dialog').dialog('close');
+            }
+    });
+
+
+  </script>
+  <!-- <script src="{% static 'js/Evc_partner_script.min.js' %}"></script> -->
+
+{% endblock %}

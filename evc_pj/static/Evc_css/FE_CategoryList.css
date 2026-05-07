@@ -1,0 +1,261 @@
+@import url("azborn.css");
+
+th:first-child, td:first-child {
+  width: 20%;
+}
+th:nth-child(2), td:nth-child(2) {
+  width: 56%;
+}
+th:nth-child(3), td:nth-child(3) {
+  width: 10%;
+}
+th:last-child, td:last-child {
+  width: 14%;
+}
+
+/* table tr:last-child td:first-child {
+border-radius: 0 0 0 5px;
+}
+
+table tr:last-child td:last-child {
+border-radius: 0 0 5px 0;
+} */
+
+.t-flag {
+  width: 10%;
+  align-self: center;
+  text-align: center;
+}
+.f-flag:not(:empty) {
+  color: #fff;
+  background-color: rgb(233, 82, 82);
+  padding: 0.5em 1em 0.8em;
+  display: inline-block;
+  border-radius: 1em;
+  line-height: 0.5;
+}
+
+input[type="text"] {
+  padding: 0.5em 1em;
+  border-radius: 2em;
+  width: 300px;
+  background-color: #fff;
+}
+.sub-title::before,
+.sub-title::after {
+  border-color: #333;
+}
+#form-area form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+input::placeholder {
+  color: #ccc;
+}
+#export {
+  /* margin-left:auto; */
+  /* margin-right: auto; */
+  transition: 0.5s;
+  color: #666;
+}
+#export span {
+  font-size: 2.4em;
+  vertical-align: middle;
+  padding-bottom: 0.1em;
+  margin-right: 0.1em;
+}
+#export:hover {
+  color: var(--secondary-c);
+}
+
+/* bootstrapを使う ?*/
+.pagination {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 400px;
+  margin-inline: auto;
+  font-size: 1.6em;
+  font-weight: 200;
+  /* padding: 5px 10px; */
+  /* border: 1px solid; */
+  /* border:1px #dee2e6 solid; */
+}
+
+.pagination .active {
+  background-color: #ddd;
+  color: #999;
+}
+.page-num:not(.active) {
+  transition: 0.5s;
+}
+.page-num a {
+  padding: 0.2em 0.6em;
+  display: inline-block;
+}
+.page-num:not(.active):hover {
+  background-color: #ddd;
+}
+.page-item .inactive {
+  color: #ccc;
+  text-decoration: none;
+}
+.page-link span {
+  font-size: 1.5em;
+  vertical-align: middle;
+}
+.page-item .page-link {
+  transition: 0.5s;
+}
+.page-item .page-link:not(.inactive):hover {
+  opacity: 0.3;
+}
+.page-select {
+  margin: 2em 0 3em;
+  text-align: center;
+}
+.page-select label {
+  color: #666;
+  font-weight: 200;
+  margin-right: 1em;
+}
+.select-wrapper {
+  display: inline-block;
+  position: relative;
+}
+.page-select select {
+  border: 1px solid #999;
+  padding: 0.5em 4em;
+  border-radius: 3em;
+  color: #666;
+  font-weight: 200;
+  transition: 0.5s;
+}
+.page-select select:hover {
+  background-color: #eee;
+}
+.select-wrapper::after {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  border-top: 1px solid;
+  border-left: 1px solid;
+  rotate: 225deg;
+  color: #999;
+  position: absolute;
+  right: 1em;
+  top: 0.9em;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  #form-area {
+    position: fixed;
+    z-index: 8;
+    opacity: 0;
+    transition: opacity .4s, right 0s .4s;
+    right: -100%;
+    top: 0;
+  }
+  #s-toggle {
+    position: fixed;
+    top: 6px;
+    right: 14px;
+    height: 40px;
+    width: 40px;
+    cursor: pointer;
+    z-index: 20;
+    background-color: #fff;
+    border-radius: 50%;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .s-open #s-toggle span {
+    display: none;
+  }
+  .s-open #s-toggle::after {
+    content: "";
+    width: 60%;
+    height: 60%;
+    border-top: 1px solid;
+    rotate: 45deg;
+    top: 40%;
+    left: 0%;
+    position: absolute;
+  }
+  .s-open #s-toggle::before {
+    content: "";
+    width: 60%;
+    height: 60%;
+    border-top: 1px solid;
+    rotate: -45deg;
+    top: 40%;
+    right: 0%;
+    position: absolute;
+  }
+  #form-area {
+    width: 100vw;
+    height: 100vh;
+    padding-top: 100px;
+    background-color: #333;
+  }
+  #form-area form {
+    flex-direction: column;
+    gap: 1.6em;
+  }
+  .search-container {
+    display: contents;
+  }
+  .s-open #form-area {
+    opacity: 1;
+    right: 0;
+    transition: opacity 0.4s;
+  }
+  .s-open #nav-toggle {
+    z-index: 1;
+  }
+  #export {
+    color: #ccc;
+  }
+  table {
+    box-shadow: none;
+    margin-block: -2em 2em;
+    width: 90%;
+    margin-inline: 5%;
+  }
+  tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+  }
+  table th {
+    display: none;
+  }
+  tr:not(:first-child):has(:not(:empty)) {
+    flex-direction: column;
+    border-radius: 1em;
+    box-shadow: 0 0 10px 3px rgba(0, 0, 0, 0.3);
+    padding: 1em;
+    gap: 1em;
+  }
+  td:not(:has(:not(:empty))) {
+    display: none;
+  }
+  .pagination {
+    width: 320px;
+  }
+
+  .t-flag {
+    font-size: 0.9em;
+    text-align: right;
+  }
+  .t-flag:has(:not(:empty))::before {
+    content: "削除フラグ：";
+    font-size: 13px;
+    color: #999;
+    background-color: transparent;
+  }
+}

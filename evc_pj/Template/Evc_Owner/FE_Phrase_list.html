@@ -1,0 +1,60 @@
+{% extends "commons/Evc_base_phrase.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_PhraseList.css" %}'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="card card-default">
+        <ul class="list-group list-group-flush">
+          {% for obj in object_list %}
+            <li class="list-group-item">
+              {{ obj.phrase_id }}</a>
+              <a href="{% url 'Evc_Owner:phrase_detail' obj.pk %}">{{ obj.phrase }}</a>
+              <div class="btn-area">
+                <a class="btn btn-primary" href="{% url 'Evc_Owner:phrase_update' obj.pk %}">修正</a>
+                <a class="btn btn-danger" href="{% url 'Evc_Owner:phrase_delete' obj.pk %}">削除</a>
+              </div>
+            </li>
+          {% empty %}
+            <li class="list-group-item">
+              メモはありません
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="mt-3 text-center">
+        {% if page_obj.has_previous %}
+          <a class="btn btn-secondary" href="/?page={{ page_obj.previous_page_number }}">前へ</a>
+        {% endif %}
+        <span>{{ page_obj.number }}/{{ paginator.num_pages }}ページ</span>
+        {% if page_obj.has_next %}
+          <a class="btn btn-secondary" href="/?page={{ page_obj.next_page_number }}">次へ</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-12 mt-3">
+      <a href="{% url 'Evc_Owner:phrase_create' %}" class="btn btn-primary">新規作成</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

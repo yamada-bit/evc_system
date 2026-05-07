@@ -1,0 +1,59 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- BootstrapのCDNでのCSS読み込み -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+    crossorigin="anonymous"
+  />
+
+  {% block link_block %}
+  {% endblock %}
+  <title>{% block meta_title %}{% endblock %}</title>
+</head>
+
+<body>
+
+{% if messages %}
+  <!-- Django のメッセージに記録している内容があればここで表示 -->
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="messages mt-3">
+          {% for message in messages %}
+            <div class="alert alert-dismissable alert-{{ message.tags }}" data-alert="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="mt-5">{% block page_title %}検索文字列{% endblock %}</h1>
+    </div>
+  </div>
+</div>
+{% block content %}
+{% endblock %}
+{% block foot_scripts %}
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <!-- BootstrapのCDNでのjs読み込み -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"
+  ></script>
+{% endblock %}
+</body>
+</html>

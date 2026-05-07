@@ -1,0 +1,324 @@
+{% extends "commons/Fms_base_ocrform.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Fms_Ocrform/css/FE_EditOcrform.css" %}?250520'>
+{% comment "下記の部分はコメントアウト" %}
+{% endcomment %}
+{% endblock %}
+{% block script_block %}
+<!-- <script src='{% static "js/dialog.min.js" %}' defer></script> -->
+<!-- <script src='{% static "Fms_Ocrform/js/Fms_Ocrform_edit.js" %}' defer></script> -->
+<!-- <script src='{% static "Fms_Ocrform/js/Fms_Ocrform_draw.js" %}' defer></script> -->
+<script src='{% static "Fms_Ocrform/js/Fms_ocrform_edit.min.js" %}?260130' defer></script>
+<script src='{% static "Fms_Ocrform/js/Fms_ocrform_draw.min.js" %}?260130' defer></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+    <div id="s-toggle" class="sp" style="display:none;">
+      <span class="material-symbols-outlined">edit_square</span>
+    </div>
+    <div class="edit-flex">
+      <figure id="pdfimage" class="card">
+        <div class="card-contents">
+          <h2> {{ pdf_name }} </h2>
+          {% comment "下記の部分はコメントアウト" %}
+          {% if src_pdffile %}
+          <h2> ここにPDFを表示します</h2>
+          {% else %}
+          <h2> ここに画像を表示します</h2>
+          {% endif %}
+          {% endcomment %}
+          <div class="imagebox" id="imagebox">
+            <canvas id="image_canvas"></canvas>
+            <div style="display:none;">
+              <img id="bk_img" src='{{ imgfile }}'>
+            </div>
+          </div>
+          {% comment "下記の部分はコメントアウト" %}
+          <button  class="button_image"  onclick="zoom(-1)">ー</button>
+          <button  class="button_image"  onclick="zoom(+1)">＋</button>
+          {% endcomment %}
+          <button  class="button_image"  onclick="clearAreas()">選択枠削除</button>
+          <!-- <button  class="button_image"  id="act_mode"  onclick="actMode(this)">枠入力</button> -->
+          {% if data_type == 1 %}
+          <button  class="button_image"  id="id_add_table" onclick="addTable()">表追加</button>
+          {% endif %}
+          {% comment "下記の部分はコメントアウト" %}
+          {% if src_pdffile %}
+          <a href="{{ pdffile }}" target="_blank" rel="noopener noreferrer" class="button_image" >PDF表示</a>
+          {% else %}
+          <a class="button_image" href="{{ imgfile }}" download>画像ダウンロード</a>
+          {% endif %}
+          {% endcomment %}
+          <div>
+            <span class="act-label">操作</span>
+            <span class="radio_image" >
+              <input type="radio" id="add_mode" name="act_mode" value="add" checked="checked"/>
+              <label for="add_mode">枠追加</label>
+              <input type="radio" id="select_mode" name="act_mode" value="select" />
+              <label for="select_mode">範囲選択</label>
+              <input type="radio" id="pan_mode" name="act_mode" value="pan" />
+              <label for="pan_mode">移動</label>
+            </span>
+            <h3 class="act-label">ズーム：ホイール,　パン:Shift+ドラッグ</h3>
+          </div>
+          <div>
+          </div>
+          <input type="hidden" id="areas" name="areas" value="{{ areas }}">
+          <input type="hidden" id="angle" name="angle" value="{{ angle }}">
+        </div>
+      </figure>
+      <div id="shiori" class="card">
+        <div class="card-contents">
+          <h2  style="display:none;">テキスト</h2>
+          <form id="form1" name="form1" method="post">
+            {% csrf_token %}
+            {{ form.postext }}
+            {{ form.pagebtn }}
+            <!-- {{ form.ocrform_id }} -->
+            <!-- {{ form.fulltext }} -->
+            <div class="table-area" style="overflow-y: auto; ">
+              {% if data_type == 1 %}
+              <table id="table_item" class="trasa-tabel">
+              {% else %}
+              <table id="table_item" class="ocrform-tabel">
+              {% endif %}
+                <thead>
+                <tr>
+                  <!-- <th>No.</th> -->
+                  <th>項目名</th>
+                  <th>番号</th>
+                  <th>JSON名</th>
+                  {% if data_type == 1 %}
+                  <th>表</th>
+                  {% endif %}
+                  <th>行削除</th>
+                  <th>行挿入</th>
+                </tr>
+                </thead>
+                <tbody id = 'table_tbody'>
+                {% for item in object_list %}
+                <tr>
+                  <!-- <td contenteditable="false">{{item.item_no}}</td> -->
+                  {% comment "下記の部分はコメントアウト" %}
+                  <td>
+                    <div class="form-group">
+                      <input type="search" name="item_name_{{forloop.counter}}" value="{{item.item_name}}">
+                    </div>
+                  </td>
+                  <td>
+                    <div class="form-group">
+                      <input type="number" name="area_no_{{forloop.counter}}" value="{{item.area_no}}">
+                    </div>
+                  </td>
+                  <td contenteditable="true">{{item.item_name}}</td>
+                  <td contenteditable="true">{{item.area_no}}</td>
+                  <td><button class="item-del">削除</button></td>
+                  <td><button class="item-ins">追加</button></td>
+                  <td {% if item.result == "NG" %} class="result-red" {% endif %}>{{item.result}}</td> 
+                  {% endcomment %}
+                  <td>
+                    <input type="search" name="item_name_{{forloop.counter}}" value="{{item.item_name}}">
+                  </td>
+                  <td>
+                    <input type="number" name="area_no_{{forloop.counter}}" value="{{item.area_no}}" min="1" >
+                  </td>
+                  <td>
+                    <input type="search" name="item_json_{{forloop.counter}}" value="{{item.item_json}}">
+                  </td>
+                  {% if data_type == 1 %}
+                  <td>
+                    <input type="search" name="table_id_{{forloop.counter}}" value="{{item.table_id}}">
+                  </td>
+                  {% endif %}
+                  <td>
+                    <p  class="del-item">ー</p>
+                  </td>
+                  <td>
+                    <p  class="ins-item">＋</p>
+                  </td>
+                </tr>
+                {% comment "下記の部分はコメントアウト" %}
+                  <td class="del-item">ー</td>
+                  <td class="ins-item">＋</td>
+                <input type="hidden" id="object_list_num" name="object_list_num" value="{{forloop.counter}}">
+                {% endcomment %}
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <input type="hidden" id="object_list_json" name="object_list_json" value="">
+            <input type="hidden" id="postext" name="postext" value="">
+
+            <div class="btn-area">
+              <!-- <div class="btn-container"  style="display:none;"> -->
+              {% comment "下記の部分はコメントアウト" %}
+              {% endcomment %}
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  sort
+                </span>
+                <input type="button" id="sort_number" value="整列">
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  refresh
+                </span>
+                {% if user.user_authority == "スーパーバイザ" %}
+                <input type="button" id="commit" name="commit" value="保存">
+                {% else %}
+                <input type="button" id="commit" name="commit" value="保存" disabled>
+                {% endif %}
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  delete
+                </span>
+                <input type="button" id="delete_ocrform" value="削除 ">
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  undo
+                </span>
+                <input type="button" id="cancel" value="戻る">
+              </div>
+            </div>
+            <div id="MovePage">
+              {% if page_obj.has_previous %}
+              <a href="{% url 'Fms_Ocrform:edit_ocrform' data_type ocrform_id previous_image_no %}" id="back_btn">
+                <span class="material-symbols-outlined arrow">
+                  arrow_back_ios
+                </span>
+                <span>前頁</span>
+              </a>
+              {% else %}
+              <a id="back_btn" style="color:gray;" disabled=disabled>
+                <span class="material-symbols-outlined">
+                  arrow_back_ios
+                </span>
+                <span>前頁</span>
+              </a>
+              {% endif %}
+      
+              {% if page_obj.has_next %}
+              <a href="{% url 'Fms_Ocrform:edit_ocrform' data_type ocrform_id next_image_no %}" id="next_btn">
+                <span>次頁</span>
+                <span class="material-symbols-outlined arrow">
+                  arrow_forward_ios
+                </span>
+              </a>
+              {% else %}
+              <a id="next_btn" style="color:gray;text-decoration:none;">
+                <span>次頁</span>
+                <span class="material-symbols-outlined">
+                  arrow_forward_ios
+                </span>
+              </a>
+              {% endif %}
+            </div>
+
+            <input type="hidden" id="submit_action1" name="submit_action" value="update">
+          </form>     
+        </div>
+      </div>
+    </div>
+    <dialog id="del-record">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p>このレコードを削除します。<br>よろしいですか？</p>
+      <div class="btn-area">
+        <button id="close">キャンセル</button>
+        <button id="scon_delete">削除</button>
+      </div>
+    </dialog>
+    <dialog id="dialog_table">
+      <div>
+        表の入力領域を指定
+        <hr>
+        <div>
+          <label>
+            表名
+            <input type="search" name="table_name" id="table_name" value="">
+          </label>
+        </div>
+        <div>
+          <label>
+            JSON名
+            <input type="search" name="table_json" id="table_json" value="">
+          </label>
+        </div>
+        <br>
+        <div style="display:none;">
+          <label>
+            表番号
+            <input type="search" name="table_no" id="table_no" value="1">
+          </label>
+        </div>
+        <div style="display:none;">
+          <label>
+            列番号
+            <input type="search" name="col_no" id="col_no" value="1">
+          </label>
+        </div>
+        <div style="display:none;">
+          <label>
+            (表の列を識別するため番号を設定)
+          </label>
+        </div>
+        <br>
+        <div>
+          <label>
+            項目名
+            <input type="search" name="item_name" id="item_name" value="">
+          </label>
+        </div>
+        <div>
+          <label>
+            (項目名　+ _連番で行追加)
+          </label>
+        </div>
+        <div>
+          <label>
+            JSON名
+            <input type="search" name="item_json" id="item_json" value="">
+          </label>
+        </div>
+        <br>
+        <div>
+          <label>
+            行数
+            <input type="search" name="table_row" id="table_row" value="1">
+          </label>
+        </div>
+      </div>
+      <hr>
+      <div class="btn-area">
+        <button onclick="dialog_table_close()">キャンセル</button>
+        <button onclick="dialog_table_ok()">OK</button>
+      </div>
+      <hr>
+      <p>選択枠内に表を配置します。</p>
+      <p>表名・項目名・JSON名・行数を指定し、</p>
+      <p>OKボタンをクリックしてください。</p>
+
+      <!-- <input type="button" class="leftButton" id="clear_02" value="Clear" onclick="Dialog_clear_02()">
+      <input type="button" class="rightButton" id="close_02" value=" OK " onclick="Dialog_close_02()"> -->
+    </dialog>
+  </main>
+{% endblock %}
+  

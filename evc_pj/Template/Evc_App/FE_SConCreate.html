@@ -1,0 +1,414 @@
+{% extends "commons/Evc_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_SConCreate.css" %}?250515'>
+{% comment "下記の部分はコメントアウト" %}
+{% endcomment %}
+{% endblock %}
+{% block script_block %}
+<script src='{% static "js/dialog.min.js" %}' defer></script>
+{% comment "下記の部分はコメントアウト" %}
+{% endcomment %}
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+      .button_swap {
+        padding-left:0.5em;
+      }
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+    <div id="s-toggle" class="sp">
+      <span class="material-symbols-outlined">edit_square</span>
+    </div>
+    <div class="edit-flex">
+      <figure id="pdfimage" class="card">
+        <div class="card-contents">
+          <h2> {{ pdf_name }} </h2>
+          {% comment "下記の部分はコメントアウト" %}
+          {% if src_pdffile %}
+          <h2 style="display:none;"> ここにPDFを表示します</h2>
+          {% else %}
+          <h2 style="display:none;"> ここに画像を表示します</h2>
+          {% endif %}
+          {% endcomment %}
+          <div class="imagebox" id="imagebox">
+            <canvas id="image_canvas"></canvas>
+            <div style="display:none;">
+              <img id="bk_img" src='{{ imgfile }}'>
+            </div>
+          </div>
+          <button  class="button_image"  onclick="setResize(-1)">ー</button>
+          <button  class="button_image"  onclick="setResize(+1)">＋</button>
+          {% if src_pdffile %}
+          {% comment "下記の部分はコメントアウト" %}
+          <h2> ここにPDFを表示します</h2>
+          <iframe src="{{ pdffile }}" width="100%" height="100%"></iframe>
+          {% endcomment %}
+          <a href="{{ pdffile }}" target="_blank" rel="noopener noreferrer" class="button_image" >PDF表示</a>
+          {% if user.user_authority == "スーパーバイザ" %}
+          <a href="{% url 'Evc_App:pdf_merge' form.evidence_id.value %}" target="_blank" rel="noopener noreferrer" class="button_image" >テキスト貼付</a>
+          {% endif %}
+          {% else %}
+          <a class="button_image" href="{{ imgfile }}" download>画像ダウンロード</a>
+          {% comment "下記の部分はコメントアウト" %}
+          <h2> ここに画像を表示します</h2>
+          <img src='{{ imgfile }}'  width="90%" >
+          <br>
+          <a href="{{ imgfile }}" download>画像をダウンロードする</a>
+          {% endcomment %}
+          {% endif %}
+          {% comment "下記の部分はコメントアウト" %}
+          <div id="MovePage">
+            {% if page_obj.has_previous %}
+            <a href="{% url 'Evc_App:sconcreate' previous_evi_id %}" id="back_btn">
+              <span class="material-symbols-outlined arrow">
+                arrow_back_ios
+              </span>
+              <span>前頁</span>
+            </a>
+            {% else %}
+            <a id="back_btn" style="color:gray;" disabled=disabled>
+              <span class="material-symbols-outlined">
+                arrow_back_ios
+              </span>
+              <span>前頁</span>
+            </a>
+            {% endif %}
+    
+            {% if page_obj.has_next %}
+            <a href="{% url 'Evc_App:sconcreate' next_evi_id %}" id="next_btn">
+              <span>次頁</span>
+              <span class="material-symbols-outlined arrow">
+                arrow_forward_ios
+              </span>
+            </a>
+            {% else %}
+            <a id="next_btn" style="color:gray;text-decoration:none;">
+              <span>次頁</span>
+              <span class="material-symbols-outlined">
+                arrow_forward_ios
+              </span>
+            </a>
+            {% endif %}
+          </div>
+          {% endcomment %}
+        </div>
+      </figure>
+      <div id="shiori" class="card">
+        <div class="card-contents">
+          <h2>テキスト</h2>
+          <form id="form1" name="form1" method="post">
+            {% csrf_token %}
+            {{ form.evidence_id }}
+            {{ form.fulltext }}
+            <div class="btn-area">
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  edit
+                </span>
+                <input type="button" id="edit" value="編集">
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  refresh
+                </span>
+                <input type="button" id="update" value="更新">
+              </div>
+            </div>
+            <input type="hidden" id="submit_action1" name="submit_action" value="update">
+          </form>
+        </div>
+      </div>
+
+      <aside id="serchcon">
+        <h2> 検索条件を編集</h2>
+        <form  id="form2" name="form2" method="post">
+          {% csrf_token %}
+          {{ form.evidence_id }}
+          <div class="e-data">
+            <label class="e-category">カテゴリ
+              {% if not form.category.value %}
+              <span class="detect_warning">*未入力*</span>
+              {% endif %}
+              <div class="select-wrapper">
+              {{ form.category }}
+              </div>
+            </label>
+            {{ form.category.errors }}
+            <label class="e-duplicate">重複
+              <div class="area-duplicate">
+                {{ form.duplicate_check}}重複許可
+              </div>
+            </label>
+          </div>
+          <label>取引先　
+            {% if form.detect_partner.value %}
+            <span class="detect_warning">*未登録*</span>
+            {% elif not form.partner.value %}
+            <span class="detect_warning">*未入力*</span>
+            {% endif %}
+            {% comment "下記の部分はコメントアウト" %}
+            <div class="form-select">
+              <select name="partner_cd">
+                {% for value, text in form.partner_cd.field.choices %}
+                <option value="{{ value }}" {% if value == partner_id %}selected{% endif %}>{{ text }}</option>     
+                {% endfor %}
+              </select>
+            </div>
+            {% endcomment %}
+            {% comment "下記の部分はコメントアウト" %}
+            {{ form.partner }}
+            {% endcomment %}
+            <input type="search" list="Partner" name="partner" value="{{ form.partner.value }}"  size="25">
+            <datalist id="Partner">
+              {% for value, text in form.partner_cd.field.choices %}
+              <option value="{{ text }}"></option>
+              {% endfor %}
+            </datalist>
+          </label>
+          {{ form.partner.errors }}
+          <label>発行元　
+            {% if form.detect_publisher.value %}
+            <span class="detect_warning">*未登録*</span>
+            {% endif %}
+            <button type="button" class="button_image button_swap" onclick="swapPartnerPublisher()">
+              ⇅
+            </button>
+            <!-- <span class="material-symbols-outlined">
+              swap_vert
+            </span> -->
+            {{ form.publisher }}
+            {{ form.publisher.errors }}
+            {% comment "下記の部分はコメントアウト" %}
+            <div class="form-select">
+              <select name="publisher_cd">
+                {% for value, text in form.publisher_cd.field.choices %}
+                <option value="{{ value }}">{{ text }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endcomment %}
+            {% comment "下記の部分はコメントアウト" %}
+            <input type="search" list="Publisher" name="publisher" value="{{ form.publisher.value }}"  size="25">
+            <datalist id="Publisher">
+              {% for value, text in form.publisher_cd.field.choices %}
+              <option value="{{ text }}">
+              {% endfor %}
+            </datalist>
+            {% endcomment %}
+          </label>
+          <div class="e-data">
+            <label>取引日
+              {% if not form.process_date.value %}
+              <span class="detect_warning">*未入力*</span>
+              {% endif %}
+              {{ form.process_date }}
+            </label>
+            {{ form.process_date.errors }}
+            <label>取引金額
+              {% if not form.amount.value %}
+              <span class="detect_warning">*未入力*</span>
+              {% endif %}
+              <!-- {{ form.amount }} -->
+              <input type="search" name="amount" value="{{ form.amount.value }}" placeholder="取引金額" pattern="^[0-9]+$" size="12"
+                maxlength="12" id="id_amount" >
+            </label>
+            {{ form.amount.errors }}
+          </div>
+          <div class="e-data">
+            <label>科目
+              <input type="search" list="Account" name="account" value="{{ form.account.value }}"  size="25" id="id_account">
+              <datalist id="Account">
+                {% for value, text in form.account_cd.field.choices %}
+                <option value="{{ text }}"></option>
+                {% endfor %}
+              </datalist>
+              {{ form.account.errors }}
+              {% comment "下記の部分はコメントアウト" %}
+              {{ form.account }}
+              {{ form.account.errors }}
+              {% endcomment %}
+            </label>
+            <label>摘要
+              {{ form.account_desc }}
+              {{ form.account_desc.errors }}
+              {% comment "下記の部分はコメントアウト" %}
+              <div class="form-select">
+                <select name="account_desc_cd">
+                  {% for value, text in form.account_desc_cd.field.choices %}
+                  <option value="{{ value }}" {% if value == account_desc_id %}selected{% endif %}>{{ text }}</option>     
+                  {% endfor %}
+                </select>
+              </div>
+              {% endcomment %}
+              {% comment "下記の部分はコメントアウト" %}
+              <input type="search" list="account_desc" name="account_desc" value="{{ form.account_desc.value }}"  size="25">
+              <datalist id="account_desc">
+                {% for value, text in form.account_desc_cd.field.choices %}
+                <option value="{{ text }}" {% if value == account_desc_id %}selected{% endif %}>
+                {% endfor %}
+              </datalist>
+              {% endcomment %}
+            </label>
+          </div>
+          <div class="e-data">
+            <label>伝票番号
+              {{ form.slip_number}}
+              {{ form.slip_number.errors }}
+            </label>
+            <label>支払日
+              {{ form.payment_date }}
+              {{ form.payment_date.errors }}
+            </label>
+            {% comment "下記の部分はコメントアウト" %}
+            <label>重複
+              <div class="area-duplicate">
+                {{ form.duplicate_check}}重複許可
+              </div>
+            </label>
+            {% endcomment %}
+          </div>
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="e-data">
+            <label>支払日
+              {{ form.payment_date }}
+              {{ form.payment_date.errors }}
+            </label>
+          </div>
+          {% endcomment %}
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="e-data">
+            <label>重複
+              <div class="area-duplicate">
+                {{ form.duplicate_check}}重複許可
+              </div>
+            </label>
+          </div>
+          {% endcomment %}
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="area-duplicate">
+            <input type="checkbox" id="duplicate" name="duplicate" class="duplicate-checkbox" checked />重複許可
+          </div>
+          {% endcomment %}
+  
+          <input type="hidden" id="submit_action2" name="submit_action" value="commit">
+          {{ form.detect_partner }}
+          {{ form.detect_publisher }}
+        </form>
+        {% comment "下記の部分はコメントアウト" %}
+        <div class="btn-container edit-reg">
+          <span class="material-symbols-outlined">
+            check_circle
+          </span>
+          <input type="button" id="commit" name="commit" onclick="commit()" value="登録">
+        </div>
+        {% endcomment %}
+        <div class="btn-area2 bottom-btn">
+          <div class="btn-container">
+            <span class="material-symbols-outlined">
+              check_circle
+            </span>
+            <input type="button" id="commit" name="commit" onclick="commit()" value="登録">
+          </div>
+            <div class="btn-container">
+            <span class="material-symbols-outlined">
+              delete
+            </span>
+            <input type="submit" id="delete_evidence" value="削除 ">
+          </div>
+          <div class="btn-container">
+            <span class="material-symbols-outlined">
+              undo
+            </span>
+            <input type="button" id="cancel" value="戻る">
+          </div>
+        </div>
+        <div id="MovePage">
+          {% if page_obj.has_previous %}
+          <a href="{% url 'Evc_App:sconcreate' previous_evi_id %}" id="back_btn">
+            <span class="material-symbols-outlined arrow">
+              arrow_back_ios
+            </span>
+            <span>前頁</span>
+          </a>
+          {% else %}
+          <a id="back_btn" style="color:gray;" disabled=disabled>
+            <span class="material-symbols-outlined">
+              arrow_back_ios
+            </span>
+            <span>前頁</span>
+          </a>
+          {% endif %}
+  
+          {% if page_obj.has_next %}
+          <a href="{% url 'Evc_App:sconcreate' next_evi_id %}" id="next_btn">
+            <span>次頁</span>
+            <span class="material-symbols-outlined arrow">
+              arrow_forward_ios
+            </span>
+          </a>
+          {% else %}
+          <a id="next_btn" style="color:gray;text-decoration:none;">
+            <span>次頁</span>
+            <span class="material-symbols-outlined">
+              arrow_forward_ios
+            </span>
+          </a>
+          {% endif %}
+        </div>
+      </aside>
+    </div>
+    <dialog id="del-record">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p>このレコードを削除します。<br>よろしいですか？</p>
+      <div class="btn-area">
+        <button id="close">キャンセル</button>
+        <button id="scon_delete">削除</button>
+      </div>
+    </dialog>
+    {% comment "下記の部分はコメントアウト" %}
+    <dialog id="detect_partner">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p>取引先が未登録です。<br>登録を実行してください。</p>
+      <div class="btn-area">
+        <button onclick="dialog_close()">閉じる</button>
+      </div>
+    </dialog>
+    {% endcomment %}
+  </main>
+  <script src='{% static "js/Evc_zoom.min.js" %}?250116' defer></script>
+  <script src="{% static 'js/Evc_price_input.min.js' %}?260226" defer></script>
+  <script>
+    const account = document.getElementById('id_account')
+    $("#id_account").mousedown(function() {
+      const value = account.value;
+      account.value = value.replace(/\s+/g, '');
+    });    
+    function swapPartnerPublisher() {
+      const partner = document.querySelector('input[name="partner"]');
+      const publisher = document.querySelector('input[name="publisher"]');
+
+      const temp = partner.value;
+      partner.value = publisher.value;
+      publisher.value = temp;
+    }
+  </script>
+  
+{% endblock %}
+  

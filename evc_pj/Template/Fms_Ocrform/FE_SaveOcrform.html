@@ -1,0 +1,92 @@
+{% extends "commons/Fms_base_ocrform.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href="{% static 'Fms_Ocrform/css/FE_FileSave.css' %}?250120">
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">フォームファイルをアップロード保存</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+
+    <form id="uploadform" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+      <div id="upload_area">
+        <div class="card-contents">
+          <h2 class="sp-hidden">file upload</h2>
+          <p id="msg" class="sp-hidden">
+            ファイルを選択するか、または<br>ここにドラッグ＆ドロップしてください！
+          </p>
+          <div id="thumb_area" class="thumb-area">
+            <canvas id="thumb_canvas"></canvas>
+          </div>
+          <div id="upload_area2">
+            <br>
+          </div>
+          <label class="upload-label" for="file_upload">
+            <span class="material-symbols-outlined">
+              folder_open
+            </span>
+            ファイルを選択
+            <input type="file" id="file_upload" name="file" accept=".pdf" multiple="multiple"
+              onchange="loadfile(this)" />
+          </label>
+          <input type="hidden" required="required" id="file_photo" name="photo" value="" />
+          <canvas id="canvas"  style="display:none;"></canvas>
+          <p id="msg" class="sp-hidden">
+            １ファイルだけ選択してください。
+          </p>
+        </div>
+      </div>
+      {{ form.file.errors }}
+      <input type="hidden" name="specif" id="id_specif">
+      <input type="hidden" id="id_evidence_kubuns_2">
+
+      <span>
+        <input type="submit" class="upload-btn" name="btn_upload" value="実行" onclick="return uploadcheck(this);" />
+      </span>
+      {% comment "下記の部分はコメントアウト" %}
+      <span class="guid">スマホは写真の背景を黒に近い色にして下さい</span>
+      {% endcomment%}
+    </form>
+  </main>
+
+  <!-- ////////////////////////////////////// -->
+  <script src="{% static 'js/Evc_upload_script.min.js' %}"></script>
+  <!-- <script src="{% static 'js/Evc_upload_script.js' %}"></script> -->
+  <script type="text/javascript">
+    function uploadcheck(btn) {
+      if (check(btn)) {
+        let fileList = document.getElementById('file_upload').files;
+        if (1 < fileList.length) {
+            show_message('1ファイルだけ選択してください');
+        } else {
+          let format = {{ data_type | safe }};
+          if (format == 1) {
+            if (checkPdf(fileList[0].name)) {
+                return true;
+            } else {
+              show_message('PDFファイルではありません！');
+            }
+          } else {
+            return true;
+          }
+        }
+      }
+      isSubmit = false;
+      btn.value = '実行';
+      return false;
+    }
+  </script>
+
+{% endblock %}

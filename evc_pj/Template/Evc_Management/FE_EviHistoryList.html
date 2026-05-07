@@ -1,0 +1,314 @@
+{% extends "commons/Evc_base_management.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_EviHistoryList.css" %}?241209'>
+{% endblock %}
+{% block script_block %}
+<script src="{% static 'js/Evc_price_input.min.js' %}?260226" defer></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+    <div id="form-area">
+      <div class="search-header">
+        <h2>条件検索</h2>
+        <input type="button" value='全クリア' class="chk" id="chkid" onClick="clear_all();">
+        <span id="search-wrap">
+          <input type="button" class='search' onclick="PdfList()" value="検索">
+        </span>
+        <!-- <input type="submit" value="検索" > -->
+        <!-- <input type="submit" onclick="EviHistoryList()" value="検索" > -->
+        <label id="export" class="sp-hidden">
+          <a href="{% url 'Evc_Management:export_history_csv' %}?{{ request.GET.urlencode }}">
+            <span class="material-symbols-outlined">download</span>
+            CSVダウンロード
+          </a>
+        </label>
+      </div>
+      <form name="SearchForm" id="searchForm" method="get">
+      {% comment "下記の部分はコメントアウト" %}
+      {% csrf_token %}
+      {% endcomment%}
+        <div class="s-radio">
+          <h3>履歴区分</h3>
+          <div class="s-radio-body">
+            {% for value, text in form.kubun.field.choices %}
+            <label>
+              <input type='radio' name='{{ form.kubun.name }}' value='{{ value }}' {% if kbn == value %} checked="checked" {% endif %} />
+              {{ text }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="s-file">
+          <h3>ファイル情報</h3>
+          <div class="s-flex">
+            {{ form.pdf_name }}
+            <div class="date-wrapper">
+              <label for="id_create_date" class="s-label date">処理年月日</label>
+              {{ form.create_date }}
+              {% comment "下記の部分はコメントアウト" %}
+              <label for="id_shori_date" class="s-label date">処理年月</label>
+              {{ form.shori_date }}
+              {% endcomment%}
+            </div>
+          </div>
+        </div>
+        <div class="s-read">
+          <h3>読取情報</h3>
+          <div class="s-flex">
+            <div class="select-wrapper category">
+              {{ form.category }}
+              <!-- {{ form.category.errors }} -->
+            </div>
+            <div class="slip_number">
+              {{ form.slip_number}}
+            </div>
+            <!-- {{ form.partner }} -->
+            <!-- {{ form.partner.errors }} -->
+          </div>
+          <div class="s-flex">
+            {{ form.partner }}
+            <!-- {{ form.partner.errors }} -->
+            {{ form.publisher }}
+            <!-- {{ form.publisher.errors }} -->
+          </div>
+
+          <label for="id_process_date1" class="s-label">取引日</label>
+          <div class="s-flex">
+            <div>
+              {{ form.process_date1 }}
+            <!-- {{ form.process_date1.errors }} -->
+              <span>～</span>
+              {{ form.process_date2 }}
+            <!-- {{ form.process_date2.errors }} -->
+            </div>
+            {% comment "下記の部分はコメントアウト" %}
+            <div>
+              {{ form.amount1 }}
+            <!-- {{ form.amount1.errors }} -->
+              <span>～</span>
+              {{ form.amount2 }}
+            <!-- {{ form.amount2.errors }} -->
+            </div>
+            {% endcomment%}
+            <div>
+              {{ form.amount }}
+            <!-- {{ form.amount.errors }} -->
+              <div class="select-wrapper">
+                {{ form.amount_choice }}
+              <!-- {{ form.amount_choice.errors }} -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="s-note">*テキスト入力欄には、検索したいキーワードを入力して下さい。</p>
+        <input type="hidden" id="evi_id" name="evi_id">
+        {{ form.page_size }}
+      </form>
+    </div>
+
+    <script type="text/javascript">
+      //処理を適用するテキストボックスへのイベント設定
+      function PdfList()
+      {
+        $("#searchForm").submit();
+      }    
+      //全クリア
+      function clear_all() {
+        let elements = document.getElementsByName('kubun');
+        elements[0].checked = true;      
+        document.getElementById("id_pdf_name").value = "";
+        if (document.getElementById("id_shori_date") != null) {
+          document.getElementById("id_shori_date").value = "";
+        }
+        if (document.getElementById("id_create_date") != null) {
+          document.getElementById("id_create_date").value = "";
+        }
+        document.getElementById("id_category").selectedIndex = 0;
+        document.getElementById("id_partner").value = "";
+        document.getElementById("id_publisher").value = "";
+        document.getElementById("id_process_date1").value = "";
+        document.getElementById("id_process_date2").value = "";
+        // document.getElementById("id_amount1").value = "";
+        // document.getElementById("id_amount2").value = "";
+        document.getElementById("id_amount").value = "";
+        document.getElementById("id_amount_choice").selectedIndex = 0;
+        document.getElementById("id_slip_number").value = "";
+      }
+
+      function EviHistoryList()
+      {
+        alert( "エビデンス変更履歴の取得＆表示");
+      }
+      function change_page_size(){
+        num = document.getElementById( "select_page_size" ).value;
+        document.getElementById( "id_page_size" ).value = num;
+        $("#searchForm").submit();
+      }
+      $(function() {
+        $('tr[data-href]').on('click', function(e) {
+            location.href = $(this).data('href');
+        });
+      });
+    </script>
+    <table>
+      <tr>
+        <th>履歴区分</th> 
+        <th>ファイル名</th>
+        <th>処理年月日</th>
+        <th>
+          <div>カテゴリ</div>
+          <div>伝票番号</div>
+        </th>
+        {% comment "下記の部分はコメントアウト" %}
+        <th>カテゴリ</th>
+        {% endcomment%}
+        <th>金額</th>
+        {% comment "下記の部分はコメントアウト" %}
+        <th>
+          <div>金額</div>
+          <div>支払日</div>
+        </th>
+        {% endcomment%}
+        <th>
+          <div>取引先</div>
+          <div>発行元</div>
+        </th>
+        <th>
+          <div>科目</div>
+          <div>摘要</div>
+        </th>
+        <th>取引日</th> 
+      </tr>
+      {% for item in object_list %}
+      <tr data-href="{% url 'Evc_Management:sconshow' item.r_evi_id 'r_evi' %}">
+      <!-- <tr> -->
+        <td>{{item.rireki_kbn}}</td>
+        <td>{{item.pdf_name}}</td>
+        <td>{{item.create_date}}</td>
+        <td>
+          <div>{{item.category_name}}</div>
+          <div>{{item.slip_number}}</div>
+        </td>
+        {% comment "下記の部分はコメントアウト" %}
+        <td>{{item.category_name}}</td>
+        {% endcomment%}
+        <td>{{item.total_amount|intcomma }}</td>
+        {% comment "下記の部分はコメントアウト" %}
+        <td>
+          <div>{{item.total_amount|intcomma }}</div>
+          <div class="payment_date">{{item.payment_date}}</div>
+        </td> 
+        {% endcomment%}
+        <td>
+          <div class="partner">{{item.partner_name}}</div>
+          <div class="publisher">{{item.publisher_name}}</div>
+        </td> 
+        <td>
+          <div class="account">{{item.account_name}}</div>
+          <div class="account_desc">{{item.account_desc}}</div>
+        </td> 
+        {% comment "下記の部分はコメントアウト" %}
+        <td>{{item.partner_name}}</td> 
+        <td>{{item.publisher_name}}</td> 
+        {% endcomment%}
+        <td>{{item.processed_date}}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <nav>
+      {% if is_paginated %}
+      <ul class="pagination">
+        <!-- 前へ の部分 -->
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.previous_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% endif %}
+        <!-- 数字の部分 -->
+        <!-- if 3 < page_obj.number -->
+        {% if 2 < page_obj.number %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' 1 %}">1</a>
+          </li>
+        {% endif %}
+        <!-- if 4 < page_obj.number -->
+        {% if 3 < page_obj.number %}
+          <li>…</li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range  %}
+        <!-- page_obj.number|add:-2 <= num and num <= page_obj.number|add:2 -->
+          {% if page_obj.number|add:-1 <= num and num <= page_obj.number|add:1 %}
+            {% if page_obj.number == num %}
+              <li class="page-num active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% else %}
+              <li class="page-num"><a class="page-link" href="?{% url_replace request 'page' num %}">{{ num }}</a></li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        <!-- add:3 -->
+        {% if page_obj.number|add:2 < page_obj.paginator.num_pages %}
+          <li>…</li>
+        {% endif %}
+        <!-- add:2  %} -->
+        {% if page_obj.number|add:1 < page_obj.paginator.num_pages %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.paginator.num_pages %}">{{ page_obj.paginator.num_pages }}</a>
+          </li>
+        {% endif %}
+
+        <!-- 次へ の部分 -->
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.next_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+      {% endif %}
+      <div class="page-select">
+        <label for="page_size_choice">表示件数</label>
+        <div class="select-wrapper">
+          <select id="select_page_size" name="page_size_choice" onchange="change_page_size();">
+            {% for value, text in form.page_size_choice.field.choices %}
+            <option value="{{ value }}" {% if value == page_size %} selected {% endif %}>{{ text }}</option>     
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </nav>
+  </main>
+{% endblock %}
+
+

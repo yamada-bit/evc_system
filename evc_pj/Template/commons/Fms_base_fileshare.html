@@ -1,0 +1,166 @@
+{% load static %}
+<!DOCTYPE html>
+<html  lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% comment "下記の部分はコメントアウト" %}
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" type="text/css" href='{% static "css/bootstrap/bootstrap.min.css" %}'/>
+    <script src="./js/bootstrap.bundle.min.js"></script>
+    {% endcomment%}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;300;400;500;700&display=swap"
+      rel="stylesheet">
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    {% if process_title == "共有ファイル情報編集" %}
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    {% endif %}
+    <link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_Dialog.css" %}'>
+
+    {% block link_block %}
+    {% endblock %}
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src='{% static "js/script.min.js" %}' defer></script>
+    {% block script_block %}
+    {% endblock %}
+
+    <title>
+      {% block title %}{% endblock %}
+    </title>
+    <style>
+      {% block styles %}{% endblock %}
+    </style>
+  </head>
+  <body>
+    {% if process_title == "共有ファイル情報編集" %}
+    <div class="bg"></div>
+    {% endif %}
+
+    <header>
+      {% if process_title == "共有ファイル情報編集" %}
+      <div class="logo-area">
+        <img src='{% static "images/Companylogo-2.png" %}' class="Companylogo" >
+        <h4>{{ owner_ryaku_name }}</h4>
+        <h4>{{ user.user_name }}</h4>
+      </div>
+      {% else %}
+      <div id="nav-toggle" class="sp">
+        <div>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="header-area">
+        <div class="logo-area">
+          <img src='{% static "images/Companylogo.png" %}' class="Companylogo" >
+          <h4>{{ owner_ryaku_name }}</h4>
+          <h4>{{ user.user_name }}</h4>
+        </div>
+        {% if user.is_authenticated %}
+        <nav id="g-menu">
+          <ul>
+            <li>
+              <a href="{% url 'Fms_fileshare:file_upload' %}"><span class="material-symbols-outlined">upload_file</span>共有ファイル保存</a>
+            </li>
+            <li>
+              <a href="{% url 'Fms_fileshare:file_list' %}"><span class="material-symbols-outlined">list</span>共有ファイル一覧</a>
+            </li>
+            {% comment "下記の部分はコメントアウト" %}
+            {% endcomment%}
+            <li>
+              <a href="{% url 'accounts:mainmenu' %}"><span class="material-symbols-outlined">undo</span>メインメニュー</a>
+            </li>
+          </ul>
+        </nav>
+        {% endif %}
+      </div>
+      {% endif %}
+    </header>
+
+    <!-- メッセージフレームワーク -->
+    {% if form.errors or messages %}
+      <dialog id="message_dialog">
+        <span class="material-symbols-outlined">
+          {% if form.errors %}
+          error
+          {% else %}
+          report
+          {% endif %}
+        </span>
+        <div>
+        {% if form.errors %}
+          {{ form.non_field_errors }}
+        {% endif %}
+        {% for errors in form.errors.values %}
+          {% for error in errors %}
+            {{ error }}<br>
+          {% endfor %}
+        {% endfor %}
+       
+        {% comment "下記の部分はコメントアウト" %}
+        {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+              {{ message }}
+            </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% endcomment%}
+        {% if messages %}
+          {% for message in messages %}
+            <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+              {{ message }}
+            </p>
+          {% endfor %}
+        {% endif %}
+        </div>
+        <div class="btn-dialog">
+          <button id="message_close">閉じる</button>
+        </div>
+      </dialog>
+      <script>
+        $(function() {
+          let messagebox = document.getElementById('message_dialog');
+          let btn_close = document.getElementById('message_close');
+          btn_close.addEventListener('click', function() {
+            messagebox.close();
+          });
+          messagebox.showModal();
+        });
+      </script>  
+    {% endif %}
+  <!-- alertメッセージフレームワーク -->
+    <dialog id="alert_dialog">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p id="alert_msg"></p>
+      <div class="btn-dialog">
+        <button id="alert_close">閉じる</button>
+      </div>
+    </dialog>
+    <script>
+      function show_message(str) {
+        let messagebox = document.getElementById('alert_dialog');
+        document.getElementById('alert_msg').innerText = str;
+        let btn_close = document.getElementById('alert_close');
+        btn_close.addEventListener('click', function() {
+          messagebox.close();
+        });
+        messagebox.showModal();
+      }
+    </script>
+    {% block content %}
+    {% endblock %}    
+    {% block extrajs %}{% endblock %}
+  </body>
+</html>

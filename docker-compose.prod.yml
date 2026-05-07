@@ -1,0 +1,194 @@
+# version: '3.9'
+
+services:
+  # ---------------------------
+  # PostgreSQL データベース
+  # 本番では外部に公開しない
+  # Windows から pgAdmin で接続する場合は
+  # SSHトンネル経由で localhost:15432 → サーバー内 localhost:5432
+  # ---------------------------
+  db:
+    image: postgres:16
+    container_name: pg16
+    restart: always
+    env_file:
+      - .env.prod
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # ports:
+    #   - "5432:5432"
+    # expose:
+    # - "5432"   # ← portsにしない
+    # 一時的に ports を開ける SSHトンネルpgadmin4接続のため
+    ports:
+      - "127.0.0.1:5432:5432"  # ← SSHトンネル用（外部非公開）    
+    # networks:
+    #   - evc_network
+    # logging:
+    #   driver: "json-file"
+    #   options:
+    #     max-size: "5m"
+    #     max-file: "3"
+
+  web:
+    # build:
+    #   context: .
+    #   dockerfile: docker/Dockerfile.prod
+    image: evc_web:${IMAGE_TAG}
+    # image: evc_web:backup_20260331_0835
+    container_name: evc_web
+    # 本番環境や特定の検証環境に合わせて、Compose側でワーカー数を指定します。
+    # command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4
+    restart: always
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 4
+      --access-logfile -
+      --error-logfile -
+      --log-level info
+    # # Dockerコンテナが起動した際に Djangoの「開発用サーバー」を立ち上げる
+    # # 0.0.0.0: サーバーを「外部（ホストPCなど）からのアクセスをすべて受け付ける状態」
+    # # command: python manage.py runserver 0.0.0.0:8000
+    # command: sleep infinity  # コンテナを維持するだけの命令に変更
+    # コードはイメージ内にコピー済み、本番ではマウント不要
+    # 静的ファイルとデータディレクトリのみマウント
+    volumes:
+      - ./evc_pj/static:/staticfiles
+      - ./data_root:/data_root  # ホストの ./data_root をコンテナの /data_root に繋ぐ
+      - ./Google:/Google_data
+
+    # volumes:
+    #   - /home/deploy/projects/evc_system/evc_pj:/app
+    #   - /home/deploy/projects/evc_system/evc_pj/static:/staticfiles
+    #   - /home/deploy/projects/evc_system/data_root:/data_root
+      # - ./data_root/media:/media
+    # 「Docker単体確認段階」で必要
+    # ports:
+    #   - "8000:8000"
+    env_file:
+      - .env.prod
+    depends_on:
+      - db
+    environment:
+      - ENV_FILE=.env.prod
+    # 「本番」で必要
+    # expose:
+    #   - "8000"
+    # environment:
+    #   - DJANGO_SETTINGS_MODULE=config.settings
+    # networks:
+    #   - evc_network
+    # Gunicornログローテーション
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # 10MBごとにローテーション
+        max-file: "5" # 最大5世代保存
+  # # ---------------------------
+  # # 追加（jaf用）
+  # # ---------------------------
+  # web_jaf:
+  #   build:
+  #     context: ./jaf_pj   # ← jafプロジェクトのディレクトリ
+  #     dockerfile: docker/Dockerfile.prod
+  #   container_name: jaf_web
+  #   restart: always
+  #   command: >
+  #     gunicorn config.wsgi:application
+  #     --bind 0.0.0.0:8000
+  #     --workers 2
+  #   volumes:
+  #     - ./jaf_pj/static:/staticfiles
+  #     - ./jaf_data:/data_root
+  #   env_file:
+  #     - .env.prod
+  #   depends_on:
+  #     - db
+
+  # ---------------------------
+  # Nginx リバースプロキシ
+  # 静的ファイル + Django アプリを公開
+  # ---------------------------
+  nginx:
+    image: nginx:stable
+    container_name: nginx_prod
+    restart: always
+    ports:
+      - "80:80"   # HTTP公開（必要に応じて443も）
+      - "443:443"
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+      # - certbot_www_stg:/var/www/certbot_stg  # 追加      
+      # - certbot_www:/var/www/certbot
+      # - certbot_conf:/etc/letsencrypt
+      # - ./certbot/www:/var/www/certbot
+      # - ./certbot/conf:/etc/letsencrypt
+      - ./evc_pj/static:/staticfiles:ro
+      # - ./jaf_pj/static:/jaf_static:ro
+      - ./data_root:/data_root
+      # - ./data_root/evc_root:/data_root/EvcData
+      # - ./data_root/evc_help:/data_root/help:ro
+      # - ./data_root/media:/data_root/media
+      # - ./data_root/evc_root:/EvcData
+      # - ./data_root/evc_help:/help:ro
+      # - ./data_root/media:/media
+      # - ./jaf_data:/jaf_data
+    depends_on:
+      - web
+      # - web_jaf
+    # networks:
+    #   - evc_network
+    # nginxログローテーション
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+  certbot:
+    image: certbot/certbot
+    container_name: certbot_prod
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+      # - certbot_www:/var/www/certbot
+      # - certbot_conf:/etc/letsencrypt
+      # - ./certbot/www:/var/www/certbot
+      # - ./certbot/conf:/etc/letsencrypt
+      - ./logs/letsencrypt:/var/log/letsencrypt
+    entrypoint: >
+      sh -c "
+      # cron 自動更新
+      # TERMシグナルを受けたら exit
+      # renew:期限30日前なら更新
+      trap exit TERM;
+      while :; do
+        certbot renew --webroot -w /var/www/certbot --quiet;
+        sleep 12h & wait $${!};
+      done
+      # echo '0 0,12 * * * certbot renew --webroot --webroot-path=/var/www/certbot --quiet --deploy-hook \"nginx -s reload\" >> /var/log/letsencrypt/renew.log 2>&1' > /etc/crontabs/root
+      # crond -f -l 2
+      "
+    # certbotログローテーション
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+# ---------------------------
+# データ永続化ボリューム
+# ---------------------------
+volumes:
+  pgdata:
+  certbot_www:
+  certbot_conf:
+  # certbot_www_stg:  # 追加  
+# ---------------------------
+# Docker ネットワーク
+# ---------------------------
+# networks:
+#   evc_network:
+
+#     driver: bridge

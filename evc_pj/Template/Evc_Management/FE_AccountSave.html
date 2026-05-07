@@ -1,0 +1,88 @@
+{% extends "commons/Evc_base_management.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_PartnerSave.css" %}'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+
+    <form id="uploadform" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="card">
+        <div class="card-contents">
+          <h2>batch save</h2>
+
+          <p class="lead">CSVファイルで取引先を一括登録します。</p>
+          <div>
+            <label class="csv-save" for="csv_save">
+              <span class="material-symbols-outlined">
+                folder_open
+              </span>
+              ファイルを選択
+              <input type="file" id="csv_save" name="accountcsv" accept=".csv" required
+                onchange="$('#fake_text_box').val($(this).val())">
+              <input type="text" id="file_upload" value="" onClick="$('#csv_save').click();">
+            </label>
+          </div>
+          <div>
+            <input type="text" id="fake_text_box" value="" size="35" readonly onClick="$('#csv_save').click();">
+          </div>
+        </div>
+      </div>
+      <div  class="upload_download">
+        <input type="submit" class="upload-btn" name="btn_upload" value="アップロード実行" onclick="return check(this);" />
+        {% comment "下記の部分はコメントアウト" %}
+        <label id="export">
+          <a href="{% url 'Evc_Management:download_account_csv' %}">
+            <span class="material-symbols-outlined">download</span>CSVダウンロード　
+          </a>
+        </label>
+        {% endcomment%}
+      </div>
+
+
+    </form>
+  </main>
+  <script type="text/javascript">
+
+    // $(function(){
+    //   $('#uploadform').submit(function(){
+    //     if (file_upload.files.length < 1) {
+    //       alert('ファイルが選択されていません');
+    //       return false;
+    //     }
+    //   });
+    // });    
+    var isSubmit = false;
+    function check(btn) {
+        if (isSubmit) {
+          show_message('処理中です');
+          return false;
+        } else {
+          let fileList = document.getElementById('csv_save').files;
+          if (fileList.length < 1) {
+            show_message('ファイルが選択されていません');
+            return false;
+          }
+          isSubmit = true;
+          btn.value = '処理中';
+          return true;
+        }
+    };
+ 
+  </script>
+
+{% endblock %}

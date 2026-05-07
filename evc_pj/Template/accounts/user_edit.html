@@ -1,0 +1,18 @@
+{% extends "commons/Evc_base.html" %}
+
+{% block title %}ユーザ情報{% endblock %}
+
+{% block headertitle %}ユーザ情報{% endblock %}
+
+{% block content %}
+<h1>ユーザ情報</h1>
+   <div class="reg">
+   <table class="reg_form">
+    <form method="POST">
+      {% csrf_token %}
+      {{ form.as_table }}
+      <!-- <input type="submit" class='btn' value="登録"> -->
+    </form>
+   </table>
+   </div>
+{% endblock %}

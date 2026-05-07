@@ -1,0 +1,332 @@
+@import url("FE_PartnerList.css?241001");
+
+.date-wrapper {
+  display: flex;
+  flex-direction: column;
+  /* position: relative; */
+}
+
+input[type="text"],
+input[type="date"],
+input[type="month"],
+input[type="search"],
+select[name="category"] {
+  padding: 0.5em 1em;
+  height: fit-content;
+  border-radius: 2em;
+  border: 1px solid #999;
+}
+input[type="date"],
+input[type="month"],
+input[type="search"],
+select[name="category"],
+input[type="text"] {
+  /* width: 300px; */
+  width: 100%;
+  background-color: #fff;
+}
+label {
+  color: #aaa;
+}
+label div {
+  color: #333;
+}
+
+/* form{
+display: inline-block;
+font-size: large;
+} */
+.select-wrapper.category {
+  display: initial;
+  /* width: 200px; */
+  color: #ccc;
+  /* margin-bottom: 0.8em; */
+}
+select[name="category"]{
+  color: #ccc;
+}
+
+.selectbox {color: #000}
+input[name="publisher"]:invalid{color: #ccc}
+
+input[name="partner"] {
+  width: 100%;
+  /* width: 300px; */
+}
+input[name="publisher"] {
+  width: 100%;
+  /* width: 300px; */
+}
+select[name="category"] {
+  width: 100%;
+}
+input[type="month"],
+input[type="date"] {
+  /* width: 145px; */
+  color: #ccc;
+  height: 40.4px;
+}
+/* No.を追加したためfirst-child変更 */
+th:first-child,
+td:first-child {
+  width: 5%;
+}
+th:nth-child(2),
+td:nth-child(2) {
+  width: 20%; /* 25% */
+}
+th:nth-child(3),
+td:nth-child(3) {
+  width: 55%; /* 9.5% */
+}
+th:last-child,
+td:last-child {
+  width: 20%; /* 5% */
+  padding-inline: 0;
+}
+/* td:nth-child(5) {
+  text-align: right;
+}
+td:last-child {
+  align-self: center;
+  text-align: center;
+} */
+/* td:last-child:not(:empty) {
+  color: #fff;
+  background-color: rgb(233, 82, 82);
+  width: 4.2%;
+  padding: 0.6em 0;
+  display: inline-block;
+  border-radius: 1em;
+  line-height: 0.5;
+  font-size: 0.9em;
+} */
+/* No.を追加したためfirst-child変更 */
+/* td:first-child { */
+/* td:nth-child(2) {
+  display: flex;
+  justify-content: space-between;
+} */
+
+.ev-table .material-symbols-outlined {
+  border: 1.6px solid;
+  border-radius: 4px;
+  color: var(--secondary-c);
+  opacity: 0;
+  font-size: 20px;
+  font-variation-settings: "wght" 400;
+  transition: 0.3s;
+}
+
+tr:hover td .material-symbols-outlined {
+  opacity: 0.7;
+}
+
+/* tablesorter を使うソートのスタイル */
+/* #ev_table .tablesorter-header {
+	cursor: pointer;
+	outline: none;
+} */
+th.th-pointer {
+	cursor: pointer;
+}
+/* #ev_table .tablesorter-header-inner::after { 
+	content: '▼';
+	font-size: 12px;
+	margin-left: 5px;
+  color: lightgray;  
+} */
+
+/* th.tablesorter-headerUnSorted,
+th.tablesorter-headerAsc,
+th.tablesorter-headerDesc {
+  color: white;
+  padding-top: 8px;
+  padding-bottom: 8px;
+} */
+
+/* ソート矢印 Material Symbols Outlined　を使う */
+
+th.tablesorter-headerUnSorted span.arrow,
+th.tablesorter-headerAsc span.arrow,
+th.tablesorter-headerDesc span.arrow {
+  position: relative;
+  border: 1.6px solid;
+  border-radius: 4px;
+  border-color: #ABC;
+  font-family: "Material Symbols Outlined";
+  /* font-size: 18px; */
+  font-variation-settings: "wght" 400;
+  vertical-align: middle;  
+}
+
+th.tablesorter-headerUnSorted span.arrow:before {
+	/* content: '▲'; */
+	/* content: '▼'; */
+  content: "\e5d7";
+  color: #ABC;
+}
+
+th.tablesorter-headerAsc span.arrow:before {
+	/* content: '▲'; */
+	content: "\e5c7";
+}
+
+th.tablesorter-headerDesc span.arrow:before {
+	/* content: '▼'; */
+	content: "\e5c5";
+}
+
+
+/* thead,tbody追加によりtr:first-childが違ってくるので再定義 */
+/* azborn.css での定義を初期化 */
+tr:first-child {
+  width: initial;
+  background-color: initial;
+}
+thead tr:first-child {
+  width: 100%;
+  background-color: #666;
+}
+/* azborn.css での定義を初期化 */
+tr:not(:first-child):nth-child(odd) {
+  background-color: initial;
+}
+tbody tr:nth-child(even) {
+  background-color: rgb(219, 247, 239);
+}
+/* azborn.css */
+/* table tr[data-href]:hover {
+  background: #f2f8fa;
+  cursor: pointer;
+} */
+
+/* first-childにも適用するため定義 */
+/* reset.css  tr:not(:first-child) */
+tbody tr {
+  display: flex;
+}
+
+.show {
+  visibility: visible;
+  /* opacity: 1; */
+  /* transform: translateY(0rem); */
+}
+@media (max-width: 767px) {
+  #search-wrap {
+    display: inline-block;
+    width: 110px;
+    font-size: 0.9em;
+    height: auto;
+  }
+  
+  input[type="text"] {
+    width: 100%;
+  }
+  input[type="text"],
+  input[type="date"],
+  input[type="month"],
+  input[type="search"],
+  select[name="category"] {
+    padding: 0.5em 1em;
+    background-color: #fff;
+    border: none;
+  }
+  input[type="text"],
+  input[type="search"] {
+    color: black;
+  }
+
+  select[name="category"] {
+    color: #333;
+  }
+  /* #searchForm .date-wrapper {
+    grid-row: 1;
+    width: 100px;
+  } */
+  .select-wrapper.category {
+    /* grid-column: 1/3; */
+    width: 200px;
+    margin-bottom: 0;
+  }
+  input[type="month"],
+  input[type="date"] {
+    /* width: 45%; */
+    width: 145px;
+    height: 34.55px;
+  }
+
+  .ev-table td {
+    width: 100%;
+  }
+  /* FE_PartnerList.css */
+  /* tbody { */
+  /* 先頭行の上の余白のために応急処置 */
+  table {
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+  }
+  tr:not(:first-child):has(:not(:empty)) {
+    gap: 0.2em;
+    display: grid;
+  }
+  /* FE_PartnerList.css */
+  /* tr:not(:first-child):has(:not(:empty)) { */
+  /* 先頭行の設定のために応急処置 */
+  tbody tr:first-child:has(:not(:empty)) {
+    flex-direction: column;
+    border-radius: 1em;
+    box-shadow: 0 0 10px 3px rgba(0, 0, 0, 0.3);
+    padding: 1em;
+    gap: 0.2em;
+    display: grid;
+  }
+
+  td {
+    padding: 0;
+    font-size: 0.9em;
+  }
+  td:not(:has(:not(:empty))) {
+    display: block;
+  }
+  
+  /* No.を追加したためfirst-child変更 */
+  /* td:first-child, */
+
+  /* td:first-child,
+  td:nth-child(3) {
+    grid-area: 1/1/2/3;
+    color: #999;
+    font-size: 0.8em;
+    position: relative;
+    height: 26px;
+    display: flex;
+    align-items: center;
+  } */
+  /* Noの表示領域のためにmargin-left追加 */
+  /* td:nth-child(2):not(:empty):before {
+    content: "取引: ";
+    margin-left: 30px;
+  } */
+  td:nth-child(1),
+  td:nth-child(2),
+  td:nth-child(3),
+  td:nth-child(4) {
+    grid-row: 1;
+  }
+  /* td:nth-child(4) {
+    text-align: right;
+  } */
+  td:nth-child(1):not(:empty)::before {
+    content: "No.";
+  }
+  td:nth-child(4):not(:empty)::after {
+    content: "件";
+  }
+
+  dialog[open] {
+    font-size: 0.9em;
+    padding: 1em;
+  }
+}

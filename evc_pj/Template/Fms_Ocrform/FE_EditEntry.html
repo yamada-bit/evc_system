@@ -1,0 +1,213 @@
+{% extends "commons/Fms_base_ocrform.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Fms_Ocrform/css/FE_EditEntry.css" %}?250515'>
+{% endblock %}
+{% block script_block %}
+<!-- <script src='{% static "js/dialog.min.js" %}' defer></script> -->
+<script src='{% static "Fms_Ocrform/js/Fms_entry_edit.js" %}?250612' defer></script>
+<!-- <script src='{% static "Fms_Ocrform/js/Fms_entry_edit.min.js" %}?250612' defer></script> -->
+{% comment "下記の部分はコメントアウト" %}
+{% endcomment %}
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+      <label id="export" class="sp-hidden" style="display:none;">
+        <a href="{% url 'Fms_Ocrform:export_zip' ocrdata_id image_no %}">
+          <span class="material-symbols-outlined">download</span>
+          zipダウンロード
+        </a>
+      </label> 
+    </div>
+    <div id="s-toggle" class="sp" style="display:none;">
+      <span class="material-symbols-outlined">edit_square</span>
+    </div>
+    <div class="edit-flex">
+      <figure id="pdfimage" class="card">
+        <div class="card-contents">
+          <h2> {{ pdf_name }} </h2>
+          {% comment "下記の部分はコメントアウト" %}
+          {% if src_pdffile %}
+          <h2 style="display:none;"> ここにPDFを表示します</h2>
+          {% else %}
+          <h2 style="display:none;"> ここに画像を表示します</h2>
+          {% endif %}
+          {% endcomment %}
+          <div class="imagebox" id="imagebox">
+            <canvas id="image_canvas"></canvas>
+            <div style="display:none;">
+              <img id="bk_img" src='{{ imgfile }}'>
+            </div>
+          </div>
+          <button  class="button_image"  onclick="setResize(-1)">ー</button>
+          <button  class="button_image"  onclick="setResize(+1)">＋</button>
+          {% if src_pdffile %}
+          {% comment "下記の部分はコメントアウト" %}
+          <h2> ここにPDFを表示します</h2>
+          <iframe src="{{ pdffile }}" width="100%" height="100%"></iframe>
+          {% endcomment %}
+          <a href="{{ pdffile }}" target="_blank" rel="noopener noreferrer" class="button_image" >PDF表示</a>
+          {% else %}
+          <a class="button_image" href="{{ imgfile }}" download>画像ダウンロード</a>
+          {% comment "下記の部分はコメントアウト" %}
+          <h2> ここに画像を表示します</h2>
+          <img src='{{ imgfile }}'  width="90%" >
+          <br>
+          <a href="{{ imgfile }}" download>画像をダウンロードする</a>
+          {% endcomment %}
+          {% endif %}
+        </div>
+      </figure>
+      <div id="shiori" class="card card-2">
+        <div class="card-contents">
+          <h2>テキスト</h2>
+          <form id="form1" name="form1" method="post">
+            {% csrf_token %}
+            {{ form.ocrdata_id }}
+            <!-- {{ form.fulltext }} -->
+            <div class="table-area" style="overflow-y: auto; ">
+              <table id="table_item">
+                <thead>
+                <tr>
+                  <!-- <th>No.</th> -->
+                  <th>項目名</th>
+                  <th>JSON名</th>
+                  <th>内容</th>
+                </tr>
+                </thead>
+                <tbody id = 'table_tbody'>
+                {% for item in object_list %}
+                <tr class="item-list">
+                  <td>
+                    <input type="search" name="item_name_{{forloop.counter}}" value="{{item.item_name}}" readonly>
+                  </td>
+                  <td>
+                    <input type="search" name="item_json_{{forloop.counter}}" value="{{item.item_json}}" readonly>
+                  </td>
+                  <td>
+                    <input type="search" name="item_text_{{forloop.counter}}" value="{{item.item_text}}">
+                  </td>
+                  <td style="display:none;">
+                    <input type="search" name="area_no_{{forloop.counter}}" value="{{item.area_no}}">
+                  </td>
+                  <td style="display:none;">
+                    <input type="search" name="table_id_{{forloop.counter}}" value="{{item.table_id}}">
+                  </td>
+                  {% comment "下記の部分はコメントアウト" %}
+                  {% endcomment %}
+                </tr>
+                {% comment "下記の部分はコメントアウト" %}
+                {% endcomment %}
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <input type="hidden" id="object_list_json" name="object_list_json" value="">
+            <input type="hidden" id="areas" name="areas" value="{{ areas }}">
+
+            <div class="btn-area">
+              <div class="btn-container"  style="display:none;">
+                <span class="material-symbols-outlined">
+                  edit
+                </span>
+                <input type="button" id="edit" value="編集">
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  refresh
+                </span>
+                <input type="button" id="commit" value="登録">
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  delete
+                </span>
+                <input type="button" id="delete_entry" value="削除 ">
+              </div>
+              {% comment "下記の部分はコメントアウト" %}
+              {% endcomment %}
+              <div class="btn-container" style="display:none;">
+                <span class="material-symbols-outlined">
+                  download
+                </span>
+                <input type="button" id="download_file" value="出力">
+                <input type="hidden" id="export_file" name="export" value="{% url 'Fms_Ocrform:export_zip' ocrdata_id image_no %}">
+              </div>
+              <div class="btn-container" id="export_zip" style="display:none;">
+                <a href="{% url 'Fms_Ocrform:export_zip' ocrdata_id image_no %}">
+                  <span class="material-symbols-outlined">download</span>
+                  出力
+                </a>
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  undo
+                </span>
+                <input type="button" id="cancel" value="戻る">
+              </div>
+            </div>
+            <input type="hidden" id="submit_action1" name="submit_action" value="commit">
+            <div id="MovePage">
+              {% if page_obj.has_previous %}
+              <a href="{% url 'Fms_Ocrform:ocrdata_edit' 'entry' ocrdata_id previous_image_no %}" id="back_btn">
+                <span class="material-symbols-outlined arrow">
+                  arrow_back_ios
+                </span>
+                <span>前頁</span>
+              </a>
+              {% else %}
+              <a id="back_btn" style="color:gray;" disabled=disabled>
+                <span class="material-symbols-outlined">
+                  arrow_back_ios
+                </span>
+                <span>前頁</span>
+              </a>
+              {% endif %}
+      
+              {% if page_obj.has_next %}
+              <a href="{% url 'Fms_Ocrform:ocrdata_edit' 'entry' ocrdata_id next_image_no %}" id="next_btn">
+                <span>次頁</span>
+                <span class="material-symbols-outlined arrow">
+                  arrow_forward_ios
+                </span>
+              </a>
+              {% else %}
+              <a id="next_btn" style="color:gray;text-decoration:none;">
+                <span>次頁</span>
+                <span class="material-symbols-outlined">
+                  arrow_forward_ios
+                </span>
+              </a>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <dialog id="del-record">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p>このレコードを削除します。<br>よろしいですか？</p>
+      <div class="btn-area">
+        <button id="close">キャンセル</button>
+        <button id="scon_delete">削除</button>
+      </div>
+    </dialog>    
+  </main>
+
+{% endblock %}
+  

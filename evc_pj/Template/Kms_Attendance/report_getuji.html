@@ -1,0 +1,399 @@
+{% extends "commons/Kms_base_kintai.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+    <link rel="stylesheet" type="text/css" href='{% static "Kms_Attendance/css/FE_Monthly.css" %}?250213'>
+{% endblock %}
+{% block script_block %}
+  {% comment "下記の部分はコメントアウト" %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+  {% endcomment%}
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block extrastyle %}
+  {% comment "下記の部分はコメントアウト" %}
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  {% endcomment%}
+{% endblock %}
+{% block extrajs %}
+  {% comment "下記の部分はコメントアウト" %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+  {% endcomment%}
+    <script src="{% static 'Kms_Attendance/js/report.js' %}"></script>
+    <!-- <script type="text/javascript">
+      // ページング
+      $("#per").change(function(){
+        $("select[form=search_form]#per").removeAttr("form")
+        var form = $("#search_form")
+        $("<input>").attr({
+          "type": "hidden",
+          "name": "per",
+          "value": $('#per').val()
+        }).appendTo(form);
+        $("#search_form").submit();
+      });
+    </script> -->
+    <script>
+      if(window.matchMedia("(max-width:768px)").matches){
+        $(document).ready(function(){
+          $(".iframe").colorbox({
+            iframe:true,
+            scrolling:true,
+            closeButton:true,
+            fastIframe:false,
+            width:"90%",
+            height:"80%"
+          });
+        });
+      } else {
+        $(document).ready(function(){
+          $(".iframe").colorbox({
+            iframe:true,
+            scrolling:true,
+            closeButton:true,
+            maxWidth:"850",
+            fastIframe:false,
+            width:"80%",
+            height:"80%"
+          });
+        });
+      }
+    </script>
+    <script language="javascript">
+      $("#select_date").change(function() {
+        var date = $(this).val();
+        if (date.match(/\//)) {
+          date = date.replace(/\//g, "-");
+        }
+        var prev_date = "2021-12";
+        var prev_date2 = "";
+        var prev_year = "";
+          $.ajax({
+            url: "/ajax/check_period",
+            data: { date: date },
+            success: function(result) {
+              if (result == "no") {
+                if (prev_date2 == "") {
+                  if (prev_year == "") {
+                    $("#select_date").val(prev_date);
+                  } else {
+                    $("#select_date").val(prev_year);
+                  }
+                } else {
+                  $("#select_date").val(prev_date2);
+                }
+                $('[data-remodal-id="free_modal"]').remodal().open();
+              } else {
+                  window.location = "/aggregates/" + date + "?";
+              }
+            },
+            error: function() {
+              if (prev_date2 == "") {
+                if (prev_year == "") {
+                  $("#select_date").val(prev_date);
+                } else {
+                  $("#select_date").val(prev_year);
+                }
+              } else {
+                $("#select_date").val(prev_date2);
+              }
+              alert("情報取得に失敗しました。");
+            }
+          });
+      });
+    </script>
+
+{% endblock %}
+
+{% block content %}
+    <main>
+      <div id="s-toggle" class="sp">
+        <span class="material-symbols-outlined">search</span>
+      </div>
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+      </div>
+
+      <div  id="form-area">
+        <form name="search_form" id="searchForm" method="get">
+          <input type="hidden" id="download_type" name="download_type" value="">
+          <div class="search-container">
+            <table class="search-table">
+              <tr>
+                <td>
+                  <div class="calendar-nav">
+                    {% comment "下記の部分はコメントアウト" %}
+                    {% endcomment%}
+                    <a href="{% url 'Kms_Attendance:report_getuji' month_previous.year month_previous.month %}">前月</a>
+                    <span class="calendar-month">{{ month_current | date:"Y年m月" }}</span>
+                    <a href="{% url 'Kms_Attendance:report_getuji' month_next.year month_next.month %}">次月</a>
+                  </div>
+                </td>
+                <td>
+                  {% comment "下記の部分はコメントアウト" %}
+                  <a class="btn-image" data-confirm="CSV出力を実行しますか？" href="{% url 'Kms_Attendance:csv_export' month_current.year month_current.month %}">CSV出力</a>
+                  <a class="btn-image" data-confirm="PDF出力を実行しますか？" href="{% url 'Kms_Attendance:pdf_view' month_current.year month_current.month %}" target="_blank">PDF出力</a>
+                  <a class="btn-image" href="{{request.META.HTTP_REFERER}}">戻る</a>
+                  {% endcomment%}
+                  {% comment "下記の部分はコメントアウト" %}
+                  <a id="update_output" class="btn-image" href="javascript:void(0);">レポートデータ更新</a>
+                  {% endcomment%}
+                </td>
+                {% comment "下記の部分はコメントアウト" %}
+                <td>
+                  <a class="btn-image" href="/kintai/report">戻る</a>
+                </td>
+                {% endcomment%}
+              </tr>
+              <tr>
+                <td>
+                  <input type="text" name="number" id="number" value="{{ number }}" placeholder="社員番号" />
+                </td>
+                <td>
+                  <input type="text" name="name" id="name" value="{{ name }}" placeholder="氏名" />
+                </td>
+                <td>
+                  <div class="custom-select">
+                    <select name="works_status" id="works_status">
+                      <option value="">申請状況</option>
+                      <option  {% if works_status == "0" %} selected {% endif %} value="0">申請待ち</option>
+                      <option  {% if works_status == "1" %} selected {% endif %} value="1">申請中</option>
+                      <option  {% if works_status == "2" %} selected {% endif %} value="2">承認済</option>
+                    </select>
+                  </div>
+                </td>
+                <td>
+                  <div class="custom-select">
+                    <select name="work_parent_status" id="work_parent_status">
+                      <option value="">月締状況</option>
+                      <option value="1">未申請</option>
+                      <option value="2">申請中</option>
+                      <option value="3">確定済</option>
+                    </select>
+                  </div>
+                </td>
+                <td>
+                  <div class="custom-select">
+                    <select name="manager_user" id="manager_user">
+                      <option value="">承認者</option>
+                      <option value="2">中村朋美</option>
+                      <option value="4">承認太郎</option>
+                      <option value="5">勤怠太郎</option>
+                      <option value="6">中村雅孝</option>
+                      <option value="8">藤原裕一</option>
+                    </select>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="form-area">
+            <table class="approval-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th colspan="13">勤務時間</th>
+                  <th colspan="7">出勤状況</th>
+                  <th colspan="11">休日・休暇取得</th>
+                  <th colspan="6">勤務区分</th>
+                </tr>
+                <tr>
+                  <th>
+                    社員
+                  </th>
+                  <th>
+                    所定時間
+                  </th>
+                  <th>
+                    所定内労働時間
+                  </th>
+                  <th>
+                    法定内時間外労働時間
+                  </th>
+                  <th>
+                    法定時間外労働時間
+                  </th>
+                  <th>
+                    法定外休日労働時間
+                  </th>
+                  <th>
+                    法定休日労働時間
+                  </th>
+                  <th>
+                    深夜労働時間
+                  </th>
+                  <th>
+                    総労働時間
+                  </th>
+                  <th>
+                    実働時間
+                  </th>
+                  <th>
+                    遅刻時間
+                  </th>
+                  <th>
+                    早退時間
+                  </th>
+                  <th>
+                    所定不足時間
+                  </th>
+                  <th>
+                    残業時間
+                  </th>
+                  <th>
+                    所定日数
+                  </th>
+                  <th>
+                    出勤日数
+                  </th>
+                  <th>
+                    法定外休日出勤日数
+                  </th>
+                  <th>
+                    法定休日出勤日数
+                  </th>
+                  <th>
+                    欠勤日数
+                  </th>
+                  <th>
+                    遅刻日数
+                  </th>
+                  <th>
+                    早退日数
+                  </th>
+                  <th>
+                    公休日数
+                  </th>
+                  <th>
+                    有給休暇日数
+                  </th>
+                  <th>
+                    本日までの有給休暇残数
+                  </th>
+                  <th>
+                    夏季休暇日数
+                  </th>
+                  <th>
+                    本日までの夏季休暇残数
+                  </th>
+                  <th>
+                    振替休日日数
+                  </th>
+                  <th>
+                    本日までの振替休日残数
+                  </th>
+                  <th>
+                    代休日数
+                  </th>
+                  <th>
+                    本日までの代休残数
+                  </th>
+                  <th>
+                    特別休暇日数
+                  </th>
+                  <th>
+                    休職日数
+                  </th>
+                  <th>
+                    有給休暇
+                  </th>
+                  <th>
+                    夏季休暇
+                  </th>
+                  <th>
+                    午前有給休暇
+                  </th>
+                  <th>
+                    午後有給休暇
+                  </th>
+                  <th>
+                    経費
+                  </th>
+                  <th>
+                    月締状況
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for report in obj_reports %}
+                <tr >
+                  <td class="href-link">
+                    <br>
+                    <a href="{% url 'Kms_Attendance:monthly' month_current.year month_current.month 6 forloop.counter %}">{{ report.name }}</a>
+                    {% comment "下記の部分はコメントアウト" %}
+                    <a href="{% url 'Kms_Attendance:approval_emp' month_current.year month_current.month %}">{{ report.name }}</a>
+                    {% endcomment%}
+                  </td>
+                  <td >{{  report.SHOTEI_TIME  }}</td>
+                  <td >{{  report.SHOTEINAI_WORK_TIME  }}</td>
+                  <td >{{  report.HOTEINAI_OVER_TIME  }}</td>
+                  <td >{{  report.HOTEI_OVER_TIME  }}</td>
+                  <td >{{  report.HOTEIGAIKYU_TIME  }}</td>
+                  <td >{{  report.HOTEIKYU_TIME  }}</td>
+                  <td >{{  report.MIDNIGHT_TIME  }}</td>
+                  <td >{{  report.ALL_WORK_TIME  }}</td>
+                  <td >{{  report.JITU_WORK_TIME  }}</td>
+                  <td >{{  report.LATE_TIME  }}</td>
+                  <td >{{  report.EARLY_TIME  }}</td>
+                  <td >{{  report.SHOTEI_LESS_TIME  }}</td>
+                  <td >{{  report.OVERTIME_TIME  }}</td>
+                  <td >{{  report.SHOTEI_COUNT  }}日</td>
+                  <td >{{  report.WORK_COUNT  }}日</td>
+                  <td >{{  report.HOTEIGAI_WORK_COUNT  }}日</td>
+                  <td >{{  report.HOTEI_WORK_COUNT  }}日</td>
+                  <td >{{  report.KEKKIN_COUNT  }}日</td>
+                  <td >{{  report.LATE_COUNT  }}日</td>
+                  <td >{{  report.EARLY_COUNT  }}日</td>
+                  <td >{{  report.HOLIDAY_COUNT  }}日</td>
+                  <td >{{  report.YUKYU_COUNT  }}日</td>
+                  <td >{{  report.YUKYU_ZAN_COUNT  }}日</td>
+                  <td >{{  report.KAKIKYU_COUNT  }}日</td>
+                  <td >{{  report.KAKIKYU_ZAN_COUNT  }}日</td>
+                  <td >{{  report.FURIKYU_COUNT  }}日</td>
+                  <td >{{  report.FURIKYU_ZAN_COUNT  }}日</td>
+                  <td >{{  report.DAIKYU_COUNT  }}日</td>
+                  <td >{{  report.DAIKYU_ZAN_COUNT  }}日</td>
+                  <td >{{  report.TOKUKYU_COUNT  }}日</td>
+                  <td >{{  report.KYUSHOKU_COUNT  }}日</td>
+                  <td >{{  report.MONTH_YUKYU_COUNT  }}日</td>
+                  <td >{{  report.MONTH_KAKIKYU_COUNT  }}日</td>
+                  <td >{{  report.AM_YUKYU_COUNT  }}日</td>
+                  <td >{{  report.PM_YUKYU_COUNT  }}日</td>
+                  <td >0</td>
+                  <td >未申請</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
+        {% comment "下記の部分はコメントアウト" %}
+        <div>
+          表示件数
+          <select name="per" id="per" form="search_form">
+            <option value="10">10</option>
+            <option selected="selected" value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+          件
+        </div>
+        {% endcomment%}
+        {% comment "下記の部分はコメントアウト" %}
+        <p>
+          <a href="#top">ページTOPへ</a>
+        </p>
+        {% endcomment%}
+      </div>
+    </main>
+{% endblock  %}
+

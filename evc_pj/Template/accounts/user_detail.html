@@ -1,0 +1,20 @@
+{% extends "commons/Evc_base.html" %}
+{% load static %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_PassChange.css" %}'>
+{% endblock %}
+
+{% block title %}ユーザ情報{% endblock %}
+
+{% block headertitle %}ユーザ情報{% endblock %}
+
+{% block content %}
+  <fieldset>
+    <h1>ユーザ情報</h1>
+    <form>
+      <input type="text" id="UID" value="{{ request.user.user_id }}" readonly>
+      <input type="text" id="UID" value="{{ request.user.user_name }}" readonly>
+    </form>
+  </fieldset>
+{% endblock %}

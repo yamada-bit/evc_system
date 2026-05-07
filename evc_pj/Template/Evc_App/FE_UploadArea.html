@@ -1,0 +1,168 @@
+{% extends "commons/Evc_base.html" %}
+{% load static %}
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_UploadArea.css" %}?241029'>
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Cache-Control" content="no-cache" />
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+
+    <form id="uploadform" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.postext }}
+    {{ form.pagebtn }}
+      <div class="card" id="card_canvas">
+        <canvas id="area_canvas"></canvas>
+        <div style="display:none;">
+          <img id="bk_img" src='{{ imgpath }}'>
+        </div>
+      </div>
+      <aside>
+        <div class="aside-contents">
+          <p class="lead">マウスのドラッグで領域を指定し<br>実行してください。</p>
+          <div class="btn-container">
+            <div class="btn-area">
+              <span class="material-symbols-outlined">
+                delete
+              </span>
+              <input type="button" value='領域クリア' id="chkid" onClick="clear_all();">
+            </div>
+            <div class="btn-area" style="display:none;">
+              <span class="material-symbols-outlined">
+                check_circle
+              </span>
+              <input type="submit" class='upload-btn green' name="btn_save" value="領域保存" onclick="return check(this);">
+            </div>
+            <div class="btn-area">
+              <span class="material-symbols-outlined">
+                check_circle
+              </span>
+              <input type="submit" class='upload-btn' name="btn_upload" value="実行" onclick="return check(this);">
+            </div>
+            <div class="btn-area">
+              <span class="material-symbols-outlined">
+                cancel
+              </span>
+              <input type="submit" class='upload-btn' name="btn_cancel" value="キャンセル">
+            </div>
+          </div>
+          <div id="MovePage">
+            {% if page_obj.has_previous %}
+            <a href="{% url 'Evc_App:upload_area' previous_image_no %}" id="back_btn">
+              <span class="material-symbols-outlined arrow">
+                arrow_back_ios
+              </span>
+              <span>前頁</span>
+            </a>
+            {% else %}
+            <a id="back_btn" style="color:gray;" disabled=disabled>
+              <span class="material-symbols-outlined">
+                arrow_back_ios
+              </span>
+              <span>前頁</span>
+            </a>
+            {% endif %}
+    
+            {% if page_obj.has_next %}
+            <a href="{% url 'Evc_App:upload_area' next_image_no %}" id="next_btn">
+              <span>次頁</span>
+              <span class="material-symbols-outlined arrow">
+                arrow_forward_ios
+              </span>
+            </a>
+            {% else %}
+            <a id="next_btn" style="color:gray;text-decoration:none;">
+              <span>次頁</span>
+              <span class="material-symbols-outlined">
+                arrow_forward_ios
+              </span>
+            </a>
+            {% endif %}
+          </div>
+          <p class="lead"　 style="display:none;">ページ遷移で<br>領域は保存します。</p>
+        </div>
+      </aside>
+
+  
+      {% comment "下記の部分はコメントアウト" %}
+      {% endcomment%}
+      <input type="hidden" id="areas" name="areas" value="{{ areas }}">
+      <input type="hidden" id="angle" name="angle" value="{{ angle }}">
+      <input type="hidden" id="image_no" name="image_no" value="{{ image_no }}">
+      <input type="hidden" id="othersareas" name="othersareas" value="{{ othersareas }}">
+      
+    </form>
+    <dialog id="confirm_dialog">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p id="confirm_msg"></p>
+      <div class="btn-area-confirm">
+        <button id="confirm_ok">はい</button>
+        <button id="confirm_no">いいえ</button>
+      </div>
+    </dialog>
+  </main>
+  <!-- ////////////////////////////////////// -->
+  <!-- <script src="{% static 'js/Evc_area_script.min.js' %}"></script> -->
+  <script src="{% static 'js/Evc_area_script.js' %}"></script>
+  <script type="text/javascript">
+    function show_confirm(str, href) {
+        let messagebox = document.getElementById('confirm_dialog');
+        document.getElementById('confirm_msg').innerText = str;
+        let btn_ok = document.getElementById('confirm_ok');
+        let btn_no = document.getElementById('confirm_no');
+        btn_ok.addEventListener('click', function() {
+          messagebox.close();
+          location.href = href;
+        });
+        btn_no.addEventListener('click', function() {
+          messagebox.close();
+        });
+        messagebox.showModal();
+    }
+    let isEdit = false
+    // document.getElementById('cancel').addEventListener('click', cancel);
+    $(document).on('click', 'a', function(e) {
+      let id = e.currentTarget.id;
+      if (id == 'back_btn' || id == 'next_btn') {
+        e.preventDefault();
+        let href = $(this).attr('href');
+        if (href !== undefined) {
+          // let saved = '{{ saved }}';
+          // if (isEdit) {
+          //   show_confirm('領域が保存されていません。ページ移動してよろしいですか？', href);
+          // } else {
+          //   location.href = href;
+          // }
+          if (check(null)) {
+            if (isEdit) {
+              document.getElementById( "id_pagebtn" ).value = id;
+              $('#uploadform').submit();
+            } else {
+              location.href = href;
+            }
+          }
+          // let result = window.confirm('領域保存が実行されていません。よろしいですか？');
+          // if (result) {
+          //   location.href = href;
+          // }
+        }
+      }
+    });
+
+  </script>
+{% endblock %}

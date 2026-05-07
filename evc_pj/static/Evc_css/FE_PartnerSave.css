@@ -1,0 +1,38 @@
+@import url("FE_FileSave.css");
+
+label > input {
+  display: none;
+}
+
+#fake_text_box {
+  border: 1px solid rgba(255, 255, 255, .3);
+  padding: .4em 1em;
+  color: #fff;
+  margin-top: 1.5em;
+}
+
+input[type="submit"] {
+  width: fit-content;
+  padding-inline: 2em;
+  align-self: center;
+}
+.upload_download{
+	text-align: center;
+}
+#export {
+  /* margin-left:auto; */
+  /* margin-right: auto; */
+  position: absolute;
+  right: 0;
+  transition: 0.5s;
+  color: #666;
+}
+#export span {
+  font-size: 2.4em;
+  vertical-align: middle;
+  padding-bottom: 0.1em;
+  margin-right: 0.1em;
+}
+#export:hover {
+  color: var(--secondary-c);
+}

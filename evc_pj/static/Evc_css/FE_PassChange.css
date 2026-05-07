@@ -1,0 +1,71 @@
+@import url("FE_User.css");
+
+form {
+  padding-bottom: 51.2px;
+}
+.sub-title {
+  margin-block: 4em 3em;
+}
+
+input[type="password"], input[type="text"] {
+  height: 100%;
+  width: 100%;
+  font-size: 18px;
+  padding-inline: 3em 0.6em;
+}
+
+.pass-box {
+  background-color: #fff;
+  height: 50px;
+  width: 100%;
+  position: relative;
+  margin-bottom: 2em;
+}
+
+.u-id {
+  border-radius: 3em;
+  background-color: rgb(92, 233, 205);
+  height: 62px;
+  margin-bottom: 3em;
+  color: #666;
+}
+
+.u-id input {
+  cursor: default;
+}
+
+.pass-box span {
+  position: absolute;
+  color: #666;
+  font-size: 30px;
+  top: 10px;
+  left: .8rem;
+}
+
+.u-id span {
+  top: 16px;
+}
+
+input[type="password"]:focus {
+  border-bottom: 1px solid #666;
+  border-top: 1px solid transparent;
+}
+
+.form-Btn {
+  margin-top: 2em;
+}
+
+@media (max-width: 767px) {
+  .sub-title {
+    margin: 0;
+  }
+
+  form {
+    height: 100vh;
+    width: 100%;
+  }
+
+  .u-id {
+    margin-bottom: 2em;
+  }
+}

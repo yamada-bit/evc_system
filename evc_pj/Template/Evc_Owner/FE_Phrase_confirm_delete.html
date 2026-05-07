@@ -1,0 +1,30 @@
+{% extends "commons/Evc_base_phrase.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_PhraseList.css" %}'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <p>{{ object }} を削除していいですか?</p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="search" class="btn btn-danger" value="削除">
+        <input type="submit" class="btn btn-danger" value="削除">
+        <a href="{% url 'Evc_Owner:phrase_detail' object.pk %}">キャンセル</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

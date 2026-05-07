@@ -1,0 +1,31 @@
+{
+  "name": "Django DevContainer",
+  "dockerComposeFile": [
+    "../docker-compose.dev.yml"
+  ],
+  "service": "web",
+  "workspaceFolder": "/app",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-azuretools.vscode-docker",
+        "batisteo.vscode-django"
+      ]
+    }
+  },
+
+  // "postCreateCommand": "pip install -r requirements.txt && python manage.py migrate",
+
+  "postCreateCommand": [
+    "bash .devcontainer/restore-timestamps.sh",
+    "pip install -r requirements.txt",
+    "python manage.py migrate"
+  ],
+
+  "remoteUser": "django"
+}

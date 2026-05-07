@@ -1,0 +1,117 @@
+@import url("FE_PartnerList.css");
+
+#form-area {
+  padding-block: 0 1.4em;
+}
+
+#form-area form {
+  padding-top: 1.4em;
+}
+
+#form-area form > div {
+  background-color: #fff;
+  border-radius: 1em;
+  padding: 1em;
+  box-shadow: 5px 3px 7px 2px #32354437;
+  width: 26%;
+}
+
+#form-area h2 {
+  text-align: center;
+  color: #fff;
+}
+
+.search-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(
+    90deg,
+    rgba(225, 225, 225, 0.8),
+    #323544a6,
+    rgba(225, 225, 225, 0.8)
+  );
+  padding-block: 0.6em;
+  margin: 0 calc(50% - 50vw + 125px);
+}
+
+#form-area h3 {
+  text-align: center;
+  color: #999;
+  font-weight: 300;
+  margin-bottom: 0.8em;
+}
+
+input[type="radio"]::before {
+  border: 1px solid #999;
+}
+
+input[type="text"],
+input[type="month"],
+select[name="owner"] {
+  padding: 0.5em 1em;
+  height: fit-content;
+  border-radius: 2em;
+  border: 1px solid #999;
+  cursor: pointer;
+}
+
+.select-wrapper.owner {
+  width: 100%;
+  color: #ccc;
+}
+
+select[name="owner"] {
+  width: 100%;
+}
+
+input[type="text"] {
+  width: 104px;
+}
+input[type="month"] {
+  width: 145px;
+  color: #ccc;
+  height: 40.4px;
+}
+
+#export a {
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.s-date {
+  text-align: center;
+}
+
+.s-date input {
+  text-align: left;
+}
+
+.s-radio-body {
+  display: flex;
+  justify-content: space-around;
+  height: 40.4px;
+  align-items: center;
+}
+
+th:first-child, td:first-child {
+  width: 10%;
+}
+th:nth-child(2), td:nth-child(2) {
+  width: 26%;
+}
+th:nth-child(3), td:nth-child(3) {
+  width: 26%;
+}
+th:nth-child(4), td:nth-child(4) {
+  width: 11%;
+}
+th:nth-child(5), td:nth-child(5) {
+  width: 13%;
+}
+th:last-child, td:last-child {
+  width: 14%;
+}
+
+

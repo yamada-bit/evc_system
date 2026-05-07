@@ -1,0 +1,48 @@
+@import url("FE_FileSave.css");
+.sub-title {
+  background-color: transparent;
+}
+main {
+  margin: 0;
+  padding-top: 0px;
+}
+.logo-area {
+  width: 100.48px;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 4px;
+}
+.logo-area img {
+  width: 100%;
+}
+.card {
+  width: 100%;
+  height: 100%;
+  text-align: left;
+}
+
+.sub-title {
+  top: 10px;
+  left: calc(50% - 34.5px);
+}
+.sub-title img {
+  width: 80%;
+}
+
+#g-menu li a {
+  color: #333;
+}
+#g-menu li .op {
+  color: #bbb;
+}
+#g-menu .active a,
+#g-menu li a:hover {
+  background-color: initial;
+  color: initial;
+}
+
+#g-menu .active a,
+#g-menu li .op:hover {
+  background-color: #000;
+  color: #fff;
+}

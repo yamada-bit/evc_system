@@ -1,0 +1,256 @@
+{% extends "commons/Kms_base_calendar.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Kms_Calendar/css/FE_EditReport.css" %}?250213'>
+{% endblock %}
+{% block script_block %}
+{% comment "下記の部分はコメントアウト" %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.0.375/pdf.min.mjs"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src='{% static "js/dialog.min.js" %}' defer></script>
+{% endcomment %}
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+    </div>
+    <div id="s-toggle" class="sp" style="display:none;">
+      <span class="material-symbols-outlined">edit_square</span>
+    </div>
+    <div class="edit-flex">
+      <figure id="pdfimage" class="card">
+        <div class="card-contents">
+          <h2> {{ pdf_name }} </h2>
+          {% comment "下記の部分はコメントアウト" %}
+          {% if src_pdffile %}
+          <h2 style="display:none;"> ここにPDFを表示します</h2>
+          {% else %}
+          <h2 style="display:none;"> ここに画像を表示します</h2>
+          {% endif %}
+          {% endcomment %}
+          {% comment "下記の部分はコメントアウト" %}
+          <!-- pdf.js を使う ver4から表示できない -->
+          <div class="imagebox" id="imagebox">
+            <canvas id="pdf-canvas"></canvas>
+          </div>
+          <button class="button-image" id="prev-page">＜</button>
+          <button class="button-image" id="next-page">＞</button>
+          <button class="button-image" id="zoom-out">ー</button>
+          <button class="button-image" id="zoom-in">＋</button>
+          <input type="hidden" id="pdf_url" value="{{ pdffile }}">
+          <!-- pdf.js を使う -->
+          {% endcomment %}
+          {% comment "下記の部分はコメントアウト" %}
+          <!-- pdf埋め込み を使う -->
+          <embed src="{{ pdffile }}" width="100%" height="100%">
+          <iframe src="{{ pdffile }}" width="100%" height="100%"></iframe>
+          <object data="{{ pdffile }}" type="application/pdf" width="100%" height="100%">
+            <p>PDFが表示できない場合の代替テキスト。</p>
+          </object>          
+          {% endcomment %}
+          <div class="imagebox" id="imagebox">
+            <canvas id="image_canvas"></canvas>
+          </div>
+          <div class="image-act">
+            {% if page_count == 1 %}
+            <div class="btn-container" id="btn_prev">
+              <input type="hidden" id="prev_page" class="button-image"  value="＜前">
+            </div>
+            <div class="btn-container" id="btn_next">
+              <input type="hidden" id="next_page" class="button-image" value="次＞">
+            </div>
+            {% else %}
+            <div class="btn-container disabled" id="btn_prev">
+              <input type="button" id="prev_page" class="button-image"  value="＜前">
+            </div>
+            <div class="btn-container" id="btn_next">
+              <input type="button" id="next_page" class="button-image" value="次＞">
+            </div>
+            {% endif %}
+            {% if src_pdffile %}
+            <div class="btn-container">
+              <a href="{{ pdffile }}" target="_blank" rel="noopener noreferrer" class="button-image" >PDF表示</a>
+            </div>
+            {% endif %}
+          </div>
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="image-act">
+            <button class="button-image" id="prev_page">＜前</button>
+            <button class="button-image" id="next_page">次＞</button>
+            <a href="{{ pdffile }}" target="_blank" rel="noopener noreferrer" class="button-image" >PDF表示</a>
+            <!-- <span>マウスホイールでズーム、ドラッグでスクロール</span> -->
+          </div>
+          {% endcomment %}
+          <input type="hidden" id="bk_img" value="{{ bk_img }}">
+          <input type="hidden" id="page_count" value="{{ page_count }}">
+          {% comment "下記の部分はコメントアウト" %}
+          <input type="hidden" id="bk_img1" value="{{ bk_img1 }}">
+          <input type="hidden" id="bk_img2" value="{{ bk_img2 }}">
+          {% for bk_img in bk_imgs %}
+            <input type="hidden" id="bk_img_{{ forloop.counter }}" value="{{ bk_img }}">
+          {% endfor %}
+          {% endcomment %}
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="imagebox" id="imagebox">
+            <canvas id="image_canvas"></canvas>
+            <div style="display:none;">
+              <img id="bk_img" src='{{ imgfile }}'>
+            </div>
+          </div>
+          <button  class="button-image"  onclick="setResize(-1)">ー</button>
+          <button  class="button-image"  onclick="setResize(+1)">＋</button>
+          {% if src_pdffile %}
+          <a href="{{ pdffile }}" target="_blank" rel="noopener noreferrer" class="button-image" >PDF表示</a>
+          {% else %}
+          <a class="button-image" href="{{ imgfile }}" download>画像ダウンロード</a>
+          {% endif %}
+          {% endcomment %}
+        </div>
+      </figure>
+      <div id="shiori" class="card"  style="display:none;">
+        <div class="card-contents">
+          <h2>テキスト</h2>
+          <form id="form1" name="form1" method="post">
+            {% csrf_token %}
+            {{ form.report_id }}
+            {{ form.fulltext }}
+            <div class="btn-area">
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  edit
+                </span>
+                <input type="button" id="edit" value="編集">
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  refresh
+                </span>
+                <input type="button" id="update" value="更新">
+              </div>
+            </div>
+            <input type="hidden" id="submit_action1" name="submit_action" value="update">
+          </form>
+        </div>
+      </div>
+      <aside id="serchcon">
+        <h2>情報を編集</h2>
+        <form  id="form2" name="form2" method="post">
+          {% csrf_token %}
+          {{ form.report_id }}
+          <div class="e-data">
+            <label>報告書名
+              <div>
+              {{ form.report_name }}
+              </div>
+            </label>
+            {{ form.report_name.errors }}
+          </div>
+          <div class="date-wrapper">
+            <label>報告月
+              <div>
+                {{ form.report_month }}
+              </div>
+            </label>
+            {{ form.report_month.errors }}
+          </div>
+          <div>
+            <label>備考
+              <div>
+              {{ form.notes }}
+              </div>
+            </label>
+            {{ form.notes.errors }}
+          </div>
+          {% comment "下記の部分はコメントアウト" %}
+          <div class="form-user">
+            <p class="form-label"><span class="e-data form-bikou"></span>備考</p>
+            {{ form.notes }}
+          </div>
+          {{ form.notes.errors }}
+          {% endcomment %}
+          <input type="hidden" id="submit_action2" name="submit_action" value="commit">
+        </form>
+        <div class="btn-area bottom-btn">
+          <div class="btn-container">
+            <span class="material-symbols-outlined">
+              check_circle
+            </span>
+            <input type="button" id="commit" name="commit" onclick="commit()" value="登録">
+          </div>
+            <div class="btn-container">
+            <span class="material-symbols-outlined">
+              delete
+            </span>
+            <input type="button" id="delete_report" value="削除 ">
+          </div>
+          <div class="btn-container">
+            <span class="material-symbols-outlined">
+              undo
+            </span>
+            <input type="button" id="cancel" value="戻る">
+          </div>
+        </div>
+        {% comment "下記の部分はコメントアウト" %}
+        <div id="MovePage">
+          {% if page_obj.has_previous %}
+          <a href="{% url 'Evc_App:sconcreate' previous_evi_id %}" id="back_btn">
+            <span class="material-symbols-outlined arrow">
+              arrow_back_ios
+            </span>
+            <span>前頁</span>
+          </a>
+          {% else %}
+          <a id="back_btn" style="color:gray;" disabled=disabled>
+            <span class="material-symbols-outlined">
+              arrow_back_ios
+            </span>
+            <span>前頁</span>
+          </a>
+          {% endif %}
+  
+          {% if page_obj.has_next %}
+          <a href="{% url 'Evc_App:sconcreate' next_evi_id %}" id="next_btn">
+            <span>次頁</span>
+            <span class="material-symbols-outlined arrow">
+              arrow_forward_ios
+            </span>
+          </a>
+          {% else %}
+          <a id="next_btn" style="color:gray;text-decoration:none;">
+            <span>次頁</span>
+            <span class="material-symbols-outlined">
+              arrow_forward_ios
+            </span>
+          </a>
+          {% endif %}
+        </div>
+        {% endcomment %}
+      </aside>
+    </div>
+    <dialog id="del-record">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p>このレコードを削除します。<br>よろしいですか？</p>
+      <div class="btn-area">
+        <button id="close">キャンセル</button>
+        <button id="scon_delete">削除</button>
+      </div>
+    </dialog>    
+  </main>
+{% endblock %}
+{% block extrajs %}
+    <!-- <script src="{% static 'Kms_Calendar/js/edit_report.js' %}" defer></script> -->
+    <script src="{% static 'Kms_Calendar/js/edit_report.min.js' %}?250418" defer></script>
+{% endblock %}
+  

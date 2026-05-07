@@ -1,0 +1,169 @@
+{% extends "commons/Fms_base_ocrform.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_ocrform %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Fms_Ocrform/css/FE_OcrformList.css" %}'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div id="s-toggle" class="sp" style="display:none;">
+      <span class="material-symbols-outlined">search</span>
+    </div>    
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+    <div>
+      <form name="SearchForm" id="searchForm" method="get">
+      {% comment "下記の部分はコメントアウト" %}
+      {% csrf_token %}
+      {% endcomment%}
+        {{ form.page_size }}
+      </form>
+    </div>
+    <table class="ocrform_table">
+      <tr>
+        <th>フォームID</th>
+        <th>フォーム名</th>
+        {% comment "下記の部分はコメントアウト" %}
+        <th class="t-none">フォームID</th>
+        <th>フォーム名</th>
+        <th class="t-none">会社名（略称）</th>
+        <th>担当者</th>
+        <th class="t-none">担当者メールアドレス</th>
+        <th class="t-none">電話番号</th>
+        <th class="t-none">備考</th>
+        <th>利用者数</th>
+        {% endcomment%}
+      </tr>
+      {% for item in object_list %}
+      <tr data-href="{% url 'Fms_Ocrform:edit_ocrform' data_type item.ocrform_id 1 %}">
+        <td>
+          <div>{{item.ocrform_id}}</div>
+        </td>
+        <td>
+          <div>{{item.ocrform_name}}</div>
+        </td>
+        {% comment "下記の部分はコメントアウト" %}
+        <td class="t-partner">
+          <div class="pn-id">{{item.ocrform_id}}</div>
+          <div class="pn-name">{{item.ocrform_name}}</div>
+        </td>
+        <td class="t-manager">
+          <div class="mn-name">{{item.charge_name}}</div>
+          <div class="mn-mail">{{item.charge_email}}</div>
+        </td>
+        <td class="t-address">
+          <div class="ad-tel">{{item.tel_no}}</div>
+          <div class="ad-fax">{{item.notes}}</div>
+        </td>
+        <td class="t-flag">
+          <div class="f-flag">{{item.users_number}}</div>
+        </td>
+        {% endcomment%}
+      </tr>
+      {% endfor %}
+    </table>
+    <nav>
+      {% if is_paginated %}
+      <ul class="pagination">
+        <!-- 前へ の部分 -->
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.previous_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_before</span>
+            </a>
+          </li>
+        {% endif %}
+        <!-- 数字の部分 -->
+        <!-- if 3 < page_obj.number -->
+        {% if 2 < page_obj.number %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' 1 %}">1</a>
+          </li>
+        {% endif %}
+        <!-- if 4 < page_obj.number -->
+        {% if 3 < page_obj.number %}
+          <li>…</li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range  %}
+        <!-- page_obj.number|add:-2 <= num and num <= page_obj.number|add:2 -->
+          {% if page_obj.number|add:-1 <= num and num <= page_obj.number|add:1 %}
+            {% if page_obj.number == num %}
+              <li class="page-num active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% else %}
+              <li class="page-num"><a class="page-link" href="?{% url_replace request 'page' num %}">{{ num }}</a></li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        <!-- add:3 -->
+        {% if page_obj.number|add:2 < page_obj.paginator.num_pages %}
+          <li>…</li>
+        {% endif %}
+        <!-- add:2  %} -->
+        {% if page_obj.number|add:1 < page_obj.paginator.num_pages %}
+          <li class="page-num">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.paginator.num_pages %}">{{ page_obj.paginator.num_pages }}</a>
+          </li>
+        {% endif %}
+
+        <!-- 次へ の部分 -->
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace request 'page' page_obj.next_page_number %}">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link inactive" href="#">              
+              <span aria-hidden="true" class="material-symbols-outlined arrow">navigate_next</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+      {% endif %}
+      <div class="page-select">
+        <label for="page_size_choice">表示件数</label>
+        <div class="select-wrapper">
+          <select id="select_page_size" name="page_size_choice" onchange="change_page_size();">
+            {% for value, text in form.page_size_choice.field.choices %}
+            <option value="{{ value }}" {% if value == page_size %} selected {% endif %}>{{ text }}</option>     
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </nav>
+  </main>
+  <script type="text/javascript">
+    $(function(){
+      $('tr[data-href]').on('click', function(){
+        location.href = $(this).data('href');
+      });
+    });
+
+    function change_page_size(){
+      num = document.getElementById( "select_page_size" ).value;
+      document.getElementById( "id_page_size" ).value = num;
+      $("#searchForm").submit();
+    }   
+  </script>
+{% endblock %}
+

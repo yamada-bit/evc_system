@@ -1,0 +1,151 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+pgdata
+
+# C extensions
+*.so
+
+# Django database files
+*.sqlite3
+*.db
+
+# Django migrations
+# **/migrations/
+# !**/migrations/__init__.py
+staticfiles/
+media/
+evc_pj/static_stg/
+
+# Environment variables
+.env
+*.env
+.env.stg
+.env.prod
+.env.*
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.pipenv/
+
+# media
+data_root/
+data_root_stg/
+
+Google/
+
+# Pytest
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
+
+# Pyre
+.pyre/
+
+# Logs
+*.log
+logs/
+.last_stg_tag
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build files
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Static/media files (optional — use with care)
+# staticfiles/
+# media/
+
+# Unit test results
+junit*.xml
+
+# Docker
+*.pid
+
+# JetBrains IDEs (PyCharm, etc.)
+*.iml
+
+certbot/
+certbot_conf_stg/
+certbot_test/
+certbot_www_stg/
+letsencrypt/
+ssl/
+# =========================
+# Secret / Keys
+# =========================
+# Local test certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Google Cloud
+*gcp*.json
+*google*.json
+service-account*.json
+
+# =========================
+# Backup
+# =========================
+backups/
+backup/
+*.sql
+*.dump
+*.bak
+*.tar
+*.tar.gz
+*.zip
+
+backup_dev/
+# =========================
+# Docker
+# =========================
+docker-data/
+postgres_data/
+
+# DevContainer local files
+.devcontainer/*.env
+
+# =========================
+# Node
+# =========================
+node_modules/
+
+# =========================
+# Temporary
+# =========================
+tmp/
+temp/

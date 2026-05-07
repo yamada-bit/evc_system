@@ -1,0 +1,187 @@
+{% extends "commons/Kms_base_kintai.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+    <link rel="stylesheet" type="text/css" href='{% static "Kms_Attendance/css/FE_Edit.css" %}?250213'>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+    <main>
+      <div id="s-toggle" class="sp">
+        <span class="material-symbols-outlined">search</span>
+      </div>
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+      </div>
+      <div id="form-area">
+        <form method="post" action="{% url 'Kms_Attendance:request_edit' year month day mode %}">
+          {% csrf_token %}
+          <table id="edit_table" class="edit-table">
+            <tbody>
+              <tr>
+                <th>氏名</th>
+                <td>{{ username }}</td>
+              </tr>
+              <tr>
+                <th>社員番号</th>
+                <td>{{ number }}</td>
+              </tr>
+              <tr>
+                <th>日付</th>
+                <td>{{ form.date_field }}</td>
+              </tr>
+              <tr>
+                <th>勤務区分</th>
+                <td class="select-box custom-select">{{ form.kbns_cd }}</td>
+              </tr>
+              <tr>
+                <th>
+                  出勤・退勤時刻
+                  <span>(打刻)</span>
+                </th>
+                <td>
+                  <p>
+                    {{ form.CORRET_START_TIME }}
+                    {{ form.START_TIME }}
+                    &nbsp;
+                    ~
+                    &nbsp;
+                    {{ form.CORRET_END_TIME }}
+                    {{ form.END_TIME }}
+                    &nbsp;
+                    <input type="checkbox" name="next_day_end" id="next_day_end" value="1"  {% if end_next_flg == 1 %} checked {% endif %}/>
+                    <label for="next_day_end">翌日</label>
+                  </p>
+                  <div id="auto_set_rest_msg" ></div>
+                </td>
+              </tr>
+              {% for rest in restlist %}
+              <tr id="extra_rest_tr{{ forloop.counter }}" class="extra-rest-tr">
+                <th>休憩{{ forloop.counter }}</th>
+                <td>
+                  <span>
+                    <input maxlength="5" size="5" type="text" value="{{ rest.REST_START_TIME }}" name="rest_start" id="rest_{{ forloop.counter }}_start" />
+                    &nbsp;
+                    <input type="checkbox" name="rest_start_chk" id="next_day_rest_{{ forloop.counter }}_start" value="{{ forloop.counter }}" {% if rest.REST_START_NEXT_FLG == 1 %} checked {% endif %}/>
+                    <label for="next_day_rest_{{ forloop.counter }}_start">翌日</label>
+                    ~
+                    &nbsp;
+                    <input maxlength="5" size="5" type="text" value="{{ rest.REST_END_TIME }}" name="rest_end" id="rest_{{ forloop.counter }}_end" />
+                    &nbsp;
+                    <input type="checkbox" name="rest_end_chk" id="next_day_rest_{{ forloop.counter }}_end" value="{{ forloop.counter }}" {% if rest.REST_END_NEXT_FLG == 1 %} checked {% endif %}/>
+                    <label for="next_day_rest_{{ forloop.counter }}_end">翌日</label>
+                    {%if forloop.last %}
+                    <button id="add_extra_rest" type="button" class="btn-image add-extra-rest" >追加</button>
+                    {% endif %}
+                  </span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr id="extra_rest_tr1" class="extra-rest-tr">
+                <th>休憩1</th>
+                <td>
+                  <span>
+                    <input maxlength="5" size="5" type="text" value="" name="rest_start" id="rest_1_start" />
+                    &nbsp;
+                    <input type="checkbox" name="rest_start_chk" id="next_day_rest_1_start" value="1" />
+                    <label for="next_day_rest_1_start">翌日</label>
+                    ~
+                    &nbsp;
+                    <input maxlength="5" size="5" type="text" value="" name="rest_end" id="rest_1_end" />
+                    &nbsp;
+                    <input type="checkbox" name="rest_end_chk" id="next_day_rest_1_end" value="1" />
+                    <label for="next_day_rest_1_end">翌日</label>
+                    <button id="add_extra_rest" type="button" class="btn-image add-extra-rest" >追加</button>
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+              <tr id="rest_0_tr" style="display:none;">
+                <th>rest_no</th>
+                <td>
+                  <span>
+                    <input type="text" name="rest_start" id="start_rest0" maxlength="5" size="5" />
+                    &nbsp;
+                    <input type="checkbox" name="rest_start_chk" id="next_day_start_rest0" value="1"  />
+                    <label for="next_day_start_rest0">翌日</label>
+                    ~
+                    &nbsp;
+                    <input type="text" name="rest_end" id="end_rest0" maxlength="5" size="5" />
+                    &nbsp;
+                    <input type="checkbox" name="rest_end_chk" id="next_day_end_rest0" value="1" />
+                    <label for="next_day_end_rest0">翌日</label>
+                    &nbsp;
+                    <a class="btn-image remove-extra-rest" href="javascript:void(0)">-</a>
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <th>経費</th>
+                <td>{{ form2.EXPENSES }}</td>
+              </tr>
+              <tr>
+                <th>備考</th>
+                <td>{{ form2.MEMO }}</td>
+              </tr>
+              <tr>
+                <th>所属長コメント</th>
+                <td>{{ form2.AGREE_COMMENT }}</td>
+              </tr>
+              <tr>
+                <th>申請承認</th>
+                <td>{{ form.stat }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <table hidden>
+          {% for field in form %}
+              {% if field.is_hidden %}
+                {{ field.as_hidden }}
+              {% endif %}
+          {% endfor %}
+          </table>
+          <div class="btn-area">
+            <input class="btn-image upload-btn" type="submit" name="commit" value="登録">
+            {% if mode == 1 %}
+            <input class="btn-image" type="submit" name="add" value="申請">
+            {% else %}
+            <input class="btn-image" type="submit" name="approval" value="承認">
+            {% endif %}
+            <input class="btn-image" type="submit" name="cancel" value="戻る">
+            <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}">
+          </div>
+        </form>
+      </div>
+    </main>
+{% endblock  %}
+
+{% block extrajs %}
+    {% comment "下記の部分はコメントアウト" %}
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    {% endcomment%}
+    <script src="{% static 'Kms_Attendance/js/request.js' %}"></script>
+    {% comment "下記の部分はコメントアウト" %}
+    <script>
+      // const kbns_cd = document.getElementById('id_kbns_cd');
+      // const start_time = document.getElementById('id_CORRET_START_TIME');
+      // const end_time = document.getElementById('id_CORRET_END_TIME');
+    
+      // kbns_cd.addEventListener('change', function() {
+      //   if (kbns_cd.value == 2) {
+      //     start_time.required = false;
+      //     end_time.required = false;
+      //   } else {
+      //     start_time.required = true;
+      //     end_time.required = true;
+      //   }
+      // });
+    </script>
+    {% endcomment%}
+{% endblock %}

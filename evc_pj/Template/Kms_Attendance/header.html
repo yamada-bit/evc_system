@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <title>CRUD入門</title>
+
+</head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="navbar-nav">
+        <!-- urls.pyで定義したアプリ名 + urlpatternのpathで定めたnameを指定し、リンクで遷移できるようにする -->
+        <a class="navbar-brand" href="{% url 'Kms_Attendance:list' %}">CompanyList</a>
+      </div>
+    </nav>
+
+    <!-- Company_list.htmlのHTMLコンテンツを呼び出し -->
+    <div class="container">
+      {% block content_block %}
+      {% endblock %}
+    </div>
+
+  </body>
+</html>

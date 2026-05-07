@@ -1,0 +1,325 @@
+{% extends "commons/Kms_base_kintai.html" %}
+{% load static %}
+{% load humanize %}
+{% load param_extras_management %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Kms_Attendance/css/FE_Monthly.css" %}?250213'>
+{% endblock %}
+{% block script_block %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.1/js/jquery.tablesorter.min.js"></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+    <main>
+      <div id="s-toggle" class="sp">
+        <span class="material-symbols-outlined">search</span>
+      </div>
+      <div class="h1-wrapper">
+        <h1 class="sub-title">{{ process_title }}</h1>
+      </div>
+
+      <div id="form-area">
+        <form name="SearchForm" id="searchForm" method="post">
+        {% csrf_token %}
+          <div class="search-container">
+            <div class="calendar-nav">
+              {% comment "下記の部分はコメントアウト" %}
+              {% endcomment%}
+              <a href="{% url 'Kms_Attendance:monthly' month_previous.year month_previous.month mode %}">前月</a>
+              <span class="calendar-month">{{ month_current | date:"Y年m月" }}</span>
+              <a href="{% url 'Kms_Attendance:monthly' month_next.year month_next.month mode %}">次月</a>
+            </div>
+            {% if mode != 1 %}
+            <a class="btn-image" data-confirm="CSV出力を実行しますか？" href="{% url 'Kms_Attendance:csv_export' month_current.year month_current.month %}">CSV出力</a>
+            <a class="btn-image" data-confirm="PDF出力を実行しますか？" href="{% url 'Kms_Attendance:pdf_view' month_current.year month_current.month %}" target="_blank">PDF出力</a>
+            {% endif %}
+            <div>
+              {% if mode == 1 %}
+              <input class="btn-image" type="submit" name="bulk_request" value="一括申請">
+              {% else %}
+              <input class="btn-image" type="submit" name="cancel" value="戻る">
+              {% comment "下記の部分はコメントアウト" %}
+              <a class="btn-image" href="{{request.META.HTTP_REFERER}}">戻る</a>
+              {% endcomment%}
+              {% endif %}
+            </div>
+          </div>
+          <input type="hidden" id="current_month" name="current_month" value="{{ month_current }}">
+          <input type="hidden" id="user_id" name="user_id" value="{{ user_id }}">
+          <input type="hidden" id="act" name="act">
+          {{ form.page_size }}
+        </form>
+        <div id="timestamp_list">
+          <p>{{ comment }}</p>
+          {% if mode == 1 %}
+          <table class="ev-table tablesorter calendar"  id="ev_table">
+          {% else %}
+          <table class="ev-table approval-table"  id="ev_table">
+          {% endif %}
+            <thead>
+              <tr>
+                <th rowspan="2">日付</th>
+                <th rowspan="2">勤務区分</th>
+                <th rowspan="2">出勤時刻<br />（打刻）</th>
+                <th rowspan="2">退勤時刻<br />（打刻）</th>
+                {% if mode == 1 %}
+                <th rowspan="2">休憩時間</th>
+                {% else %}
+                <th>総労働時間</th>
+                <th>休憩時間</th>
+                <th>残業時間</th>
+                <th>残業時間:36</th>
+                <th>実働時間</th>
+                <th>所定内労働</th>
+                <th>法定内時間外労働</th>
+                <th>法定時間外労働</th>
+                <th>法定外休日労働</th>
+                <th>法定休日労働</th>
+                <th>深夜労働</th>
+                <th>添付</th>
+                <th>経費</th>
+                <th>備考</th>
+                {% endif %}
+                <th rowspan="2">申請承認</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for day in timestamp %}
+              <tr>
+                <td class="
+                {% if day.is_sunday %}sunday{% elif day.is_saturday %}saturday{% endif %}
+                {% if day.is_holiday %}holiday{% endif %}
+                ">
+                  <p>{{ day.datew }}</p>
+                  <div>
+                    <a href="{% url 'Kms_Attendance:request_edit' month_current.year month_current.month day.d mode %}" {% if day.work_stat != 0 %} hidden {% endif %}>編集</a>
+                  </div>
+                </td>
+                <td>
+                  <div>{{ day.kbn_name }}</div>
+                  <div>
+                  {{ day.kbn_name2 }}
+                  </div>
+                </td>
+                <td>
+                  <div>
+                    <span>{{ day.corret_start }}</span>
+                  </div>
+                  <div readonly>
+                    <span>{{ day.start }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div>
+                  {{ day.corret_end }}
+                  </div>
+                  <div>
+                    <span>{{ day.end }}</span>
+                  </div>
+                </td>
+                {% if mode == 1 %}
+                <td>
+                  {{ day.times.rest1 }}
+                </td>
+                {% else %}
+                <td>
+                  {{ day.times.work_time }}
+                </td>
+                <td>
+                  {{ day.times.rest1 }}
+                </td>
+                <td>
+                  {{ day.times.over_time }}
+                </td>
+                <td>
+                  {{ day.times.over_time36 }}
+                </td>
+                <td>
+                  {{ day.times.jitu_work }}
+                </td>
+                <td>
+                  {{ day.times.syoteinai_work }}
+                </td>
+                <td>
+                  {{ day.times.hoteinai_jikangai }}
+                </td>
+                <td>
+                  {{ day.times.hotei_jikangai }}
+                </td>
+                <td>
+                  {{ day.times.hoteigai_kyu }}
+                </td>
+                <td>
+                  {{ day.times.hotei_kyu }}
+                </td>
+                <td>
+                  {{ day.times.midnight_time }}
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                  <div></div>
+                  <div></div>
+                </td>
+                {% endif %}
+                <td>
+                  <a class="{% if day.work_stat == 2 %} disabled {% endif %}" data-remote="true" href="{% url 'Kms_Attendance:timestamp_stat' month_current.year month_current.month day.d mode %}">{{ day.stat }}</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="edit-flex">
+            <div class="card-contents">
+              <table>
+                <tr>
+                  <p>出勤状況</p>
+                </tr>
+                <tr>
+                  <th>所定日数：</th>
+                  <td>{{ obj_getuji.SHOTEI_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>出勤日数：</th>
+                  <td>{{ obj_getuji.WORK_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>法定外休日出勤日数：</th>
+                  <td>{{ obj_getuji.HOTEIGAI_WORK_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>欠勤日数：</th>
+                  <td>{{ obj_getuji.KEKKIN_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>遅刻日数：</th>
+                  <td>{{ obj_getuji.LATE_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>早退日数：</th>
+                  <td>{{ obj_getuji.EARLY_COUNT }}日</td>
+                </tr>
+              </table>
+            </div>
+            <div class="card-contents">
+              <table>
+                <tr>
+                  <p>勤務時間</p>
+                </tr>
+                <tr>
+                  <th>総労働時間：</th>
+                  <td>{{ obj_getuji.ALL_WORK_TIME }}</td>
+                </tr>
+                <tr>
+                  <th>実働時間：</th>
+                  <td>{{ obj_getuji.JITU_WORK_TIME }}</td>
+                </tr>
+                <tr>
+                  <th>残業時間：</th>
+                  <td>{{ obj_getuji.OVERTIME_TIME }}</td>
+                </tr>
+                <tr>
+                  <th>法定休日労働時間：</th>
+                  <td>{{ obj_getuji.HOTEIKYU_TIME }}</td>
+                </tr>
+                <tr>
+                  <th>深夜労働時間：</th>
+                  <td>{{ obj_getuji.MIDNIGHT_TIME }}</td>
+                </tr>
+                <tr>
+                  <th>遅刻時間：</th>
+                  <td>{{ obj_getuji.LATE_TIME }}</td>
+                </tr>
+                <tr>
+                  <th>早退時間：</th>
+                  <td>{{ obj_getuji.EARLY_TIME }}</td>
+                </tr>
+                <tr>
+                  <th>所定不足時間：</th>
+                  <td>{{ obj_getuji.SHOTEI_LESS_TIME }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="card-contents">
+              <table>
+                <tr>
+                  <th><b>休日・休暇取得</b></th>
+                  <td>
+                    <a class="" href="{% url 'Kms_Attendance:paid_holiday' month_current.year 1 %}">休暇管理</a>
+                  </td>
+                </tr>
+                <tr>
+                  <th>公休日数：</th>
+                  <td>{{ obj_getuji.HOLIDAY_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>有給休暇日数：</th>
+                  <td>{{ obj_getuji.YUKYU_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>本日までの有給休暇残数：</th>
+                  <td>{{ obj_getuji.YUKYU_ZAN_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>夏季休暇日数：</th>
+                  <td>{{ obj_getuji.KAKIKYU_COUNT }}日</td>
+              </tr>
+                <tr>
+                  <th>本日までの夏季休暇残数：</th>
+                  <td>{{ obj_getuji.KAKIKYU_ZAN_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>振替休日日数：</th>
+                  <td>{{ obj_getuji.FURIKYU_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>本日までの振替休日残数：</th>
+                  <td>{{ obj_getuji.FURIKYU_ZAN_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>代休日数：</th>
+                  <td>{{ obj_getuji.DAIKYU_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>本日までの代休残数：</th>
+                  <td>{{ obj_getuji.DAIKYU_ZAN_COUNT }}日</td>
+                </tr>
+                <tr>
+                  <th>休職日数：</th>
+                  <td>{{ obj_getuji.KYUSHOKU_COUNT }}日</td>
+                </tr>
+              </table>
+            </div>
+            <div class="card-contents">
+              <table>
+                <tr>
+                  <p>勤務区分</p>
+                </tr>
+                <tr>
+                  <th>有休：</th>
+                  <td>
+                  {{ obj_getuji.MONTH_YUKYU_COUNT }}日
+                  </td>
+                </tr>
+                <tr>
+                  <th>夏休：</th>
+                  <td>
+                  {{ obj_getuji.MONTH_KAKIKYU_COUNT }}日
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div> <!-- edit-flex -->
+        </div>
+      </div> <!-- form-area -->
+    </main>
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "commons/Evc_base.html" %}
+{% load static %}
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Evc_css/FE_UploadCropimage.css" %}'>
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Cache-Control" content="no-cache" />
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+      {% comment "下記の部分はコメントアウト" %}
+      <a href='{{ help_url }}' target="_blank" rel="noopener noreferrer" class="evc-help" ></a>
+      {% endcomment%}
+    </div>
+
+    <form id="uploadform" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.postext }}
+      <div class="card" id="card_canvas">
+        <canvas id="area_canvas"></canvas>
+        <div style="display:none;">
+          <img id="bk_img" src='{{ imgpath }}'>
+        </div>
+      </div>
+      <span>
+        <input type="submit" class='upload-btn' name="btn_upload" value="実行" onclick="return check(this);">
+        <input type="submit" class='upload-btn' name="btn_cancel" value="キャンセル" onclick="return cancel(this);">
+      </span>
+      <span class="guid">切り出し範囲(赤い矩形)が正しいければ実行して下さい</span>
+
+      {% comment "下記の部分はコメントアウト" %}
+      {% endcomment%}
+      <input type="hidden" id="areas" name="areas" value="{{ areas }}">
+      <input type="hidden" id="angle" name="angle" value="{{ angle }}">
+      <input type="hidden" id="preview" name="preview" value="0">
+    </form>
+  </main>
+  <!-- ////////////////////////////////////// -->
+  <script src="{% static 'js/Evc_area_script.min.js' %}"></script>
+
+{% endblock %}
