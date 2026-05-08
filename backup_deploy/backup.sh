@@ -48,7 +48,14 @@ cp -a $PROJECT_DIR/nginx $BACKUP_DIR/
 echo "===== Backup Complete ====="
 
 # ⑤ 30日以上前のバックアップ削除
-find /home/deploy/projects/backup -mindepth 1 -maxdepth 1 -type d -mtime +30 -exec rm -rf {} \;
+# find /home/deploy/projects/backup -mindepth 1 -maxdepth 1 -type d -mtime +30 -exec rm -rf {} \;
+find /home/deploy/projects/backup \
+  -mindepth 1 \
+  -maxdepth 1 \
+  -type f \
+  -name "*.tar.gz" \
+  -mtime +30 \
+  -exec rm -f {} \;
 
 # ⑥ 圧縮して容量削減
 tar -czf /home/deploy/projects/backup/$DATE.tar.gz -C /home/deploy/projects/backup $DATE

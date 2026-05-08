@@ -52,10 +52,22 @@ if [ "$CONFIRM" != "yes" ]; then
   exit 0
 fi
 
+if ! docker image inspect evc_web:${TARGET_TAG} >/dev/null 2>&1; then
+  echo "ERROR: image not found"
+  exit 1
+fi
+########################################
+# .env.prod 更新
+########################################
+sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${TARGET_TAG}/" .env.prod
+
 ########################################
 # ロールバック実行
 ########################################
-IMAGE_TAG=${TARGET_TAG} docker compose -f ${PROD_COMPOSE} up -d web
+docker compose \
+  --env-file .env.prod \
+  -f ${PROD_COMPOSE} \
+  up -d --no-deps --force-recreate web
 
 # IMAGE_TAG=${TARGET_TAG} docker compose -f ${PROD_COMPOSE} up -d web
 # docker compose -f ${PROD_COMPOSE} exec nginx nginx -s reload
@@ -67,9 +79,10 @@ NOW=$(date "+%Y-%m-%d %H:%M:%S")
 
 echo "${NOW} ROLLBACK_TO=${TARGET_TAG} FROM=${CURRENT_TAG}" >> ${HISTORY_FILE}
 echo "${TARGET_TAG}" > ${CURRENT_FILE}
-echo ">>> nginx reload"
-docker compose -f ${PROD_COMPOSE} exec nginx_prod nginx -t
-docker compose -f ${PROD_COMPOSE} exec nginx_prod nginx -s reload
+# nginx reload は不要
+# echo ">>> nginx reload"
+# docker compose -f ${PROD_COMPOSE} exec nginx_prod nginx -t
+# docker compose -f ${PROD_COMPOSE} exec nginx_prod nginx -s reload
 
 ########################################
 # 完了
