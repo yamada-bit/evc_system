@@ -26,6 +26,11 @@ STATIC_DIR = BASE_DIR / 'static'
 # メディアフォルダへの絶対パスを定義
 MEDIA_DIR = BASE_DIR / 'media'
 
+# 環境変数管理で.env ファイルを使う
+# load_dotenv(dotenv_path=BASE_DIR / '.env')
+# Docker Compose の environment: で　ENV_FILEが設定
+env_file = os.getenv('ENV_FILE', '.env')
+load_dotenv(BASE_DIR / env_file)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -35,7 +40,6 @@ MEDIA_DIR = BASE_DIR / 'media'
 # 新しい強力なキーを生成して設定する。
 # SECRET_KEY = "50文字以上のランダムな文字列"
 # python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-# SECRET_KEY = '+yzll16pb*%eo29fuvsttn4(k(+je(ag3v1rdtj+_7px)z_+4)'
 # SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 SECRET_KEY = os.getenv('SECRET_KEY')
 
@@ -231,11 +235,6 @@ LOGIN_REDIRECT_URL = 'accounts:redirect_url'
 # LOGIN_REDIRECT_URL = 'accounts:mainmenu'
 LOGOUT_REDIRECT_URL = '/'
 
-# 環境変数管理で.env ファイルを使う
-# load_dotenv(dotenv_path=BASE_DIR / '.env')
-env_file = os.getenv('ENV_FILE', '.env')
-load_dotenv(BASE_DIR / env_file)
-
 # パスワードリセット機能は、ユーザーにリセット用のリンクをメールで送信する必要があります。
 # メール設定を追加します。
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'    # デバッグでコンソール表示
@@ -277,6 +276,9 @@ EVC_HELP_DIR = '/data_root/evc_help/'
 #Google Cloud Vision APIのの身元証明書のjson
 GOOGLE_CLOUD_VISION_KEY = os.getenv('GOOGLE_CLOUD_VISION_KEY')
 GOOGLE_OCR = os.getenv('GOOGLE_OCR') == 'True'
+
+KOKUZEI_WEBAPI = os.getenv('KOKUZEI_WEBAPI')
+
 #Googleの認証情報
 USE_GOOGLE_CALENDAR = True
 if USE_GOOGLE_CALENDAR:
@@ -340,7 +342,7 @@ LOGGING = {
 
     'formatters': {
         'standard': {
-            'format': '%(asctime)s [%(levelname)s] '
+            'format': '%(asctime)s [%(levelname)s] [DJANGO] '
                       '%(name)s.%(funcName)s:%(lineno)d '
                       '%(message)s'
         },

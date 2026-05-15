@@ -3,6 +3,10 @@ import requests
 import datetime
 import logging
 import math
+import requests
+import xml.etree.ElementTree as ET
+
+from django.conf import settings
 
 from Evc_App.sv_file import (
     sv_get_partner_id,sv_get_publisher_id,
@@ -56,10 +60,12 @@ def detect_partner(user_id, owner_id, textdatalist, texts, evidence_id):
     reg_publisher_name = None   # 登録番号に対応した取引先マスタの取引先名
 
     corporate_number, reg_textdata = extract_registration(textdatalist)    # 登録番号(数字13桁)抽出
-    # corporate_number = extract_invoice_number(texts)
-    # if corporate_number:
-    #     # 登録番号で取引先マスタを検索,なければ登録
-    #     reg_publisher_id, reg_publisher_name = get_company_id(user_id, owner_id, corporate_number)
+    corporate_number = extract_invoice_number(texts)
+    if corporate_number:
+        # T・ハイフン・スペースを除去して数字のみにする
+        corporate_number = re.sub(r'[^0-9]', '', corporate_number)
+        # 登録番号で取引先マスタを検索,なければ登録
+        reg_publisher_id, reg_publisher_name = get_company_id(user_id, owner_id, corporate_number)
 
     result = get_matched_partner_id(user_id, owner_id, textdatalist, texts)
 
@@ -552,7 +558,9 @@ def get_company_id(user_id, owner_id, corporate_number):
             issuer_method = 'invoice_api'
     return partner_id, issuer
 
-API_KEY = 'あなたのAPIキー'
+# API_KEY = 'あなたのAPIキー'
+API_KEY = getattr(settings, 'KOKUZEI_WEBAPI')
+
 # =========================
 # 法人番号APIで会社名取得
 # =========================
@@ -571,25 +579,34 @@ def get_company_info(corporate_number: str):
     #         }
     # return None
     url = 'https://api.houjin-bangou.nta.go.jp/4/num'
-    
+
     params = {
         'id': API_KEY,
         'number': corporate_number,
-        'type': '12'  # JSON
+        'type': '12'    # XML
     }
     response = requests.get(url, params=params)
     
     if response.status_code != 200:
         return None
-    data = response.json()
     try:
-        company = data['corporations'][0]
-        return {
-            'name': company['name'],
-            'address': company['prefectureName'] + company['cityName']
-        }
-    except (KeyError, IndexError):
-        return None
+        # data = response.json()
+        # company = data['corporations'][0]
+        # return {
+        #     'name': company['name'],
+        #     'address': company['prefectureName'] + company['cityName']
+        # }
+        # print(response.text)
+        root = ET.fromstring(response.content)
+        name_el = root.find(".//name")
+        if name_el is not None:
+            return {
+                'name': name_el.text,
+                'address': ''
+            }
+    except Exception as e:
+        logger.exception(f'Web API exception {e}')
+    return None
 # =========================
 # インボイスAPIで会社名取得
 # =========================
@@ -598,7 +615,7 @@ def fetch_company_name_from_invoice_api(reg_no: str):
     国税庁インボイス登録番号照会API
     """
     url = 'https://www.invoice-kohyo.nta.go.jp/regno-search/num'
-    
+
     params = {
         'number': reg_no,
         'type': 'json'
