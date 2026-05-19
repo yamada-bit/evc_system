@@ -2,6 +2,7 @@ import datetime as dt
 import calendar
 import logging
 
+from django.utils import timezone
 from commons.mixins import MonthCalendarMixin
 
 from Kms_Attendance.models import (M_emp,M_holiday,
@@ -91,7 +92,7 @@ def get_daily_report(obj_emp, year, month):
 # 今日の出退勤レポート
 def get_today_stamp(number, department, lodgment, employment, manager):
     obj_list = []
-    dt_now = dt.datetime.now()
+    dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
     
     q_objects = Q(TARGET_DATE = today)   # 「Q object」複雑な処理を実装できるクエリ
@@ -169,7 +170,7 @@ def get_shime_status(year, month, number, department, lodgment, employment, mana
 # 月次レポート,PdfView
 def get_getuji_report(year, month, number, department, lodgment, employment, manager):
     obj_list = []
-    # dt_now = dt.datetime.now()
+    # dt_now = timezone.localtime()
     yearmonth = year * 100 + month
     
     q_objects = Q(TARGET_MONTH = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
@@ -200,7 +201,7 @@ def get_getuji_report(year, month, number, department, lodgment, employment, man
 # 休日管理レポート
 def get_holiday_report(year, number, department, lodgment, employment, manager):
     # obj_list = []
-    # dt_now = dt.datetime.now()
+    # dt_now = timezone.localtime()
     
     report_list = []
 
@@ -326,7 +327,7 @@ def get_csv_list(obj_emp, year, month, type):
     month_days = cal.itermonthdates(year, month)
 
     # try:
-    #     dt_now = dt.datetime.now()
+    #     dt_now = timezone.localtime()
     #     date = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
     #     if month != dt_now.month:
     #         date = year * 10000 + month * 100 + calendar.monthrange(year, month)[1]
@@ -337,7 +338,7 @@ def get_csv_list(obj_emp, year, month, type):
     # except T_getuji_kintai.DoesNotExist:
     #     return csv_list
 
-    dt_now = dt.datetime.now()
+    dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
     holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
 
@@ -444,7 +445,7 @@ def get_csv_list(obj_emp, year, month, type):
 
 def get_pdf_list(obj_emp, year, month):
     pdf_list = []
-    dt_now = dt.datetime.now()
+    dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
     holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
 

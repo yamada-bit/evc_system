@@ -10,6 +10,7 @@ from django.conf import settings
 
 from google.cloud.vision import AnnotateImageResponse
 
+from commons.utils import ut_get_localtime
 from Evc_App.sv_file import TextData,TextDatas,FullText,FullTexts
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ def obj_dict(obj):
 
 # UploadFilesをjsonファイルに保存
 def sv_save_upload_json(uploadfiles, json_dir):
-    now = datetime.datetime.now()
+    now = ut_get_localtime()
     time = now.strftime('_%Y%m%d-%H%M%S%f')
     name = 'uploadfiles' + time + '.json'
 

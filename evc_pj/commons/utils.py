@@ -48,7 +48,24 @@ def ut_get_hash(dat):
     else:
         hs = 'None'
     return hs
-# UTCをJSTのdatetimeに変換(9時間ずれるため調整)
+
+# timezone付き（aware）
+# DB保存で使用
+def ut_get_timezone_now():
+    # datetime.datetime(2026, 5, 15, 15, 0, 0)
+    # return datetime.datetime.now()    # タイムゾーン情報を持たない（Naive）
+    # datetime.datetime(2026, 5, 15, 6, 0, 0, tzinfo=datetime.timezone.utc
+    return timezone.now()   # timezone付き（aware）通常UTC
+
+# ローカルタイムゾーン（現地時間）の日時(JST)
+def ut_get_localtime():
+    # datetime.datetime(2026, 5, 15, 15, 0, 0, tzinfo=zoneinfo.ZoneInfo(key='Asia/Tokyo')
+    return timezone.localtime()
+# ローカルの日付を取得 
+def ut_get_localtoday():
+    return timezone.localdate()
+
+# NativeをJSTのdatetimeに変換(9時間ずれるため調整)
 def ut_get_localdate(date):
     localdate = None
     if date:
@@ -58,7 +75,7 @@ def ut_get_localdate(date):
             # 9時間ずれるため調整
             # date_utc = make_aware(date, timezone=datetime.timezone.utc)
             # localdate = timezone.localtime(date_utc)
-            if timezone.is_naive(date):
+            if timezone.is_naive(date): # 渡された日時が Naive だったら Aware に変換する
                 date = timezone.make_aware(date, datetime.timezone.utc)
             localdate = timezone.localtime(date)
         except Exception:
@@ -274,7 +291,7 @@ def round_tco2_1_str(tco2):
     return str(tco2)
 # ログインした年月から換算して11月前から1年
 def get_period():
-    today = datetime.datetime.today()
+    today = ut_get_localtoday()
     if today.month == 12:
         lastyear =  datetime.datetime(today.year, 1, 1)
     else:

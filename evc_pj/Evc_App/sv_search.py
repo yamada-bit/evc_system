@@ -3,6 +3,7 @@ import re   # 正規表現操作
 import logging
 from django.db.models import Q  # 条件を一つでも満たすものを取得する場合Q objectsと|を使う
 
+from commons.utils import ut_get_localtoday
 from Evc_App.sv_file import (SearchKey,
     sv_get_category_list,
     sv_get_textlines,sv_get_textdatas_area,sv_get_textlines_lf,
@@ -259,7 +260,7 @@ def extract_date(lines):
                             return datetime.date(y, m, d)
                     elif key == 'date4':    # yy.mm.dd
                         y = int(result.group(1))
-                        year = datetime.date.today().year
+                        year = ut_get_localtoday().year
                         if abs(2018 + y - year) < abs(2000 + y - year):
                             y += 2018
                         else:

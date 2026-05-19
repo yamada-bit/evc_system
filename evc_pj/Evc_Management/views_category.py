@@ -22,7 +22,7 @@ from django.urls import reverse
 from django.http import JsonResponse
 
 from users.models import MtFolder
-from commons.utils import ut_get_localdate,ut_get_client_ip
+from commons.utils import ut_get_timezone_now,ut_get_localdate,ut_get_client_ip
 
 from Evc_Management.forms import EvcCategoryListForm,EvcCategoryForm
 
@@ -267,7 +267,7 @@ class EvcCategoryEditView(LoginRequiredMixin, OwnerTestMixin, FormView):
 #     return response
 # 新規partner_id取得
 def get_new_folder_id(owner_id):
-    # d = datetime.date.today().strftime('%y%m%d')
+    # d = ut_get_localtoday().strftime('%y%m%d')
     # id = d + '0001'
     prefix = owner_id
     try:
@@ -297,7 +297,7 @@ def get_new_folder_id(owner_id):
 def sv_save_folder(data, owner_id, user_id, kubun):
     if kubun == 'new':
         folder_id = get_new_folder_id(owner_id)
-        create_date=datetime.datetime.now() 
+        create_date = ut_get_timezone_now()
         create_user = user_id
         update_date = create_date
         update_user = user_id
@@ -311,7 +311,7 @@ def sv_save_folder(data, owner_id, user_id, kubun):
             return False
         create_date = ut_get_localdate(folder_obj.create_date)
         create_user = folder_obj.create_user
-        update_date = datetime.datetime.now()
+        update_date = ut_get_timezone_now()
         update_user = user_id
     use_flg = data.get('use_flg')
     display_order = data.get('display_order')
@@ -347,7 +347,7 @@ def sv_delete_folder(folder_id, user_id):
         return False
     folder_obj.create_date = ut_get_localdate(folder_obj.create_date)
     folder_obj.update_user = user_id
-    folder_obj.update_date = datetime.datetime.now()
+    folder_obj.update_date = ut_get_timezone_now()
     folder_obj.use_flg = Decimal(0)
 
     try:

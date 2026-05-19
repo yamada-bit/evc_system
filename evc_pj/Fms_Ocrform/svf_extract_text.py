@@ -10,6 +10,7 @@ from google.cloud import vision
 from google.oauth2 import service_account
 
 from django.conf import settings
+from commons.utils import ut_get_localtime,ut_get_localtoday
 from Evc_App.sv_file import TextData,TextDatas,DetectJson,DetectJsons,sv_get_textlines
 from Evc_App.sv_json import sv_save_responsetext,sv_save_detect_json,sv_load_detect_json
 # XTHRESHOLD=120   # 1cm : 100 / 254 * 300(DPI)
@@ -37,7 +38,7 @@ def svf_extract_text(imagefiles, areas_dict):
     path = os.path.join(settings.BASE_DIR, settings.GOOGLE_CLOUD_VISION_KEY).replace(os.sep,'/')
     textdatas = []
     try:
-        logger.debug(f'vision.ImageAnnotatorClient {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+        logger.debug(f'vision.ImageAnnotatorClient {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
         credentials = service_account.Credentials.from_service_account_file(path)
         client = vision.ImageAnnotatorClient(credentials=credentials)
     except Exception:
@@ -59,22 +60,22 @@ def svf_extract_text(imagefiles, areas_dict):
             with io.open(input_file, 'rb') as image_file:
                 content = image_file.read()
             if GOOGLEOCR:
-                logger.debug(f'vision.Image {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                logger.debug(f'vision.Image {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
                 image = vision.Image(content=content)
-                # logger.debug('text_detection' + datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
+                # logger.debug('text_detection' + ut_get_localtime().strftime('%Y/%m/%d %H:%M:%S'))
                 # response = client.text_detection(image=image)
                 response = client.document_text_detection(
                     image=image,
                     image_context={'language_hints': ['ja']}
                 )
-                logger.debug(f'document_text_detection {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                logger.debug(f'document_text_detection {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
                 google_cnt += 1
                 if settings.DEBUG:
                     detecttext = vision.AnnotateImageResponse.to_json(response)
                     detecttext_list.append(DetectJson(page_no, detecttext))
             else:
                 basename = os.path.basename(imagefiles[0])
-                now = datetime.datetime.now()
+                now = ut_get_localtoday()
                 time = now.strftime('_%Y%m%d-')
                 idx = basename.find(time)
                 if 0 < idx:
@@ -849,7 +850,7 @@ def sv_detect_trasa(imagefiles):
     path = os.path.join(settings.BASE_DIR, settings.GOOGLE_CLOUD_VISION_KEY).replace(os.sep,'/')
     textdatas = []
     try:
-        logger.debug(f'vision.ImageAnnotatorClient {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+        logger.debug(f'vision.ImageAnnotatorClient {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
         credentials = service_account.Credentials.from_service_account_file(path)
         client = vision.ImageAnnotatorClient(credentials=credentials)
     except Exception:
@@ -867,21 +868,21 @@ def sv_detect_trasa(imagefiles):
                 content = image_file.read()
             basename_without_ext = os.path.basename(input_file)
             if GOOGLEOCR:
-                logger.debug(f'vision.Image {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                logger.debug(f'vision.Image {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
                 image = vision.Image(content=content)
-                # logger.debug('text_detection' + datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
+                # logger.debug('text_detection' + ut_get_localtime().strftime('%Y/%m/%d %H:%M:%S'))
                 # response = client.text_detection(image=image)
                 response = client.document_text_detection(
                     image=image,
                     image_context={'language_hints': ['ja']}
                 )
-                logger.debug(f'document_text_detection {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                logger.debug(f'document_text_detection {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
                 google_cnt += 1
                 if settings.DEBUG:
                     detecttext = vision.AnnotateImageResponse.to_json(response)
                     detecttext_list.append(DetectJson(page_no, detecttext))
             else:
-                now = datetime.datetime.now()
+                now = ut_get_localtoday()
                 time = now.strftime('_%Y%m%d-')
                 basename = os.path.basename(imagefiles[0])
                 idx = basename.find(time)
@@ -909,7 +910,7 @@ def sv_detect_trasa(imagefiles):
         if detecttext_list:
             json_dir = '/data_root/evc_root/json'
             basename = os.path.basename(imagefiles[0])
-            now = datetime.datetime.now()
+            now = ut_get_localtoday()
             time = now.strftime('_%Y%m%d-')
             idx = basename.find(time)
             if 0 < idx:

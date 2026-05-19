@@ -14,7 +14,7 @@ from django.conf import settings
 from users.models import SysOwner,EvcUser,MtFolder,MtPartner,MtAccount,TtDetect
 # from users.models import SysOwner,EvcUser,MtFolder,MtPartner,MtAccount,TtDetect,MtOwnerUser
 # from urllib.parse import urljoin,quote
-from commons.utils import ut_get_hash,ut_get_localdate
+from commons.utils import ut_get_hash,ut_get_timezone_now,ut_get_localdate,ut_get_localtoday
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +172,7 @@ def make_evidence_image_dir(rootfolder):
     json_path = os.path.join(rootfolder, 'evidence_image').replace(os.sep,'/')
     make_dir(json_path)
     try:
-        today = datetime.datetime.now()
+        today = ut_get_localtoday()
         yy = today.strftime('%Y')
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
@@ -210,7 +210,7 @@ def make_json_dir(rootfolder):
 # 年月別にファイルを保存するフォルダ作成
 def make_processed_ym_dir(rootfolder):
     try:
-        today = datetime.datetime.now()
+        today = ut_get_localtoday()
         yy = today.strftime('%Y')
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
@@ -611,9 +611,9 @@ def sv_get_partner_id(name, owner_id):
     return partner_id
 # 検出情報データ作成
 def sv_save_detect(detect_partner_name, detect_publisher_name, user_id, evidence_id):
-    # d = datetime.date.today().strftime('%y%m%d')
+    # d = ut_get_localtoday().strftime('%y%m%d')
     # id = d + '0001'
-    create_date=datetime.datetime.now() 
+    create_date = ut_get_timezone_now()
     obj = TtDetect(
         evidence_id=evidence_id,
         category_name=None,
@@ -728,7 +728,7 @@ def sv_get_publisher_list(owner_id):
 
 # 新規partner_id取得
 def get_new_partner_id():
-    # d = datetime.date.today().strftime('%y%m%d')
+    # d = ut_get_localtoday().strftime('%y%m%d')
     # id = d + '0001'
     prefix = 'AUTO_'
     try:
@@ -758,11 +758,11 @@ def get_new_partner_id():
 def sv_create_partner_auto(name, user_id, owner_id):
     if not name or not owner_id:
         return None
-    # d = datetime.date.today().strftime('%y%m%d')
+    # d = ut_get_localtoday().strftime('%y%m%d')
     # id = d + '0001'
     id = get_new_partner_id()
 
-    create_date=datetime.datetime.now() 
+    create_date = ut_get_timezone_now()
     obj = MtPartner(
         partner_id=id,
         partner_name=name,
@@ -786,7 +786,7 @@ def sv_create_partner_auto(name, user_id, owner_id):
 def sv_save_partner(data, user_id, kubun):
     if kubun == 'new':
         partner_id = get_new_partner_id()
-        create_date=datetime.datetime.now() 
+        create_date = ut_get_timezone_now()
         create_user = user_id
         update_date = create_date
         update_user = user_id
@@ -803,7 +803,7 @@ def sv_save_partner(data, user_id, kubun):
         else:
             create_date = None
         create_user = partner_obj.create_user
-        update_date = datetime.datetime.now()
+        update_date = ut_get_timezone_now()
         update_user = user_id
     delete_flg = data.get('delete_flg')
     obj = MtPartner(
@@ -847,7 +847,7 @@ def sv_delete_partner(partner_id, user_id):
     if partner_obj.create_date:
         partner_obj.create_date = ut_get_localdate(partner_obj.create_date)
     partner_obj.update_user = user_id
-    partner_obj.update_date = datetime.datetime.now()
+    partner_obj.update_date = ut_get_timezone_now()
     partner_obj.delete_flg = Decimal(1)
 
     try:
@@ -890,7 +890,7 @@ def sv_get_account_id(name, user_id, owner_id, create):
 def sv_save_account(data, user_id, kubun):
     if kubun == 'new':
         account_id = get_new_account_id()
-        create_date=datetime.datetime.now() 
+        create_date = ut_get_timezone_now()
         create_user = user_id
         update_date = create_date
         update_user = user_id
@@ -907,7 +907,7 @@ def sv_save_account(data, user_id, kubun):
         else:
             create_date = None
         create_user = account_obj.create_user
-        update_date = datetime.datetime.now()
+        update_date = ut_get_timezone_now()
         update_user = user_id
     # delete_flg = data.get('delete_flg')
     obj = MtAccount(
@@ -928,7 +928,7 @@ def sv_save_account(data, user_id, kubun):
     return False
 # 新規account_id取得
 def get_new_account_id():
-    # d = datetime.date.today().strftime('%y%m%d')
+    # d = ut_get_localtoday().strftime('%y%m%d')
     # id = d + '0001'
     prefix = 'acct_'
     try:

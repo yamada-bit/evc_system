@@ -5,13 +5,13 @@ import logging
 import json
 from decimal import Decimal
 from django.conf import settings
-from django.utils import timezone
-from django.utils.timezone import make_aware
+# from django.utils import timezone
+# from django.utils.timezone import make_aware
 from sequences import get_next_value
 from django.db.models import F
 
 from users.models import TtEvidence,MtPartner,HtEvidence,TtDetect,MtFolder
-from commons.utils import ut_get_localdate
+from commons.utils import ut_get_timezone_now,ut_get_localdate,ut_get_localtoday
 
 from Evc_App.sv_file import (sv_delete_file,
     get_rootfolder,get_imgfolder_upload,
@@ -318,7 +318,7 @@ def move_file_processed_ym(filepath, rootfolder, basename):
     if not filepath or not os.path.exists(filepath):
         return new_path
     try:
-        today = datetime.datetime.now()
+        today = ut_get_localtoday()
         processed_ym = today.strftime('%Y%m')
         dest_dir = sv_get_processed_ym_path(rootfolder, processed_ym)
         dest_file = os.path.join(dest_dir, basename).replace(os.sep,'/')
@@ -343,7 +343,7 @@ def check_filename(file):
     if os.path.exists(file):
         # 別日付の場合
         # dt = datetime.datetime.fromtimestamp(os.path.getmtime(file))
-        # dt_now = datetime.datetime.now()
+        # dt_now = ut_get_localtoday()
         # if dt.year != dt_now.year or dt.month != dt_now.month or dt.day != dt_now.day:
         filepath, ext = os.path.splitext(file)
         i = 1
@@ -357,7 +357,7 @@ def check_filename(file):
 # エビデンスID取得
 # evidence_id：yyyymmdd_連番(00001～)
 def get_evidence_id():
-    d = datetime.date.today().strftime('%Y%m%d')
+    d = ut_get_localtoday().strftime('%Y%m%d')
     # lastobj = TtEvidence.objects.all().order_by('-evidence_id').first()
     # # first():存在しない場合Noneを返す
     # if lastobj:
@@ -391,11 +391,10 @@ def save_evidence_data(user_id, owner_id, file_path, pdf_name, search, jsontext,
         partner_ryaku_name = partnerobj.partner_ryaku_name or ''
     except MtPartner.DoesNotExist:
         partner_ryaku_name = ''
-    d = datetime.date.today().strftime('%Y%m%d')
-    create_date = datetime.datetime.now()
+    create_date = ut_get_timezone_now()
     create_user_id = user_id
     id = evidence_id    # get_evidence_id()
-    processed_ym = create_date.strftime('%Y%m')
+    processed_ym = ut_get_localtoday().strftime('%Y%m')
     # try:
     #     with open(pdffile, 'rb') as f:
     #         b_pdf = f.read()
@@ -420,7 +419,8 @@ def save_evidence_data(user_id, owner_id, file_path, pdf_name, search, jsontext,
     # }
     google_amount = pages
     tran_detail = ''
-    name = d + '_' +  partner_ryaku_name + '_' + (str(search.total_amount) if search.total_amount else '')
+    today = ut_get_localtoday().strftime('%Y%m%d')
+    name = today + '_' +  partner_ryaku_name + '_' + (str(search.total_amount) if search.total_amount else '')
     obj = TtEvidence(
         evidence_id=id,
         evidence_name=name,
@@ -442,8 +442,8 @@ def save_evidence_data(user_id, owner_id, file_path, pdf_name, search, jsontext,
         # payment_date = '',
         create_date=create_date,                # DateTimeField
         create_user=create_user_id,
-        update_user=user_id,
-        update_date=datetime.datetime.now()     # DateTimeField
+        update_user=create_user_id,
+        update_date=create_date
     )
     try:
         obj.save()
@@ -494,7 +494,7 @@ def sv_update_evidence(evidence_id, search, account_id, account_desc, duplicate_
     evi_obj.tran_detail = tran_detail if duplicate_ok else ''
     evi_obj.create_date = ut_get_localdate(evi_obj.create_date)
     evi_obj.update_user = user_id
-    evi_obj.update_date = datetime.datetime.now()
+    evi_obj.update_date = ut_get_timezone_now()
 
     try:
         evi_obj.save()
@@ -526,7 +526,7 @@ def sv_update_shiori(evidence_id, fulltext, user_id, owner_id):
     evi_obj.pdf_handbook = fulltext
     evi_obj.create_date = ut_get_localdate(evi_obj.create_date)
     evi_obj.update_user = user_id
-    evi_obj.update_date = datetime.datetime.now()
+    evi_obj.update_date = ut_get_timezone_now()
 
     try:
         evi_obj.save()
@@ -651,7 +651,7 @@ def delete_evidence_file(evi_obj):
 def sv_copy_htevidence(evi_obj, user_id, rireki_kbn):
     lastobj = HtEvidence.objects.all().order_by('-r_evidence_id').first()
     # r_evidence_id：yyyymmdd_連番(00001～)
-    d = datetime.date.today().strftime('%Y%m%d')
+    d = ut_get_localtoday().strftime('%Y%m%d')
     if lastobj:
         pre_id = lastobj.r_evidence_id
         try:
@@ -689,9 +689,9 @@ def sv_copy_htevidence(evi_obj, user_id, rireki_kbn):
             account_desc = evi_obj.account_desc,
             slip_number = evi_obj.slip_number,
             payment_date= evi_obj.payment_date,
-            create_date = datetime.datetime.now(),
+            create_date = ut_get_timezone_now(),
             create_user = user_id,
-            update_date = datetime.datetime.now(),
+            update_date = ut_get_timezone_now(),
             update_user = user_id
         )    
         logger.info(f'履歴情報テーブル登録 {evi_obj.pdf_name} : {evi_obj.evidence_id} -> {id}')

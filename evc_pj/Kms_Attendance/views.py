@@ -30,7 +30,8 @@ from Kms_Attendance.forms import (EvcLoginForm,
     EditEmpForm,TimeStampEditForm,ClockForm,RequestEditForm,ApprovalForm)
 # 日次勤怠
 from commons.mixins import MonthCalendarMixin
-from commons.utils import ut_get_hash,ut_get_client_ip,ut_get_localdate
+from commons.utils import (ut_get_hash,ut_get_client_ip,ut_get_localtime,
+                           ut_get_localdate,ut_get_timezone_now,ut_get_localtoday)
 
 from Kms_Attendance.commons.utils import (sv_get_kbn_choices,sv_get_name_choices,
     is_holiday,get_time_stamp,bulk_request_time_stamp,get_times,get_kbn_name,get_str2datetime,
@@ -94,7 +95,7 @@ class IndexView(LoginRequiredMixin, View):
             # レコードがなければ新規画面へ
             return redirect('Kms_Attendance:add_emp')
 
-        dt_now = datetime.datetime.now()
+        dt_now = ut_get_localtoday()
         today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
         # 打刻レコード取得（ボタンの無効設定のため)
         try:
@@ -146,7 +147,7 @@ class ResultView(LoginRequiredMixin, View):
             emp_name = self.request.POST.get('name_field')
             target_date = self.request.POST.get('TARGET_DATE')
             str_time = self.request.POST.get('showTime2')
-            now2 = get_str2datetime(str_time) or datetime.datetime.now()
+            now2 = get_str2datetime(str_time) or ut_get_localtime()
             month = now2.month
             day = now2.day
             hour = now2.hour
@@ -162,15 +163,15 @@ class ResultView(LoginRequiredMixin, View):
                     ),
                 )
                 if created:
-                    obj_timestamp.INS_DATE = now2
+                    obj_timestamp.INS_DATE = ut_get_timezone_now()
                     obj_timestamp.INS_ID = self.request.user.user_id  # ログイン中のユーザ
                     obj_timestamp.DEL_FLG = 0
                     obj_timestamp.WORK_STAT = 0
                 else:
                     ins_date = ut_get_localdate(obj_timestamp.INS_DATE)
-                    obj_timestamp.INS_DATE = ins_date or datetime.datetime.now()
+                    obj_timestamp.INS_DATE = ins_date or ut_get_timezone_now()
 
-                obj_timestamp.UPDATE_DATE = now2
+                obj_timestamp.UPDATE_DATE = ut_get_timezone_now()
                 obj_timestamp.UPDATE_ID = self.request.user.user_id
                 # obj_timestamp.KBN = 1
                 if 'start' in self.request.POST:
@@ -278,7 +279,7 @@ class MonthCalendar(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         # ログインユーザ以外のユーザを選択遷移
         user_id = self.request.session.pop('user_id', self.request.user.user_id)
         if not year or not month:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
             month = dt_today.month
             # day = dt_today.day
@@ -316,7 +317,7 @@ class MonthCalendar(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
                 calendar_context.update({'obj_getuji':obj_getuji})
             except T_getuji_report.DoesNotExist:
                 pass
-        # dt_now = dt.datetime.now()
+        # dt_now = ut_get_localtoday()
         # date = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
         # if month_current.month != dt_now.month:
         #     td = self.get_last_date(month_current)
@@ -440,7 +441,7 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
             month = self.kwargs.get('month')
             day = self.kwargs.get('day')
             if not year or not month or not day:
-                td = datetime.date.today()
+                td = ut_get_localtoday()
             else:
                 td = datetime.date(year, month, day)
 
@@ -448,8 +449,8 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
         works_status = self.request.POST.get('works_status')
         full_name = self.request.POST.get('name')
 
-        # month = datetime.datetime.today().strftime('%Y-%m')
-        # max_month = (datetime.datetime.today() + relativedelta(years=10)).strftime('%Y-%m')
+        # month = ut_get_localtoday().strftime('%Y-%m')
+        # max_month = (ut_get_localtoday() + relativedelta(years=10)).strftime('%Y-%m')
 
         self.extra_context = {
             'year': td.year,
@@ -627,7 +628,7 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
         month = self.kwargs.get('month')
         day = self.kwargs.get('day')
         if not year or not month or not day:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
             month = dt_today.month
             day = dt_today.day
@@ -870,14 +871,14 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
                 ),
             )
             if created:
-                obj_timestamp.INS_DATE = datetime.datetime.now()
+                obj_timestamp.INS_DATE = ut_get_timezone_now()
                 obj_timestamp.INS_ID = self.request.user.user_id # emp_id
                 obj_timestamp.DEL_FLG = 0
             else:
                 ins_date = ut_get_localdate(obj_timestamp.INS_DATE)
-                obj_timestamp.INS_DATE = ins_date or datetime.datetime.now()
+                obj_timestamp.INS_DATE = ins_date or ut_get_timezone_now()
 
-            obj_timestamp.UPDATE_DATE = datetime.datetime.now()
+            obj_timestamp.UPDATE_DATE = ut_get_timezone_now()
             obj_timestamp.UPDATE_ID = self.request.user.user_id  # emp_id
             if start_time:
                 obj_timestamp.CORRET_START_TIME = get_time2date_str(start_time, year, month, day)
@@ -916,19 +917,19 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
                     # id = uuid.uuid4(),
                     KBN = 1,
                     END_NEXT_FLG = 0,
-                    REQUEST_DATE = get_date2int(datetime.datetime.now())
+                    REQUEST_DATE = get_date2int(ut_get_localtime())
                 ),
             )
             if created:
-                obj_request.INS_DATE = datetime.datetime.now()
+                obj_request.INS_DATE = ut_get_timezone_now()
                 obj_request.INS_ID = self.request.user.user_id   # emp_id
                 obj_request.DEL_FLG = 0
                 obj_request.WORK_STAT = 0
             else:
                 ins_date = ut_get_localdate(obj_request.INS_DATE)
-                obj_request.INS_DATE = ins_date or datetime.datetime.now()
+                obj_request.INS_DATE = ins_date or ut_get_timezone_now()
 
-            obj_request.UPDATE_DATE = datetime.datetime.now()
+            obj_request.UPDATE_DATE = ut_get_timezone_now()
             obj_request.UPDATE_ID = self.request.user.user_id    # emp_id
             obj_request.EXPENSES = expenses
             obj_request.MEMO = memo
@@ -966,14 +967,14 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
                         ),
                     )
                 if created:
-                    obj_request_rest.INS_DATE = datetime.datetime.now()
+                    obj_request_rest.INS_DATE = ut_get_timezone_now()
                     obj_request_rest.INS_ID = self.request.user.user_id  # emp_id
                     obj_request_rest.DEL_FLG = 0
                 else:
                     ins_date = ut_get_localdate(obj_request_rest.INS_DATE)
-                    obj_request_rest.INS_DATE = ins_date or datetime.datetime.now()
+                    obj_request_rest.INS_DATE = ins_date or ut_get_timezone_now()
 
-                obj_request_rest.UPDATE_DATE = datetime.datetime.now()
+                obj_request_rest.UPDATE_DATE = ut_get_timezone_now()
                 obj_request_rest.UPDATE_ID = self.request.user.user_id   # emp_id
 
                 obj_request_rest.REST_START_TIME = start_str
@@ -1002,23 +1003,23 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
                         # REST_START_NEXT_FLG = 0,
                         # REST_END_NEXT_FLG = 0,
                         KBN = KBN,
-                        REQUEST_DATE = get_date2int(datetime.datetime.now())
+                        REQUEST_DATE = get_date2int(ut_get_localtime())
                     ),
                 )
             if created:
-                obj.INS_DATE = datetime.datetime.now()
+                obj.INS_DATE = ut_get_timezone_now()
                 obj.INS_ID = self.request.user.user_id  # emp_id
                 obj.DEL_FLG = 0
             else:
                 ins_date = ut_get_localdate(obj.INS_DATE)
-                obj.INS_DATE = ins_date or datetime.datetime.now()
+                obj.INS_DATE = ins_date or ut_get_timezone_now()
 
-            obj.UPDATE_DATE = datetime.datetime.now()
+            obj.UPDATE_DATE = ut_get_timezone_now()
             obj.UPDATE_ID = self.request.user.user_id   # emp_id
 
             obj.KBN = KBN
             obj.TRANSFER_DATE = target_date
-            obj.REQUEST_DATE = get_date2int(obj.UPDATE_DATE)
+            obj.REQUEST_DATE = get_date2int(ut_get_localtime())
             # obj.AGREE_DATE =
             # obj.AGREE_LTD_CD = 
             # obj.AGREE_EMP_ID = ''

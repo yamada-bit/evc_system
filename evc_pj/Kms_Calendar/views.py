@@ -19,7 +19,7 @@ from dateutil.relativedelta import relativedelta
 from collections import defaultdict
 
 from commons.mixins import MonthCalendarMixin
-from commons.utils import ut_get_client_ip
+from commons.utils import ut_get_client_ip,ut_get_localtoday
 
 from Kms_Calendar.google_calendar import (
     get_calendar_service,dict_to_credentials,credentials_to_dict
@@ -255,8 +255,8 @@ class GoogleCalendarView(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
             target_year = self.kwargs['year']
             target_month = self.kwargs['month']
         except KeyError:
-            target_year = datetime.date.today().year
-            target_month = datetime.date.today().month
+            target_year = ut_get_localtoday().year
+            target_month = ut_get_localtoday().month
 
         logger.info(f'{ut_get_client_ip(self.request)} '
                     f'GoogleCalendarView {target_year}/{target_month}')
@@ -403,8 +403,8 @@ class GoogleCalendarModelView(LoginRequiredMixin, MonthCalendarMixin, TemplateVi
             target_year = self.kwargs['year']
             target_month = self.kwargs['month']
         except KeyError:
-            target_year = datetime.date.today().year
-            target_month = datetime.date.today().month
+            target_year = ut_get_localtoday().year
+            target_month = ut_get_localtoday().month
 
         logger.debug(f'{ut_get_client_ip(self.request)} '
                     f'GoogleCalendarModelView {target_year}/{target_month}')
@@ -505,8 +505,8 @@ def export_calendar_to_excel(request):
 
     # Google Calendar APIクライアントの作成         
     service = get_calendar_service(credentials_dict)
-    this_year=datetime.date.today().year
-    this_month=datetime.date.today().month
+    this_year=ut_get_localtoday().year
+    this_month=ut_get_localtoday().month
     events = get_calendar_events(service, this_year, this_month)
     # データを日ごとにグループ化
     grouped_events = group_events_by_day(events)
@@ -590,8 +590,8 @@ def export_work_schedule_to_excel(request, year, month):
 
     # Google Calendar APIクライアントの作成
     service = get_calendar_service(credentials_dict)
-    # this_year=datetime.date.today().year
-    # this_month=datetime.date.today().month
+    # this_year=ut_get_localtoday().year
+    # this_month=ut_get_localtoday().month
 
     # Google Calendar APIを使ってイベントを取得
     events = get_calendar_events(service, year, month)

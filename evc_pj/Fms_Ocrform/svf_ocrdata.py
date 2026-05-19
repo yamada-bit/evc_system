@@ -16,7 +16,7 @@ from sequences import get_next_value
 
 from Fms_Ocrform.models import TtOcrform,TtEntry,TtOcrData,TtTimesheet,TtJafyame,TtAccessLog
 
-from commons.utils import ut_get_localdate
+from commons.utils import ut_get_localdate,ut_get_timezone_now,ut_get_localtoday
 
 from Evc_App.sv_file import sv_delete_file,get_imgfolder_upload,get_jsonfolder
 
@@ -302,7 +302,7 @@ def move_images(model_name, ocrimages, ocrdata_id):
 def get_ocrdata_id(model_name):
     # entry_id：yyyymmdd_連番(00001～)
 
-    d = datetime.date.today().strftime('%Y%m%d')
+    d = ut_get_localtoday().strftime('%Y%m%d')
     # lastobj = TtWorkSchedule.objects.all().order_by('-entry_id').first() # first():存在しない場合Noneを返す
     # if lastobj:
     #     pre_id = lastobj.entry_id
@@ -340,11 +340,11 @@ def save_ocrdata(ocrdata_id, param_dict):
     fulltext = param_dict.get('fulltext')
     google_cnt = param_dict.get('google_cnt')
     try:
-        d = datetime.date.today().strftime('%Y%m%d')
-        create_date = datetime.datetime.now()
+        d = ut_get_localtoday().strftime('%Y%m%d')
+        create_date = ut_get_timezone_now()
         create_user_id = user_id
         id = ocrdata_id    # get_entry_id()
-        processed_ym = create_date.strftime('%Y%m')
+        processed_ym = ut_get_localtoday().strftime('%Y%m')
         search_text = search_text
         google_amount = google_cnt
         name = d + '_' + '' + '_'
@@ -363,7 +363,7 @@ def save_ocrdata(ocrdata_id, param_dict):
             create_date=create_date,                # DateTimeField
             create_user=create_user_id,
             update_user=user_id,
-            update_date=datetime.datetime.now()     # DateTimeField
+            update_date=ut_get_timezone_now()     # DateTimeField
         )
         obj.save()
         logger.info(f'TtOcrData save {id} : {pdf_name}')
@@ -387,11 +387,11 @@ def save_timesheet(ocrdata_id, param_dict):
     fulltext = param_dict.get('fulltext')
     google_cnt = param_dict.get('google_cnt')
     try:
-        d = datetime.date.today().strftime('%Y%m%d')
-        create_date = datetime.datetime.now()
+        d = ut_get_localtoday().strftime('%Y%m%d')
+        create_date = ut_get_timezone_now()
         create_user_id = user_id
         id = ocrdata_id    # get_entry_id()
-        processed_ym = create_date.strftime('%Y%m')
+        processed_ym = ut_get_localtoday().strftime('%Y%m')
         target_year = search_text.get('target_year')
         target_month = search_text.get('target_month')
         if target_year and target_month and 0 < len(target_year) and 0 < len(target_month):
@@ -421,7 +421,7 @@ def save_timesheet(ocrdata_id, param_dict):
             create_date=create_date,                # DateTimeField
             create_user=create_user_id,
             update_user=user_id,
-            update_date=datetime.datetime.now()     # DateTimeField
+            update_date=ut_get_timezone_now()     # DateTimeField
         )
         obj.save()
         logger.info(f'TtTimesheet save {id} : {pdf_name}')
@@ -445,11 +445,11 @@ def save_jafyame(ocrdata_id, param_dict):
     fulltext = param_dict.get('fulltext')
     google_cnt = param_dict.get('google_cnt')
     try:
-        d = datetime.date.today().strftime('%Y%m%d')
-        create_date = datetime.datetime.now()
+        d = ut_get_localtoday().strftime('%Y%m%d')
+        create_date = ut_get_timezone_now()
         create_user_id = user_id
         id = ocrdata_id    # get_entry_id()
-        processed_ym = create_date.strftime('%Y%m')
+        processed_ym = ut_get_localtoday().strftime('%Y%m')
         # processed_date = search_text.get('processed_date')
         target_year = search_text.get('date_y')
         target_month = search_text.get('date_m')
@@ -484,7 +484,7 @@ def save_jafyame(ocrdata_id, param_dict):
             create_date=create_date,                # DateTimeField
             create_user=create_user_id,
             update_user=user_id,
-            update_date=datetime.datetime.now()     # DateTimeField
+            update_date=ut_get_timezone_now()     # DateTimeField
         )
         obj.save()
         logger.info(f'TtJafyame save {id} : {pdf_name}')
@@ -507,11 +507,11 @@ def save_entry(ocrdata_id, param_dict):
     fulltext = param_dict.get('fulltext')
     google_cnt = param_dict.get('google_cnt')
     try:
-        d = datetime.date.today().strftime('%Y%m%d')
-        create_date = datetime.datetime.now()
+        d =ut_get_localtoday().strftime('%Y%m%d')
+        create_date = ut_get_timezone_now()
         create_user_id = user_id
         id = ocrdata_id    # get_entry_id()
-        processed_ym = create_date.strftime('%Y%m')
+        processed_ym = ut_get_localtoday().strftime('%Y%m')
         google_amount = google_cnt
         entry_detail = json_str
         name = d + '_' + '' + '_'
@@ -529,7 +529,7 @@ def save_entry(ocrdata_id, param_dict):
             create_date=create_date,                # DateTimeField
             create_user=create_user_id,
             update_user=user_id,
-            update_date=datetime.datetime.now()     # DateTimeField
+            update_date=ut_get_timezone_now()     # DateTimeField
         )
         obj.save()
         logger.info(f'TtEntry save {id} : {pdf_name}')
@@ -552,7 +552,7 @@ def svf_update_ocrdata(ocrdata_id, data_dict, user_id):
     ocrdata_obj.search_text = search_text
     ocrdata_obj.create_date = ut_get_localdate(ocrdata_obj.create_date)
     ocrdata_obj.update_user = user_id
-    ocrdata_obj.update_date = datetime.datetime.now()
+    ocrdata_obj.update_date = ut_get_timezone_now()
     try:
         ocrdata_obj.save()
         logger.info(f'Ocr文書情報テーブル更新 {ocrdata_id} : {ocrdata_obj.pdf_name}')
@@ -573,7 +573,7 @@ def svf_update_timesheet(timesheet_id, data_dict, user_id):
     timesheet_obj.emp_id = data_dict.get('emp_id')
     timesheet_obj.create_date = ut_get_localdate(timesheet_obj.create_date)
     timesheet_obj.update_user = user_id
-    timesheet_obj.update_date = datetime.datetime.now()
+    timesheet_obj.update_date = ut_get_timezone_now()
     try:
         timesheet_obj.save()
         logger.info(f'勤務表情報テーブル更新 {timesheet_id} : {timesheet_obj.pdf_name}')
@@ -607,7 +607,7 @@ def svf_update_jafyame(jafyame_id, data_dict, user_id):
     jafyame_obj.username = data_dict.get('username')
     jafyame_obj.create_date = ut_get_localdate(jafyame_obj.create_date)
     jafyame_obj.update_user = user_id
-    jafyame_obj.update_date = datetime.datetime.now()
+    jafyame_obj.update_date = ut_get_timezone_now()
     try:
         jafyame_obj.save()
         if new_dept != pre_dept or new_section != pre_section:
@@ -634,7 +634,7 @@ def svf_update_entry(entry_id, entry_pages, user_id):
     # entry.entry_detail = json_str
     entry.create_date = ut_get_localdate(entry.create_date)
     entry.update_user = user_id
-    entry.update_date = datetime.datetime.now()
+    entry.update_date = ut_get_timezone_now()
 
     try:
         entry.save()
@@ -698,7 +698,7 @@ def svf_update_shiori(model_name, ocrdata_id, fulltext, user_id):
     ocrdata_obj.pdf_handbook = fulltext
     ocrdata_obj.create_date = ut_get_localdate(ocrdata_obj.create_date)
     ocrdata_obj.update_user = user_id
-    ocrdata_obj.update_date = datetime.datetime.now()
+    ocrdata_obj.update_date = ut_get_timezone_now()
 
     try:
         ocrdata_obj.save()
@@ -826,7 +826,7 @@ def svf_filter_jafyame(request, queryset):
 def svf_create_access_log(owner_id, user_id, doc_id, action):
     # TtAccessLog.objects.create(user_id=user_id, document_id=doc_id, action='download')	
     try:
-        now = datetime.datetime.now()
+        now = ut_get_timezone_now()
         obj = TtAccessLog(
             owner_id = owner_id,
             access_user = user_id,

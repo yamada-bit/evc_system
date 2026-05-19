@@ -10,7 +10,7 @@ from django.conf import settings
 # from sequences import get_next_value
 
 from Kms_Calendar.models import TtGaikinReport
-from commons.utils import ut_get_localdate
+from commons.utils import ut_get_localdate,ut_get_timezone_now,ut_get_localtoday
 
 from Evc_App.sv_file import (sv_delete_file, make_dir, sv_get_user_name,
                              get_imgfolder_upload, get_jsonfolder,
@@ -37,7 +37,7 @@ def svk_get_gaikin_rootfolder():
 # 年月フォルダ
 def svk_make_report_dir(rootfolder):
     try:
-        today = datetime.datetime.now()
+        today = ut_get_localtoday()
         yy = today.strftime('%Y')
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
@@ -144,7 +144,7 @@ def move_file_processed_ym(filepath, rootfolder, basename):
     if not filepath or not os.path.exists(filepath):
         return new_path
     try:
-        today = datetime.datetime.now()
+        today = ut_get_localtoday()
         processed_ym = today.strftime('%Y%m')
         dest_dir = sv_get_processed_ym_path(rootfolder, processed_ym)
         dest_file = os.path.join(dest_dir, basename).replace(os.sep,'/')
@@ -168,7 +168,7 @@ def check_filename(file):
     if os.path.exists(file):
         # 別日付の場合
         # dt = datetime.datetime.fromtimestamp(os.path.getmtime(file))
-        # dt_now = datetime.datetime.now()
+        # dt_now = ut_get_localtoday()
         # if dt.year != dt_now.year or dt.month != dt_now.month or dt.day != dt_now.day:
         filepath, ext = os.path.splitext(file)
         i = 1
@@ -182,7 +182,7 @@ def check_filename(file):
 # 報告書情報ID取得
 # report_id：yyyymmdd_連番(00001～)
 def get_report_id():
-    d = datetime.date.today().strftime('%Y%m%d')
+    d = ut_get_localtoday().strftime('%Y%m%d')
     try:
         # # シーケンス採番
         # num = get_next_value(d)
@@ -212,12 +212,12 @@ def svk_create_report_page(filepath, user_id, owner_id, pages):
     basename = os.path.basename(filepath)
     basename_without_ext, ext_name = os.path.splitext(basename)
     pdf_name = basename_without_ext
-    # d = datetime.date.today().strftime('%Y%m%d')
-    create_date = datetime.datetime.now()
+    # d = ut_get_localtoday().strftime('%Y%m%d')
+    create_date = ut_get_timezone_now()
     create_user_id = user_id
     id = get_report_id()
     # 報告月
-    processed_ym = create_date.strftime('%Y%m')
+    processed_ym = ut_get_localtoday().strftime('%Y%m')
     # google_amount = pages
     # 報告書名
     name = f'{processed_ym}_{sv_get_user_name(user_id)}'
@@ -236,7 +236,7 @@ def svk_create_report_page(filepath, user_id, owner_id, pages):
             create_date = create_date,                # DateTimeField
             create_user = create_user_id,
             update_user = user_id,
-            update_date = datetime.datetime.now()     # DateTimeField
+            update_date = ut_get_timezone_now()     # DateTimeField
         )
         obj.save()
         logger.info(f'報告書情報情報テーブル登録 {id} : {pdf_name}')
@@ -290,7 +290,7 @@ def svk_update_report(report_id, report_name, processed_ym, notes, user_id):
     #         report_obj.pdf_name = os.path.basename(new_path)
     report_obj.create_date = ut_get_localdate(report_obj.create_date)
     report_obj.update_user = user_id
-    report_obj.update_date = datetime.datetime.now()
+    report_obj.update_date = ut_get_timezone_now()
     report_obj.report_name = report_name
     report_obj.processed_ym = processed_ym
     report_obj.notes = notes
@@ -314,7 +314,7 @@ def svk_delete_report(report_id, report_name, processed_ym, notes, user_id):
     report_obj.delete_flg = 1
     report_obj.create_date = ut_get_localdate(report_obj.create_date)
     report_obj.update_user = user_id
-    report_obj.update_date = datetime.datetime.now()
+    report_obj.update_date = ut_get_timezone_now()
     if report_name:
         report_obj.report_name = report_name
     if processed_ym:

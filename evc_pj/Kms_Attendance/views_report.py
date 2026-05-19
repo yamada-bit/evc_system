@@ -28,7 +28,8 @@ from Kms_Attendance.forms import DailyReportEditForm,PaidHolidayEditForm
 
 # 日次勤怠
 from commons.mixins import MonthCalendarMixin
-from commons.utils import ut_get_hash,ut_get_client_ip,ut_get_localdate
+from commons.utils import (ut_get_localtoday,ut_get_localtime,
+                           ut_get_localdate,ut_get_timezone_now)
 
 from Kms_Attendance.commons.utils_report import (get_int2datestr,
     get_today_stamp,get_shime_status,get_getuji_report,get_csv_list,get_pdf_list,
@@ -59,7 +60,7 @@ class PaidHoliday(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         year = self.kwargs.get('year')
         KBN = 2#self.request.POST.get('paid_holiday')
         if not year:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
         try:
             obj_emp = M_emp.objects.get(user_id=user_id)
@@ -196,13 +197,13 @@ class PaidHolidayEdit(LoginRequiredMixin, TemplateView):
                     ),
             )
             if created:
-                obj_yukyu.INS_DATE = datetime.datetime.now()
+                obj_yukyu.INS_DATE = ut_get_timezone_now()
                 obj_yukyu.INS_ID = emp_id
                 obj_yukyu.DEL_FLG = 0
             else:
                 ins_date = ut_get_localdate(obj_yukyu.INS_DATE)
-                obj_yukyu.INS_DATE = ins_date or datetime.datetime.now()
-            obj_yukyu.UPDATE_DATE = datetime.datetime.now()
+                obj_yukyu.INS_DATE = ins_date or ut_get_timezone_now()
+            obj_yukyu.UPDATE_DATE = ut_get_timezone_now()
             obj_yukyu.UPDATE_ID = emp_id
 
             # obj_yukyu.GYOMU = request.POST('GYOMU')
@@ -245,7 +246,7 @@ class ReportToday(LoginRequiredMixin, TemplateView):
         lodgment = self.request.GET.get('lodgment', '')
         employment = self.request.GET.get('employment', '')
         manager = self.request.GET.get('manager', '')
-        dt_now = datetime.datetime.now()
+        dt_now = ut_get_localtime()
 
         lists = get_today_stamp(number, department, lodgment, employment, manager)
         context.update({
@@ -278,7 +279,7 @@ class ReportTukishime(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         year = self.kwargs.get('year')
         month = self.kwargs.get('month')
         if not year or not month:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
             month = dt_today.month
 
@@ -323,7 +324,7 @@ class ReportDaily(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         year = self.kwargs.get('year')
         month = self.kwargs.get('month')
         if not year or not month:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
             month = dt_today.month
             username = ''
@@ -521,13 +522,13 @@ class ReportDailyEdit(LoginRequiredMixin, TemplateView):
                     ),
             )
             if created:
-                obj_report.INS_DATE = datetime.datetime.now()
+                obj_report.INS_DATE = ut_get_timezone_now()
                 obj_report.INS_ID = emp_id
                 obj_report.DEL_FLG = 0
             else:
                 ins_date = ut_get_localdate(obj_report.INS_DATE)
-                obj_report.INS_DATE = ins_date or datetime.datetime.now()
-            obj_report.UPDATE_DATE = datetime.datetime.now()
+                obj_report.INS_DATE = ins_date or ut_get_timezone_now()
+            obj_report.UPDATE_DATE = ut_get_timezone_now()
             obj_report.UPDATE_ID = emp_id
 
             # obj_report.GYOMU = request.POST('GYOMU')
@@ -558,7 +559,7 @@ class ReportGetuji(LoginRequiredMixin, MonthCalendarMixin, ListView):
         year = self.kwargs.get('year')
         month = self.kwargs.get('month')
         if not year or not month:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
             month = dt_today.month
 
@@ -612,10 +613,10 @@ class ReportHoliday(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         year = self.kwargs.get('year')
         month = self.kwargs.get('month')
         if not year:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
         if not month:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             month = dt_today.month
 
         number = ''
@@ -671,7 +672,7 @@ class OutputMonth(LoginRequiredMixin, TemplateView):
         year = self.kwargs.get('year')
         month = self.kwargs.get('month')
         if not year or not month:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
             month = dt_today.month
 
@@ -711,7 +712,7 @@ class OutputMonth(LoginRequiredMixin, TemplateView):
             'lodgment': lodgment,
             'employment': employment,
             'manager': manager,
-            'date': f'{datetime.datetime.now().strftime("%Y/%m/%d %H:%M")}現在',
+            'date': f'{ut_get_localtime().strftime("%Y/%m/%d %H:%M")}現在',
             'reports': lists
             })
 
@@ -726,7 +727,7 @@ class OutputDay(LoginRequiredMixin, TemplateView):
         year = self.kwargs.get('year')
         month = self.kwargs.get('month')
         if not year or not month:
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
             month = dt_today.month
 
@@ -766,7 +767,7 @@ class OutputDay(LoginRequiredMixin, TemplateView):
             'lodgment': lodgment,
             'employment': employment,
             'manager': manager,
-            'date': f'{datetime.datetime.now().strftime("%Y/%m/%d %H:%M")}現在',
+            'date': f'{ut_get_localtime().strftime("%Y/%m/%d %H:%M")}現在',
             'reports': lists
             })
         return context
@@ -824,7 +825,7 @@ class PdfView(LoginRequiredMixin, View):
         month = self.kwargs.get('month')
         if not year or not month:
             pk = ''
-            dt_today = datetime.date.today()
+            dt_today = ut_get_localtoday()
             year = dt_today.year
             month = dt_today.month
             # raise Http404("Data does not exist")

@@ -3,6 +3,7 @@ import calendar
 import jpholiday
 import logging
 
+from django.utils import timezone
 from commons.mixins import MonthCalendarMixin
 from Kms_Attendance.models import M_emp,M_kbn,M_holiday,M_work_pat,T_time_stamp
 
@@ -68,7 +69,7 @@ def get_time_stamp(obj_emp, year, month):
     month_days = cal.itermonthdates(year, month)
 
     timestamp_list = []
-    dt_now = dt.datetime.now()
+    dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
     holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
     for day in month_days:

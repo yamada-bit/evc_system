@@ -24,6 +24,7 @@ from sequences import get_next_value
 from django.http import HttpResponse
 from django.conf import settings
 
+from commons.utils import ut_get_localtime
 from Fms_Ocrform.models import TtOcrform,TtEntry
 
 from Evc_App.sv_create_image import sv_create_ocr_image
@@ -56,7 +57,7 @@ def get_trasafolder(rootfolder):
 # 生産者コードでファイル名作成
 # 出力年月日時分秒-生産者コード(5桁以下はゼロ埋め)-ランダム数8桁
 def get_tnw_filename(seisansya_code):
-    now = datetime.datetime.now()
+    now = ut_get_localtime()
     time = now.strftime('%Y%m%d%H%M%S')
     ym = now.strftime('%Y%m')
     try:

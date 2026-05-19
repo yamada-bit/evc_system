@@ -30,7 +30,7 @@ from typing import cast
 
 from Evc_App.views import OwnerTestMixin
 from users.models import EvcUser,TtEvidence,MtAccount
-from commons.utils import ut_get_localdate,ut_get_client_ip
+from commons.utils import ut_get_localdate,ut_get_client_ip,ut_get_localtoday
 
 from Evc_App.forms import EvcEviListForm,EvcSConCreateForm
 
@@ -280,6 +280,7 @@ class EvcEviListView(LoginRequiredMixin, OwnerTestMixin, ListView):
 
         # object_list : ListViewのget_context_dataで設定　context{'object_list': queryset,
         object_list = context['object_list']
+        context['duplicate_info'] = ''
         if object_list:
             for item in object_list:
                 if item.get('result') == '重複': # get_queryset：set_evidence_listsで'重複'設定
@@ -510,7 +511,7 @@ def get_duplicate_info(request):
 def check_processed_date(evi_id, processed_date):
     if not processed_date:
         return True
-    fromday = datetime.date.today() - relativedelta(months=2)
+    fromday = ut_get_localtoday() - relativedelta(months=2)
     try:
         eviobj =  TtEvidence.objects.get(evidence_id=evi_id)
         createday = ut_get_localdate(eviobj.create_date)

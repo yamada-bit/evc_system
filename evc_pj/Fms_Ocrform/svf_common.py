@@ -10,6 +10,7 @@ import numpy as np
 
 from django.conf import settings
 
+from commons.utils import ut_get_localtime,ut_get_localtoday
 from Evc_App.sv_file import make_dir,get_imgfolder_upload,sv_get_processed_ym_path
 
 from Evc_App.sv_get_image_shape import sv_imwrite
@@ -90,7 +91,7 @@ def svf_get_ocrdata_imagepath(model_name, processed_ym, ocrdata_id, page_no):
 # 画像ファイルを保存するフォルダ作成
 def svf_make_ocrdata_image_dir(rootfolder):
     try:
-        today = datetime.datetime.now()
+        today = ut_get_localtoday()
         yy = today.strftime('%Y')
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
@@ -113,7 +114,7 @@ def svf_move_uploadfile_ymfolder(filepath, rootfolder, basename):
     if not filepath or not os.path.exists(filepath):
         return new_path
     try:
-        today = datetime.datetime.now()
+        today = ut_get_localtoday()
         processed_ym = today.strftime('%Y%m')
         dest_dir = sv_get_processed_ym_path(rootfolder, processed_ym)
         dest_file = os.path.join(dest_dir, basename).replace(os.sep,'/')
@@ -254,7 +255,7 @@ def svf_get_json_text_page(**param_dict):
             if page_no == -1 or pagedata.page_no == page_no:
                 pagedatas.append(pagedata)
     if settings.DEBUG:
-        now = datetime.datetime.now()
+        now = ut_get_localtime()
         print(now)
 
     object_list = []
@@ -325,7 +326,7 @@ def svf_get_json_text_page(**param_dict):
         lists.append(data)
         item_no += 1
     if settings.DEBUG:
-        now = datetime.datetime.now()
+        now = ut_get_localtime()
         print(now)
     # else:
     #     svt_remove_numfiles()

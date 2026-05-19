@@ -28,7 +28,7 @@ from Evc_App.views import OwnerTestMixin
 from users.models import EvcUser
 from Fms_Ocrform.models import TtOcrform,TtEntry,TtOcrData,TtTimesheet,TtJafyame
 
-from commons.utils import ut_get_localdate,ut_get_client_ip
+from commons.utils import ut_get_localdate,ut_get_client_ip,ut_get_localtime
 
 from Evc_App.sv_file import (
     sv_handle_uploaded_file,make_processed_ym_dir,sv_file2url,
@@ -110,7 +110,7 @@ class EvcUploadOcrDataView(LoginRequiredMixin, FormView):
     def form_valid(self, form):
         model_name = self.kwargs['model_name']  # URLからモデル名を取得	
         logger.info(f'{ut_get_client_ip(self.request)} '
-                    f'EvcUploadOcrDataView {model_name=} {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                    f'EvcUploadOcrDataView {model_name=} {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
 
         files = self.request.FILES.getlist('file')
         user_id = self.request.user.user_id
@@ -147,7 +147,7 @@ class EvcUploadOcrDataView(LoginRequiredMixin, FormView):
             extension = ex[1] # 拡張子を取得
             if extension.lower() in VALID_EXTENSIONS:
                 basename = ex[0]
-                now = datetime.datetime.now()
+                now = ut_get_localtime()
                 time = now.strftime('_%Y%m%d-%H%M%S%f')
                 name = basename + time + extension  # ファイル名の重複をさけるため時刻追加
                 # アップロードされたファイルをハンドルする

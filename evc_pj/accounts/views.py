@@ -122,6 +122,7 @@ class EvcMainMenuView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'メインメニュー表示')
+        context['process_title'] = ''
         return context
 
 # ログイン後のリダイレクト 権限でURLを分ける

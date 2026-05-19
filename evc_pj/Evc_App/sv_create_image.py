@@ -8,6 +8,8 @@ from pathlib import Path
 from pdf2image import convert_from_path
 from PIL import Image # tiffile -> jpeg
 
+from commons.utils import ut_get_localtime
+
 JPEG = True # False
 if platform.system() == 'Windows':
     # POPPLER_DIR = Path(__file__).resolve().parent.parent.parent / 'venv/poppler-0.68.0/bin'
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # アップロードファイルから画像ファイルを作成
 def sv_create_ocr_image(path, img_dir, page_no):
-    logger.debug(f'create image start {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+    logger.debug(f'create image start {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
     ocrimages = []
     if not path or not os.path.exists(path):
         return ocrimages
@@ -43,7 +45,7 @@ def sv_create_ocr_image(path, img_dir, page_no):
             ocrimages = sv_img_to_jpeg(path, img_dir)
             # ocrimages = [path]
         logger.info(f'create image {path} : {len(ocrimages) if ocrimages else 0}')
-    logger.debug(f'create image end {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+    logger.debug(f'create image end {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
     return ocrimages
 # PDFファイルから画像ファイルを作成
 def sv_create_image(pdffile, img_dir, dpi, page_no):

@@ -39,7 +39,7 @@ from users.models import EvcUser
 # from .forms import FileUploadForm
 
 from Fms_fileshare.models import TtSharedFile
-from commons.utils import ut_get_client_ip
+from commons.utils import ut_get_client_ip,ut_get_localtime,ut_get_localtoday
 
 from Fms_fileshare.forms import FileUploadForm,FileListForm,FileEditForm
 
@@ -77,7 +77,7 @@ class FmsFileUploadView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         logger.debug(f'{ut_get_client_ip(self.request)} '
-                    f'FmsFileUploadView {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                    f'FmsFileUploadView {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
 
         files = self.request.FILES.getlist('file')
         request_user = cast(EvcUser, self.request.user)
@@ -109,7 +109,7 @@ class FmsFileUploadView(LoginRequiredMixin, FormView):
             # extension = ex[1] # 拡張子を取得
             if extension.lower() in VALID_EXTENSIONS:
                 # basename = ex[0]
-                now = datetime.datetime.now()
+                now = ut_get_localtime()
                 time = now.strftime('_%Y%m%d-%H%M%S%f')
                 name = basename + time + extension  # ファイル名の重複をさけるため時刻追加
                 # アップロードされたファイルをハンドルする
@@ -208,7 +208,7 @@ class FmsFileListView(LoginRequiredMixin, ListView):
             logger.error(f'{ut_get_client_ip(self.request)} '
                         'FmsFileListView session owner_id is None')
 
-        today = datetime.date.today()
+        today = ut_get_localtoday()
         # last_day = calendar.monthrange(today.year, today.month)[1]
         # begin_of_month = datetime.date(today.year, today.month, 1)
         # end_of_month = datetime.date(today.year, today.month, last_day)

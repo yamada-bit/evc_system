@@ -83,8 +83,8 @@ def update_attendance_to_excel(attendance, year, month, user_name):
     return output
 # シートの出退勤情報を更新
 def update_sheet(sheet, attendance, year, month, index, user_name):
-    target_year = year #datetime.date.today().year
-    target_month = month #datetime.date.today().month-1
+    target_year = year #ut_get_localtoday().year
+    target_month = month #ut_get_localtoday().month-1
     start_date = datetime.datetime(target_year, target_month, 1).date()
     end_date = start_date + relativedelta(months=+1, day=1, days=-1)
     if index == 0:

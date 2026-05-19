@@ -18,7 +18,7 @@ from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
 from users.models import EvcUser
 from Fms_Ocrform.models import TtOcrform
 
-from commons.utils import ut_get_client_ip
+from commons.utils import ut_get_client_ip,ut_get_localtime
 
 from Fms_Ocrform.forms import EvcSaveOcrformForm,EvcEditOcrformForm,EvcOcrformListForm
 
@@ -58,7 +58,7 @@ class EvcSaveOcrformView(LoginRequiredMixin, FormView):
         return context
     def form_valid(self, form):
         logger.info(f'{ut_get_client_ip(self.request)} '
-                    f'EvcSaveOcrformView {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                    f'EvcSaveOcrformView {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
         data_type = self.kwargs.get('data_type') or 1
 
         # files = self.request.FILES.getlist('file')
@@ -117,7 +117,7 @@ class EvcSaveOcrformView(LoginRequiredMixin, FormView):
             extension = ex[1] # 拡張子を取得
             if extension.lower() in VALID_EXTENSIONS:
                 basename = ex[0]
-                now = datetime.datetime.now()
+                now = ut_get_localtime()
                 time = now.strftime('_%Y%m%d-%H%M%S%f')
                 name = basename + time + extension  # ファイル名の重複をさけるため時刻追加
                 # アップロードされたファイルをハンドルする

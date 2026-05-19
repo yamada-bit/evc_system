@@ -28,7 +28,7 @@ from django.db.models.functions import TruncMonth
 # from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 
 from users.models import EvcUser,TtEvidence,SysOwner,MtPartner
-from commons.utils import ut_get_client_ip
+from commons.utils import ut_get_client_ip,ut_get_localtoday
 
 from Evc_Management.forms import EviSummaryForm,EviInquiryForm
 
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 # 当月取得 yyyy-mm
 def current_month():
-    today = datetime.datetime.today()
+    today = ut_get_localtoday()
     yearmonth = today.strftime('%Y-%m')
     return yearmonth
 
@@ -248,8 +248,8 @@ class EvcEviSummaryView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # if yearmonthday:
         #     month = yearmonthday.strftime('%Y-%m')
         # else:
-        #     month = datetime.datetime.today().strftime('%Y-%m')
-        # max_month = (datetime.datetime.today() + relativedelta(years=1)).strftime('%Y-%m')
+        #     month = ut_get_localtoday().strftime('%Y-%m')
+        # max_month = (ut_get_localtoday() + relativedelta(years=1)).strftime('%Y-%m')
         # self.extra_context = {
         #     'month': month,
         #     'max_month': max_month,

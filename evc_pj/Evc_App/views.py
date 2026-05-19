@@ -23,7 +23,7 @@ from django.http import JsonResponse
 # 実行時の処理は何もしない。静的解析ツールやIDE向け
 from users.models import EvcUser
 
-from commons.utils import ut_get_client_ip
+from commons.utils import ut_get_client_ip,ut_get_localtime
 from Evc_App.forms import EvcUploadFileForm,EvcUploadAreaForm,EvcSelectOwnerForm
 
 from Evc_App.sv_create_image import sv_create_ocr_image
@@ -141,7 +141,7 @@ class EvcUploadView(LoginRequiredMixin, OwnerTestMixin, FormView):
     #     return EvcUser.objects.get(user_id=self.request.user.user_id)
     def form_valid(self, form):
         logger.debug(f'{ut_get_client_ip(self.request)} '
-                     f'EvcUploadView start {datetime.datetime.now()}')
+                     f'EvcUploadView start {ut_get_localtime()}')
 
         files = self.request.FILES.getlist('file')
         request_user = cast(EvcUser, self.request.user)
@@ -197,7 +197,7 @@ class EvcUploadView(LoginRequiredMixin, OwnerTestMixin, FormView):
             extension = ex[1] # 拡張子を取得
             if extension.lower() in VALID_EXTENSIONS:
                 basename = ex[0]
-                now = datetime.datetime.now()
+                now = ut_get_localtime()
                 time = now.strftime('_%Y%m%d-%H%M%S%f')
                 name = basename + time + extension  # ファイル名の重複をさけるため時刻追加
                 path = False
@@ -286,7 +286,7 @@ class EvcUploadView(LoginRequiredMixin, OwnerTestMixin, FormView):
                 logger.info(f'{ut_get_client_ip(self.request)} '
                             f'EvcUploadView {cnt}件 アップロードに成功しました。')
         logger.debug(f'{ut_get_client_ip(self.request)} '
-                     f'EvcUploadView end {datetime.datetime.now()}')
+                     f'EvcUploadView end {ut_get_localtime()}')
         return self.render_to_response(self.get_context_data(form=form))
         # return redirect('Evc_App:evidence_list')
     def form_invalid(self, form):

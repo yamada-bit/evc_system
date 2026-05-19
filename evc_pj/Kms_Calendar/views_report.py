@@ -21,7 +21,7 @@ from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
 
 from Kms_Calendar.models import TtGaikinReport
 from users.models import EvcUser
-from commons.utils import ut_get_client_ip
+from commons.utils import ut_get_client_ip,ut_get_localtime,ut_get_localtoday
 
 from Kms_Calendar.forms import UploadReportForm,ReportListForm,EditReportForm
 
@@ -59,7 +59,7 @@ class KmsUploadReportView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         logger.debug(f'{ut_get_client_ip(self.request)} '
-                    f'KmsUploadReportView {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                    f'KmsUploadReportView {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
 
         files = self.request.FILES.getlist('file')
         user_id = self.request.user.user_id
@@ -88,7 +88,7 @@ class KmsUploadReportView(LoginRequiredMixin, FormView):
             # extension = ex[1] # 拡張子を取得
             if extension.lower() in VALID_EXTENSIONS:
                 # basename = ex[0]
-                now = datetime.datetime.now()
+                now = ut_get_localtime()
                 time = now.strftime('_%Y%m%d-%H%M%S%f')
                 name = basename + time + extension  # ファイル名の重複をさけるため時刻追加
                 # アップロードされたファイルをハンドルする
@@ -188,7 +188,7 @@ class KmsReportListView(LoginRequiredMixin, ListView):
             logger.error(f'{ut_get_client_ip(self.request)} '
                         'KmsReportListView session owner_id is None')
 
-        today = datetime.datetime.today()
+        today = ut_get_localtoday()
         yearmonth = today.strftime('%Y-%m')
         form_month = self.request.GET.get('report_month', yearmonth)
         # request.GET 型でリクエスト　QueryDict型で初期化

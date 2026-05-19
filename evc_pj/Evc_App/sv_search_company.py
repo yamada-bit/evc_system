@@ -8,6 +8,8 @@ import xml.etree.ElementTree as ET
 
 from django.conf import settings
 
+from commons.utils import ut_get_timezone_now
+
 from Evc_App.sv_file import (
     sv_get_partner_id,sv_get_publisher_id,
     sv_get_partner_name,sv_get_partner_ryaku_name,sv_conv_company,
@@ -639,12 +641,12 @@ def fetch_company_name_from_invoice_api(reg_no: str):
 def create_partner_registration(user_id, owner_id, name, corporate_number):
     if not name or not owner_id:
         return None
-    # d = datetime.date.today().strftime('%y%m%d')
+    # d = ut_get_localtoday().strftime('%y%m%d')
     # id = d + '0001'
     id = get_new_partner_id()
 
     try:
-        create_date=datetime.datetime.now() 
+        create_date = ut_get_timezone_now()
         obj = MtPartner(
             partner_id=id,
             partner_name=name,
@@ -672,7 +674,7 @@ def update_partner_registration(partner_obj, user_id, corporate_number):
     try:
         partner_obj.corporate_number = corporate_number
         partner_obj.update_user = user_id
-        partner_obj.update_date = datetime.datetime.now()
+        partner_obj.update_date = ut_get_timezone_now()
         partner_obj.save()
         logger.info(f'update_partner_registration {id}')
     except Exception:

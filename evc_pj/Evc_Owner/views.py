@@ -18,7 +18,8 @@ from sequences import get_next_value
 
 from users.models import EvcUser,SysOwner,MtFolder,TtEvidence,MtPartner,HtEvidence
 # from users.models import EvcUser,SysOwner,MtFolder,TtEvidence,MtPartner,HtEvidence,MtOwnerUser
-from commons.utils import ut_get_hash,ut_get_localdate,ut_get_client_ip
+from commons.utils import (ut_get_hash,ut_get_client_ip,
+                           ut_get_localdate,ut_get_timezone_now,ut_get_localtoday)
 
 from Evc_Owner.forms import (
     EvcOwnerForm,EvcUpdateOwnerForm,OwnerListForm,
@@ -106,7 +107,7 @@ class EvcEditOwnerView(LoginRequiredMixin, FormView):
             ownerform.owner_id = owner_id
             root_folder = os.path.join(evc_dir, owner_id + '_root').replace(os.sep,'/')
             ownerform.root_folder = root_folder
-            ownerform.create_date = datetime.datetime.now()
+            ownerform.create_date = ut_get_timezone_now()
             ownerform.create_user = login_user_id
 
         # if kubun == '削除':
@@ -115,7 +116,7 @@ class EvcEditOwnerView(LoginRequiredMixin, FormView):
         #         messages.success(self.request, 'データを削除しました。')
         try:
             # ownerform.owner_id  = form.cleaned_data.get('owner_id')
-            ownerform.update_date = datetime.datetime.now()
+            ownerform.update_date = ut_get_timezone_now()
             ownerform.update_user = login_user_id
             ownerform.save()
             logger.info(f'{ut_get_client_ip(self.request)} '
@@ -160,9 +161,9 @@ class EvcEditOwnerView(LoginRequiredMixin, FormView):
         return super().form_invalid(form)
 # 新規owner_id取得
 def get_new_owner_id():
-    # d = datetime.date.today().strftime('%y%m%d')
+    # d = ut_get_localtoday().strftime('%y%m%d')
     # id = d + '0001'
-    now = datetime.datetime.now()
+    now = ut_get_localtoday()
     str_date = now.strftime('%y%m')
 
     prefix = 'OWNER'
@@ -211,7 +212,7 @@ def sv_add_folder(login_user_id, owner_id, root_folder, categorys):
         ['検収書','kenshuu','検収書'],
         ['発注書','hattyuu','発注書'],
         ['その他','other','その他']]
-    create_date = datetime.datetime.now() 
+    create_date = ut_get_timezone_now()
     count = len(category_list)
     for i in range(1, count + 1):
         id = owner_id + '_{:03d}'.format(i)  # 契約会社ID+連番（3桁）
@@ -258,10 +259,10 @@ def sv_create_groupadmin(login_user_id, user_id, user_name, owner_id):
     else:
         logger.debug(f'EvcEditOwnerView EvcUser レコードなし {user_id_hash=}')
         try:
-            create_date = datetime.datetime.now()
+            create_date = ut_get_timezone_now()
             idx = user_id.find('@')
             if 0 < idx:
-                d = datetime.date.today().strftime('%m%d')
+                d = ut_get_localtoday().strftime('%m%d')
                 # パスワード: ＠の前の文字列 + 作成月日
                 new_password = user_id[:idx] + d
                 # new_password = user_id[:idx]
@@ -298,7 +299,7 @@ def sv_create_groupadmin(login_user_id, user_id, user_name, owner_id):
 #         for user in list:
 #             if user:
 #                 user_list.append([user,'',user])
-#     create_date = datetime.datetime.now() 
+#     create_date = ut_get_timezone_now()
 #     count = len(user_list)
 #     for i in range(1, count + 1):
 #         # id = owner_id + '_{:03d}'.format(i)  # 契約会社ID+連番（3桁）
@@ -721,9 +722,9 @@ class EvcSelectableUserListView(LoginRequiredMixin, ListView):
                 login_user = self.request.user.user_id
                 if created:
                     obj.create_user = login_user
-                    obj.create_date = datetime.datetime.now()
+                    obj.create_date = ut_get_timezone_now()
                 obj.update_user = login_user
-                obj.update_date = datetime.datetime.now()
+                obj.update_date = ut_get_timezone_now()
                 obj.save()
                 rtn = True
         except Exception:

@@ -850,7 +850,7 @@ class EvcUseGoogleForm(forms.Form):
     # shori_date1 = forms.CharField(
     #     required=False,
     #     max_length=7,
-    #     # initial= datetime.datetime.now().strftime('%Y/%m'),
+    #     # initial= ut_get_localtoday().strftime('%Y/%m'),
     #     widget=forms.TextInput(attrs={
     #         'placeholder': 'yyyy/mm',
     #         'type': 'text',
@@ -860,7 +860,7 @@ class EvcUseGoogleForm(forms.Form):
     # shori_date2 = forms.CharField(
     #     required=False,
     #     max_length=7,
-    #     # initial= datetime.datetime.now().strftime('%Y/%m'),
+    #     # initial= ut_get_localtoday().strftime('%Y/%m'),
     #     widget=forms.TextInput(attrs={
     #         'placeholder': 'yyyy/mm',
     #         'type': 'text',

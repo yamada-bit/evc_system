@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 # from django.http import FileResponse
 
+from commons.utils import ut_get_localtime,ut_get_localtoday
 from users.models import SysOwner,MtPartner,MtAccount
 from Evc_App.sv_file import sv_get_partner_name,sv_get_publisher_name
 
@@ -139,7 +140,7 @@ def sv_filter_evidence(owner_id, request, queryset):
     return queryset
 # 本日で絞り込み
 def sv_filter_today(queryset):
-    today = datetime.date.today()
+    today = ut_get_localtoday()
     return filter_create_date(queryset, today)
 # 作成日で絞り込み
 def filter_create_date(queryset, day):
@@ -171,7 +172,7 @@ def cp932_replace(str):
 def sv_response_evidence(queryset):
     response = HttpResponse(content_type='text/csv; charset=CP932')
     # response = HttpResponse(content_type='text/csv')    # BOM付きのUTF-8のCSVファイル
-    now = datetime.datetime.now()
+    now = ut_get_localtime()
     str_time = now.strftime('_%Y%m%d%H%M%S')
 
     csvfile = 'エビデンス' + str_time + '.csv'
@@ -233,7 +234,7 @@ def sv_response_evidence(queryset):
 # 取引先情報からCSVを作成する
 def sv_response_partner(queryset):
     response = HttpResponse(content_type='text/csv; charset=CP932')
-    now = datetime.datetime.now()
+    now = ut_get_localtime()
     str_time = now.strftime('_%Y%m%d%H%M%S')
 
     csvfile = '取引先' + str_time + '.csv'
@@ -290,7 +291,7 @@ def sv_response_partner(queryset):
 # 取引先CSVファイルを作成する
 def sv_response_partner_sample():
     response = HttpResponse(content_type='text/csv; charset=CP932')
-    now = datetime.datetime.now()
+    now = ut_get_localtime()
     str_time = now.strftime('_%Y%m%d%H%M%S')
 
     csvfile = '取引先' + str_time + '.csv'
@@ -429,7 +430,7 @@ def sv_filter_history(owner_id, request, queryset):
 # 履歴情報からCSVを作成する
 def sv_response_history(queryset):
     response = HttpResponse(content_type='text/csv; charset=CP932')
-    now = datetime.datetime.now()
+    now = ut_get_localtime()
     str_time = now.strftime('_%Y%m%d%H%M%S')
 
     csvfile = 'エビデンス変更履歴' + str_time + '.csv'

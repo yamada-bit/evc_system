@@ -21,7 +21,7 @@ from sequences import get_next_value
 
 from Fms_Ocrform.models import TtOcrform
 
-from commons.utils import ut_get_localdate
+from commons.utils import ut_get_localdate,ut_get_timezone_now,ut_get_localtoday,ut_get_localtime
 
 from Evc_App.sv_file import (TextData,TextDatas,
     make_dir,get_imgfolder_upload,get_jsonfolder,sv_delete_file
@@ -369,7 +369,7 @@ def move_ocrform_file(filepath, rootfolder, basename):
 def check_filename(file):
     if os.path.exists(file):
         # dt = datetime.datetime.fromtimestamp(os.path.getmtime(file))
-        # dt_now = datetime.datetime.now()
+        # dt_now = ut_get_timezone_now()
         # if dt.year != dt_now.year or dt.month != dt_now.month or dt.day != dt_now.day:
         filepath, ext = os.path.splitext(file)
         i = 1
@@ -384,7 +384,7 @@ def check_filename(file):
 def get_ocrform_id(data_type):
     # ocrform_id：ofrm_連番(00001～)
 
-    d = datetime.date.today().strftime('%Y%m%d')
+    d = ut_get_localtoday().strftime('%Y%m%d')
     try:
         # シーケンス採番
         # num = get_next_value(d)
@@ -407,8 +407,8 @@ def svt_save_ocrform(user_id, owner_id, filepath, jsonpos, jsontext, ocrform_id)
     # basename_without_ext, ext_name = os.path.splitext(os.path.basename(pdffile))
     try:
         basename = os.path.basename(filepath)
-        # d = datetime.date.today().strftime('%Y%m%d')
-        create_date = datetime.datetime.now()
+        # d = ut_get_localtoday().strftime('%Y%m%d')
+        create_date = ut_get_timezone_now()
         create_user_id = user_id
         id = ocrform_id    # get_ocrform_id()
 
@@ -448,7 +448,7 @@ def svt_update_ocrform(ocrform_id, user_id, form_pages):
     ocrform_obj.ocrform_text = json_text
     ocrform_obj.create_date = ut_get_localdate(ocrform_obj.create_date)
     ocrform_obj.update_user = user_id
-    ocrform_obj.update_date = datetime.datetime.now()
+    ocrform_obj.update_date = ut_get_timezone_now()
 
     try:
         ocrform_obj.save()
@@ -627,8 +627,8 @@ def get_pdf_text(pdf_file, json_dir, page_count):
     """
     別プロセスで処理する
     """
-    # print('start'+ datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
-    logger.debug(f'get pdf text start {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+    # print('start'+ ut_get_localtime().strftime('%Y/%m/%d %H:%M:%S'))
+    logger.debug(f'get pdf text start {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
     basename_without_ext = os.path.splitext(os.path.basename(pdf_file))[0]
     jsonfile = os.path.join(json_dir, basename_without_ext + '_sub.json').replace(os.sep,'/')
     # cmd = 'python Fms_Ocrform/sample.py --path ' + pdf_file
@@ -639,8 +639,8 @@ def get_pdf_text(pdf_file, json_dir, page_count):
 
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # print(f'returncode: {result.returncode},stdout: {result.stdout},stderr: {result.stderr}')
-    # print('end'+ datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
-    logger.debug(f'get pdf text end {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+    # print('end'+ ut_get_localtime().strftime('%Y/%m/%d %H:%M:%S'))
+    logger.debug(f'get pdf text end {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
     if result.returncode == 0:
         if os.path.exists(jsonfile):
             try:
@@ -665,10 +665,10 @@ def get_pdf_text(pdf_file, json_dir, page_count):
     # results = dict()
     # thread = threading.Thread(target=get_pdf_text_thread,
     #                     args=(pdf_file, results), name='evc_pdfthread')
-    # print('start'+ datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
+    # print('start'+ ut_get_localtime().strftime('%Y/%m/%d %H:%M:%S'))
     # thread.start()  # エビデンス情報作成(別スレッド)
     # thread.join()
-    # print('end'+ datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
+    # print('end'+ ut_get_localtime().strftime('%Y/%m/%d %H:%M:%S'))
     # print(results)
     return textdatas
 

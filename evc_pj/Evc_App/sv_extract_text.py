@@ -7,6 +7,8 @@ from google.cloud import vision
 from google.oauth2 import service_account
 
 from django.conf import settings
+from commons.utils import ut_get_localtime
+
 from Evc_App.sv_file import TextData,TextDatas,DetectJson
 from Evc_App.sv_json import sv_save_responsetext,sv_save_detect_json,sv_load_detect_json
 
@@ -35,7 +37,7 @@ def sv_extract_text(imagefiles, areas_dict, specif_page_list):
     
     textdatas = []
     try:
-        logger.debug(f'vision.ImageAnnotatorClient {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+        logger.debug(f'vision.ImageAnnotatorClient {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
         credentials = service_account.Credentials.from_service_account_file(path)
         client = vision.ImageAnnotatorClient(credentials=credentials)
     except Exception:
@@ -54,13 +56,13 @@ def sv_extract_text(imagefiles, areas_dict, specif_page_list):
             with io.open(input_file, 'rb') as image_file:
                 content = image_file.read()
             if GOOGLEOCR:
-                logger.debug(f'vision.Image {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                logger.debug(f'vision.Image {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
                 image = vision.Image(content=content)
                 response = client.document_text_detection(
                     image=image,
                     image_context={'language_hints': ['ja']}
                 )
-                logger.debug(f'document_text_detection {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+                logger.debug(f'document_text_detection {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
                 google_cnt += 1
                 if settings.DEBUG:
                     # デバッグ用にjsonファイルで保存するためのデータ
@@ -69,7 +71,7 @@ def sv_extract_text(imagefiles, areas_dict, specif_page_list):
             else:
                 # デバッグではGoogleOCRは呼び出さずjsonファイルからデータを取り出す。
                 basename_without_ext = os.path.basename(input_file)
-                now = datetime.datetime.now()
+                now = ut_get_localtime()
                 time = now.strftime('_%Y%m%d-')
                 idx = basename_without_ext.find(time)
                 if 0 < idx:

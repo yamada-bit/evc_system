@@ -14,7 +14,7 @@ from django.urls import reverse,reverse_lazy
 from django.http import HttpResponseRedirect
 
 from users.models import EvcUser
-from commons.utils import ut_get_hash,ut_get_client_ip,ut_get_localdate
+from commons.utils import ut_get_hash,ut_get_client_ip,ut_get_timezone_now,ut_get_localdate
 
 from Evc_Management.forms import EvcUserForm,EvcUserListForm
 
@@ -124,7 +124,7 @@ class EvcUserView(LoginRequiredMixin, OwnerTestMixin, FormView):
             #     create_utc = make_aware(userobj.create_date, timezone=datetime.timezone.utc)
             #     userform.create_date = timezone.localtime(create_utc)
             # except Exception:
-            #     userform.create_date = datetime.datetime.now()
+            #     userform.create_date = ut_get_timezone_now()
             userform.create_date = ut_get_localdate(userobj.create_date)
             userform.create_user = userobj.create_user
         else:
@@ -145,7 +145,7 @@ class EvcUserView(LoginRequiredMixin, OwnerTestMixin, FormView):
             if not adduser:
                 messages.error(self.request, 'ユーザを追加できません。利用者数の追加を申請してください。')
                 return super().form_invalid(form)
-            userform.create_date = datetime.datetime.now()
+            userform.create_date = ut_get_timezone_now()
             userform.create_user = self.request.user.user_id
 
         if kubun == '削除' and not userobj:
@@ -183,7 +183,7 @@ class EvcUserView(LoginRequiredMixin, OwnerTestMixin, FormView):
                     #         messages.error(self.request, 'ユーザ数が不足しています。変更できません')
                     #         return super().form_invalid(form)
 
-                userform.update_date = datetime.datetime.now()
+                userform.update_date = ut_get_timezone_now()
                 userform.update_user = self.request.user.user_id
                 userform.save() 
                 if kubun == '削除':
@@ -299,7 +299,7 @@ class EvcUserGuestView(EvcUserView):
             # userform.is_active = userobj.is_active
             userform.date_joined = userobj.date_joined
 
-            userform.update_date = datetime.datetime.now()
+            userform.update_date = ut_get_timezone_now()
             userform.update_user = self.request.user.user_id
             userform.save() 
             messages.success(self.request, 'データを登録しました。')

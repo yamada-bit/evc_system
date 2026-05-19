@@ -10,7 +10,7 @@ from django.conf import settings
 from sequences import get_next_value
 
 from Fms_fileshare.models import TtSharedFile
-from commons.utils import ut_get_localdate
+from commons.utils import ut_get_localdate,ut_get_timezone_now,ut_get_localtoday
 
 from Evc_App.sv_file import (sv_delete_file, make_dir, sv_get_user_name,
                              get_imgfolder_upload, get_jsonfolder,
@@ -37,7 +37,7 @@ def svf_get_shared_rootfolder():
 # 年月フォルダ
 def svf_make_shared_dir(rootfolder):
     try:
-        today = datetime.datetime.now()
+        today = ut_get_localtoday()
         yy = today.strftime('%Y')
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
@@ -101,10 +101,10 @@ def svf_create_sharedfile(uploadfiles, user_id, owner_id):
         filename = uploadfile.get('name')
         path = uploadfile.get('path')
         shared_type = uploadfile.get('shared_type')
-        today = datetime.datetime.now()
 
+        local_today = ut_get_localtoday()
         # 処理年月のフォルダに保存
-        new_path = move_file_processed_ym(path, rootfolder, filename, today).replace('\\', '/')
+        new_path = move_file_processed_ym(path, rootfolder, filename, local_today).replace('\\', '/')
         # ページごとに画像データを作成
         ocrimages = sv_create_ocr_image(new_path, img_upload_dir, -1)
         if not ocrimages:   # パスワード設定などにより読み込めない
@@ -120,7 +120,7 @@ def svf_create_sharedfile(uploadfiles, user_id, owner_id):
         save_id = False
         page_count = len(ocrimages)
         # 共有ファイル情報テーブルデータ作成・登録
-        save_id = svf_create_sharedfile_page(new_path, user_id, owner_id, today, shared_type, page_count)
+        save_id = svf_create_sharedfile_page(new_path, user_id, owner_id, local_today, shared_type, page_count)
         logger.debug(f'create sharedfile page {save_id}')
         if save_id:
             for idx, imgfile in enumerate(ocrimages):
@@ -143,12 +143,12 @@ def svf_create_sharedfile(uploadfiles, user_id, owner_id):
         #         delete_files(ocrimages)
     return ok_list, error_list
 # ファイルは、年月フォルダ(当月)に移動
-def move_file_processed_ym(filepath, rootfolder, basename, today):
+def move_file_processed_ym(filepath, rootfolder, basename, local_today):
     new_path = filepath
     if not filepath or not os.path.exists(filepath):
         return new_path
     try:
-        processed_ym = today.strftime('%Y%m')
+        processed_ym = local_today.strftime('%Y%m')
         dest_dir = sv_get_processed_ym_path(rootfolder, processed_ym)
         dest_file = os.path.join(dest_dir, basename).replace(os.sep,'/')
 
@@ -171,7 +171,7 @@ def check_filename(file):
     if os.path.exists(file):
         # 別日付の場合
         # dt = datetime.datetime.fromtimestamp(os.path.getmtime(file))
-        # dt_now = datetime.datetime.now()
+        # dt_now = ut_get_timezone_now()
         # if dt.year != dt_now.year or dt.month != dt_now.month or dt.day != dt_now.day:
         filepath, ext = os.path.splitext(file)
         i = 1
@@ -185,7 +185,7 @@ def check_filename(file):
 # 共有ファイル情報ID取得
 # shared_id：yyyymmdd_連番(00001～)
 def get_sharedfile_id():
-    d = datetime.date.today().strftime('%Y%m%d')
+    d = ut_get_localtoday().strftime('%Y%m%d')
     try:
         # シーケンス採番
         num = get_next_value(f'shared_{d}')
@@ -211,19 +211,18 @@ def get_sharedfile_id():
 
     return id
 # 共有ファイル情報テーブルデータ作成・登録
-def svf_create_sharedfile_page(filepath, user_id, owner_id, today, shared_type, pages):
+def svf_create_sharedfile_page(filepath, user_id, owner_id, local_today, shared_type, pages):
     basename = os.path.basename(filepath)
     basename_without_ext, ext_name = os.path.splitext(basename)
     pdf_name = basename_without_ext
-    # d = datetime.date.today().strftime('%Y%m%d')
-    create_date = today # datetime.datetime.now()
+    # d = ut_get_localtoday().strftime('%Y%m%d')
+    create_date = ut_get_timezone_now()
     create_user_id = user_id
     id = get_sharedfile_id()
-    shared_date = create_date.strftime('%Y%m%d')
-    # 月
-    processed_ym = create_date.strftime('%Y%m')
+    shared_date = local_today.strftime('%Y%m%d')
     # google_amount = pages
     # 共有ファイル名
+    processed_ym = local_today.strftime('%Y%m')
     name = f'{processed_ym}_{sv_get_user_name(user_id)}'
     try:
         obj = TtSharedFile(
@@ -242,7 +241,7 @@ def svf_create_sharedfile_page(filepath, user_id, owner_id, today, shared_type, 
             create_date = create_date,                # DateTimeField
             create_user = create_user_id,
             update_user = user_id,
-            update_date = datetime.datetime.now()     # DateTimeField
+            update_date = ut_get_timezone_now()     # DateTimeField
         )
         obj.save()
         logger.info(f'共有ファイル情報情報テーブル登録 {id} : {pdf_name}')
@@ -296,7 +295,7 @@ def svf_update_sharedfile(shared_id, shared_name, shared_type, shared_date, note
     #         shared_obj.pdf_name = os.path.basename(new_path)
     sharedfile_obj.create_date = ut_get_localdate(sharedfile_obj.create_date)
     sharedfile_obj.update_user = user_id
-    sharedfile_obj.update_date = datetime.datetime.now()
+    sharedfile_obj.update_date = ut_get_timezone_now()
     sharedfile_obj.shared_name = shared_name
     sharedfile_obj.shared_type = shared_type
     # sharedfile_obj.processed_ym = processed_ym
@@ -322,7 +321,7 @@ def svf_delete_sharedfile(shared_id, shared_name, shared_date, notes, user_id):
     sharedfile_obj.delete_flg = 1
     sharedfile_obj.create_date = ut_get_localdate(sharedfile_obj.create_date)
     sharedfile_obj.update_user = user_id
-    sharedfile_obj.update_date = datetime.datetime.now()
+    sharedfile_obj.update_date = ut_get_timezone_now()
     if shared_name:
         sharedfile_obj.shared_name = shared_name
     # if processed_ym:

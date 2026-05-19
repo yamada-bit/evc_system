@@ -3,6 +3,7 @@ import datetime
 from collections import deque
 # import itertools
 # from django import forms
+from django.utils import timezone
 
 class BaseCalendarMixin:
     """カレンダー関連Mixinの、基底クラス"""
@@ -80,7 +81,7 @@ class MonthCalendarMixin(BaseCalendarMixin):
         if month and year:
             month = datetime.date(year=int(year), month=int(month), day=1)
         else:
-            month = datetime.date.today().replace(day=1)
+            month = timezone.localdate().replace(day=1)
         return month
     # 任意の日付（datetime, date）の月の最終日
     def get_last_date(self, date):
@@ -91,7 +92,7 @@ class MonthCalendarMixin(BaseCalendarMixin):
         self.setup_calendar()
         current_month = self.get_current_month(year, month)
         calendar_data = {
-            'now': datetime.date.today(),
+            'now': timezone.localdate(),
             'month_days': self.get_month_days(current_month),
             'month_current': current_month,
             'month_previous': self.get_previous_month(current_month),
