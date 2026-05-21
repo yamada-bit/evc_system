@@ -1,19 +1,14 @@
 import os
-# import sys
 import dataclasses
 import datetime
 import logging
-# import configparser
-# import errno
+
 from decimal import Decimal
 from typing import List
 from sequences import get_next_value
-from django.db.models import Q
 
 from django.conf import settings
 from users.models import SysOwner,EvcUser,MtFolder,MtPartner,MtAccount,TtDetect
-# from users.models import SysOwner,EvcUser,MtFolder,MtPartner,MtAccount,TtDetect,MtOwnerUser
-# from urllib.parse import urljoin,quote
 from commons.utils import ut_get_hash,ut_get_timezone_now,ut_get_localdate,ut_get_localtoday
 
 logger = logging.getLogger(__name__)
@@ -86,23 +81,6 @@ class EvidenceInfo:
     file_path: str
     google_amount: int
 
-# def read_config():
-#     exe_path = os.path.dirname(sys.argv[0])
-#     config_path = exe_path + '\setting.ini'
-
-#     if not os.path.exists(config_path):
-#         return
-#         # raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), config_path)
-
-#     config = configparser.ConfigParser()
-#     config.read(config_path, encoding='utf-8')
-#     read_default = config['DEFAULT']
-#     global Poppler_dir
-#     Poppler_dir = read_default.get('Poppler')
-#     global Image_dir
-#     Image_dir = read_default.get('Image')
-#     global Json_dir
-#     Json_dir = read_default.get('Json')
 # アップロードされたファイルを保存するパス
 def sv_get_filepath(filename, rootfolder):
     abs_path = os.path.join(rootfolder, 'upload', filename).replace(os.sep,'/')
@@ -703,6 +681,16 @@ def sv_get_publisher_id(name, user_id):
         publisher_id = None
     # logger.debug(f'publisher_id {name} : {publisher_id}')
     return publisher_id
+# 法人番号取得
+def sv_get_corporate_number(partner_id):
+    corporate_number = ''
+    if partner_id:
+        try:
+            corporate_number = MtPartner.objects.get(partner_id=partner_id).corporate_number
+        except MtPartner.DoesNotExist:
+            pass
+    return corporate_number
+
 # 取引先のList
 def sv_get_partner_list(owner_id):
     partners = []
@@ -878,11 +866,11 @@ def sv_get_account_id(name, user_id, owner_id, create):
         account_id = accountobj.account_id
     else:
         account_id = None
-        # 取引先データがなければ作成
+        # # 取引先データがなければ作成
         # if create:
         #     account_id = create_account_auto(name, user_id, owner_id)
         # else:
-            # account_id = None
+        #     account_id = None
     logger.debug(f'account_id  {name} : {account_id}')
     return account_id
 
@@ -959,7 +947,6 @@ def sv_file2url(filepath):
     evc_url = getattr(settings, 'EVC_URL')
     evcpath = getattr(settings, 'EVC_ROOT')
     # エラー：'PosixPath' object has no attribute 'lower'
-    # low_path = path.lower() 
     # 解決策：str() で文字列に変換する
     # evc_dir = str(evcpath).lower()
     evc_dir = str(evcpath)

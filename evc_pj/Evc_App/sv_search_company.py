@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 
 from django.conf import settings
 
-from commons.utils import ut_get_timezone_now
+from commons.utils import ut_get_timezone_now,ut_get_localdate
 
 from Evc_App.sv_file import (
     sv_get_partner_id,sv_get_publisher_id,
@@ -62,7 +62,7 @@ def detect_partner(user_id, owner_id, textdatalist, texts, evidence_id):
     reg_publisher_name = None   # 登録番号に対応した取引先マスタの取引先名
 
     corporate_number, reg_textdata = extract_registration(textdatalist)    # 登録番号(数字13桁)抽出
-    corporate_number = extract_invoice_number(texts)
+    # corporate_number = extract_invoice_number(texts)
     if corporate_number:
         # T・ハイフン・スペースを除去して数字のみにする
         corporate_number = re.sub(r'[^0-9]', '', corporate_number)
@@ -80,6 +80,8 @@ def detect_partner(user_id, owner_id, textdatalist, texts, evidence_id):
     matched_publisher = result.get('matched_publisher')
     textdata_publisher = result.get('textdata_publisher')
 
+    logger.debug(f'抽出 {partner_id=}')
+    logger.debug(f'抽出 {publisher_id=}')
     if reg_publisher_id:    # 登録番号法人が抽出された場合
         if reg_publisher_id == partner_id:  # 登録番号法人が取引先に設定されていた場合
             partner_id = publisher_id
@@ -93,6 +95,8 @@ def detect_partner(user_id, owner_id, textdatalist, texts, evidence_id):
         # 登録番号法人を発行元に設定
         publisher_id = reg_publisher_id
         detect_publisher_name = reg_publisher_name
+        logger.debug(f'調整 {partner_id=}')
+        logger.debug(f'調整 {publisher_id=}')
     else:
         if detect_partner_name and not detect_publisher_name:
             if publisher_id:
@@ -107,9 +111,8 @@ def detect_partner(user_id, owner_id, textdatalist, texts, evidence_id):
                     detect_publisher_name = detect_partner_name
                     partner_id = id
                     detect_partner_name = None
-
-    logger.debug(f'{partner_id=}')
-    logger.debug(f'{publisher_id=}')
+                    logger.debug(f'調整 {partner_id=}')
+                    logger.debug(f'調整 {publisher_id=}')
     # 取引先データがなければ検出情報データ作成
     if (not partner_id and detect_partner_name) or (not publisher_id and detect_publisher_name):
         sv_save_detect(detect_partner_name, detect_publisher_name, user_id, evidence_id)
@@ -542,6 +545,7 @@ def get_company_id(user_id, owner_id, corporate_number):
         issuer = partnerobj.partner_name
         partner_id = partnerobj.partner_id
         issuer_method = 'partner_db'
+        logger.info(f'得意先マスタ登録済み {partner_id} : {corporate_number}')
     else:
         # issuer = fetch_company_name_from_invoice_api(corporate_number)
         # issuer_method = 'invoice_api'
@@ -560,7 +564,6 @@ def get_company_id(user_id, owner_id, corporate_number):
             issuer_method = 'invoice_api'
     return partner_id, issuer
 
-# API_KEY = 'あなたのAPIキー'
 API_KEY = getattr(settings, 'KOKUZEI_WEBAPI')
 
 # =========================
@@ -590,6 +593,7 @@ def get_company_info(corporate_number: str):
     response = requests.get(url, params=params)
     
     if response.status_code != 200:
+        logger.warning(f'法人名取得 エラー {corporate_number=} status={response.status_code}')
         return None
     try:
         # data = response.json()
@@ -602,10 +606,12 @@ def get_company_info(corporate_number: str):
         root = ET.fromstring(response.content)
         name_el = root.find(".//name")
         if name_el is not None:
+            logger.info(f'法人名取得 {corporate_number=} name={name_el.text}')
             return {
                 'name': name_el.text,
                 'address': ''
             }
+        logger.warning(f'法人名未取得 {corporate_number=}')
     except Exception as e:
         logger.exception(f'Web API exception {e}')
     return None
@@ -660,9 +666,9 @@ def create_partner_registration(user_id, owner_id, name, corporate_number):
             update_date=create_date,
         )
         obj.save()
-        logger.info(f'create_partner_registration {id} : {name}')
+        logger.info(f'得意先マスタ登録 {id} : {corporate_number} : {name}')
     except Exception:
-        logger.exception(f'create_partner_registration save Exception {id} : {name}')
+        logger.exception(f'得意先マスタ登録 Exception {id} : {corporate_number} : {name}')
         id = None
 
     return id
@@ -673,12 +679,14 @@ def update_partner_registration(partner_obj, user_id, corporate_number):
     id = partner_obj.partner_id
     try:
         partner_obj.corporate_number = corporate_number
+        if partner_obj.create_date:
+            partner_obj.create_date = ut_get_localdate(partner_obj.create_date)
         partner_obj.update_user = user_id
         partner_obj.update_date = ut_get_timezone_now()
         partner_obj.save()
-        logger.info(f'update_partner_registration {id}')
+        logger.info(f'得意先マスタ更新 {id} : {corporate_number}')
     except Exception:
-        logger.exception(f'update_partner_registration save Exception {id}')
+        logger.exception(f'得意先マスタ更新 Exception {id} : {corporate_number}')
 
     return id
 

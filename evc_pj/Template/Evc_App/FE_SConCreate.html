@@ -190,7 +190,7 @@
           </label>
           {{ form.partner.errors }}
           <div style="display: flex; align-items: center; gap: 8px;">
-            <label>発行元　
+            <label>発行元
               {% if form.detect_publisher.value %}
               <span class="detect_warning">*未登録*</span>
               {% endif %}
@@ -198,6 +198,9 @@
             <button type="button" class="button_image button_swap" onclick="swapPartnerPublisher()">
               ⇅
             </button>
+            {% if form.corporate_number.value %}
+            <label>{{ form.corporate_number.value }}</label>
+            {% endif %}
             {% comment "下記の部分はコメントアウト" %}
             <input type="text" class="registration" name="publisher" size="15" maxlength="15" id="id_publisher">
             {% endcomment %}

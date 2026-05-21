@@ -51,16 +51,19 @@ def ut_get_hash(dat):
 
 # timezone付き（aware）
 # DB保存で使用
+# datetime.datetime.now()    # タイムゾーン情報を持たない（Naive）
+# datetime.datetime(2026, 5, 15, 15, 0, 0)
+# timezone.now()   # timezone付き（aware）通常UTC
+# datetime.datetime(2026, 5, 15, 6, 0, 0, tzinfo=datetime.timezone.utc)
 def ut_get_timezone_now():
-    # datetime.datetime(2026, 5, 15, 15, 0, 0)
     # return datetime.datetime.now()    # タイムゾーン情報を持たない（Naive）
-    # datetime.datetime(2026, 5, 15, 6, 0, 0, tzinfo=datetime.timezone.utc
     return timezone.now()   # timezone付き（aware）通常UTC
 
 # ローカルタイムゾーン（現地時間）の日時(JST)
+# datetime.datetime(2026, 5, 15, 15, 0, 0, tzinfo=zoneinfo.ZoneInfo(key='Asia/Tokyo')
 def ut_get_localtime():
-    # datetime.datetime(2026, 5, 15, 15, 0, 0, tzinfo=zoneinfo.ZoneInfo(key='Asia/Tokyo')
     return timezone.localtime()
+
 # ローカルの日付を取得 
 def ut_get_localtoday():
     return timezone.localdate()

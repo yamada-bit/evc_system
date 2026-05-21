@@ -372,6 +372,14 @@ class EvcSConCreateForm(forms.Form):
         widget=forms.widgets.Select,
         required=False
     )
+    corporate_number = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'type': 'search',
+            'size': 20,
+        })
+    )
     detect_partner = forms.CharField(
         max_length=50,
         required=False,
@@ -464,6 +472,7 @@ class EvcSConCreateForm(forms.Form):
             self.base_fields['account_cd'].choices = accounts
         super().__init__(*args, **kwargs)
     #     self.fields['fulltext'].widget.attrs['id'] = 'shiori_text'
+        self.fields['corporate_number'].widget.attrs['readonly'] = 'readonly'
 
     # def clean_amount(self):
     #     amount = self.cleaned_data['amount']

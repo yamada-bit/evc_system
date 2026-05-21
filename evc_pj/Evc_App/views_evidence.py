@@ -40,7 +40,7 @@ from Evc_App.sv_file import (SearchKey,sv_file2url,sv_get_user_authority,
     sv_get_partner_list,sv_get_publisher_id,sv_get_publisher_list,sv_create_partner_auto,
     sv_get_account_list,sv_get_account_id,
     sv_get_owner_ryaku_name,sv_get_evidence_filename,
-    sv_get_evidence_imagepath,
+    sv_get_evidence_imagepath,sv_get_corporate_number,
     get_rootfolder,get_imgfolder_upload,
 )
 
@@ -826,8 +826,12 @@ def get_scon_info(eviobj):
             if not partner_id:  # 取引先マスタに取引先名が存在しない
                 detect_partner = partner    # 未登録メッセージ表示
     detect_publisher = ''
+    corporate_number = ''
     if eviobj.publisher_id:
         publisher = sv_get_publisher_name(eviobj.publisher_id)
+        corporate_number = sv_get_corporate_number(eviobj.publisher_id)
+        if corporate_number:
+            corporate_number = f'法人番号:T{corporate_number}'
     else:   # 発行元ID未設定
         publisher = sv_get_detect_publisher_name(eviobj.evidence_id)
         if publisher: # 検出情報に発行元名が存在
@@ -858,6 +862,7 @@ def get_scon_info(eviobj):
         'category': category,
         'partner' : partner,
         'publisher' : publisher,
+        'corporate_number': corporate_number,
         'detect_partner' : detect_partner,
         'detect_publisher' : detect_publisher,
         'process_date': processed_date,

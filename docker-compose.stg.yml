@@ -11,6 +11,11 @@ services:
       - pgdata_stg:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5433:5432"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
   web_stg:
     # build:
     #   context: .
@@ -40,6 +45,11 @@ services:
       # Google Calendar http運用なのにoauthlibがhttps必須と拒否するので設定
       - OAUTHLIB_INSECURE_TRANSPORT=1
       - ENV_FILE=.env.stg
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # 10MBごとにローテーション
+        max-file: "5" # 最大5世代保存
   nginx_stg:
     image: nginx:stable
     container_name: nginx_stg
@@ -56,6 +66,11 @@ services:
       # - certbot_www_stg:/var/www/certbot
     depends_on:
       - web_stg
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   # certbot_stg:
   #   image: certbot/certbot

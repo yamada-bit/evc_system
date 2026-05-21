@@ -24,11 +24,11 @@ services:
       - "127.0.0.1:5432:5432"  # ← SSHトンネル用（外部非公開）    
     # networks:
     #   - evc_network
-    # logging:
-    #   driver: "json-file"
-    #   options:
-    #     max-size: "5m"
-    #     max-file: "3"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   web:
     # build:
