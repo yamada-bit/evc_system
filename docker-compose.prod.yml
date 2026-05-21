@@ -158,19 +158,17 @@ services:
       # - ./certbot/www:/var/www/certbot
       # - ./certbot/conf:/etc/letsencrypt
       - ./logs/letsencrypt:/var/log/letsencrypt
+    # cron 自動更新
+    # TERMシグナルを受けたら exit
+    # renew:期限30日前なら更新
     entrypoint: >
-      sh -c "
-      # cron 自動更新
-      # TERMシグナルを受けたら exit
-      # renew:期限30日前なら更新
-      trap exit TERM;
-      while :; do
-        certbot renew --webroot -w /var/www/certbot --quiet;
-        sleep 12h & wait $${!};
-      done
-      # echo '0 0,12 * * * certbot renew --webroot --webroot-path=/var/www/certbot --quiet --deploy-hook \"nginx -s reload\" >> /var/log/letsencrypt/renew.log 2>&1' > /etc/crontabs/root
-      # crond -f -l 2
-      "
+      sh -c '
+        trap exit TERM;
+        while :; do
+          certbot renew --webroot -w /var/www/certbot --quiet;
+          sleep 12h & wait $!;
+        done
+      '
     # certbotログローテーション
     logging:
       driver: json-file
