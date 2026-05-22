@@ -831,7 +831,7 @@ def get_scon_info(eviobj):
         publisher = sv_get_publisher_name(eviobj.publisher_id)
         corporate_number = sv_get_corporate_number(eviobj.publisher_id)
         if corporate_number:
-            corporate_number = f'番号:T{corporate_number}'
+            corporate_number = f'登録番号:T{corporate_number}'
     else:   # 発行元ID未設定
         publisher = sv_get_detect_publisher_name(eviobj.evidence_id)
         if publisher: # 検出情報に発行元名が存在
