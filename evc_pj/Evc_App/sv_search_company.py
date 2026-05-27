@@ -562,6 +562,9 @@ def get_company_id(user_id, owner_id, corporate_number):
             else:
                 partner_id = create_partner_registration(user_id, owner_id, issuer, corporate_number)
             issuer_method = 'invoice_api'
+        else:
+            issuer = 'API未登録'
+            partner_id = create_partner_registration(user_id, owner_id, issuer, corporate_number)
     return partner_id, issuer
 
 API_KEY = getattr(settings, 'KOKUZEI_WEBAPI')

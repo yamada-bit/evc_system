@@ -1,4 +1,5 @@
 # version: '3.9'
+# Docker Compose v2 では version 指定不要
 
 services:
   # ---------------------------
@@ -8,6 +9,7 @@ services:
   # SSHトンネル経由で localhost:15432 → サーバー内 localhost:5432
   # ---------------------------
   db:
+    # PostgreSQL 16 利用
     image: postgres:16
     # 固定コンテナ名
     container_name: pg16
@@ -27,6 +29,8 @@ services:
     # localhostのみ公開
     # 外部ネットワークからは接続不可
     ports:
+      # localhost のみ公開
+      # 外部公開防止
       - "127.0.0.1:5432:5432"  # ← SSHトンネル用（外部非公開）    
     # networks:
     #   - evc_network
@@ -34,7 +38,9 @@ services:
     logging:
       driver: "json-file"
       options:
+        # 1ファイル50MBまで
         max-size: "50m"
+        # 最大5世代保持
         max-file: "5"
   ####################################################################
   # Django + Gunicorn
@@ -43,6 +49,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: docker/Dockerfile.prod
+    # deploy_prod.sh で作成した image tag を利用
     image: evc_web:${IMAGE_TAG}
     # image: evc_web:backup_20260331_0835
     container_name: evc_web
@@ -65,7 +72,10 @@ services:
     # 静的ファイルとデータディレクトリのみマウント
     # collectstatic後のstaticを共有
     volumes:
+      # collectstatic 出力先
+      # nginx と共有
       - ./evc_pj/static:/staticfiles
+      # media 等永続データ
       - ./data_root:/data_root  # ホストの ./data_root をコンテナの /data_root に繋ぐ
       - ./Google:/Google_data
 
@@ -80,9 +90,12 @@ services:
     env_file:
       - .env.prod
     depends_on:
+      # DB起動後にweb起動
+      # DB ready までは保証しない
       - db
     # settings.pyでENV_FILEを参照するため
     environment:
+      # Django settings.py で参照
       - ENV_FILE=.env.prod
     # 「本番」で必要
     # expose:
@@ -123,11 +136,13 @@ services:
   # 静的ファイル + Django アプリを公開
   # ---------------------------
   nginx:
+    # stable版 nginx
     image: nginx:stable
     container_name: nginx_prod
     restart: always
     ports:
       - "80:80"   # HTTP公開（必要に応じて443も）
+      # HTTPS
       - "443:443"
     volumes:
       # nginx設定
@@ -155,6 +170,7 @@ services:
       # - ./data_root/media:/media
       # - ./jaf_data:/jaf_data
     depends_on:
+      # Django 起動後 nginx 起動
       - web
       # - web_jaf
     # networks:
@@ -165,9 +181,9 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
-  ####################################################################
-  # Certbot
-  ####################################################################
+  # =====================================
+  # Certbot (Let's Encrypt 自動更新)
+  # =====================================
   certbot:
     image: certbot/certbot
     container_name: certbot_prod
@@ -208,12 +224,15 @@ services:
     logging:
       driver: json-file
       options:
+        # certbotログは小さめ
         max-size: "10m"
+        # 3世代保持
         max-file: "3"
 # ---------------------------
 # データ永続化ボリューム
 # ---------------------------
 volumes:
+  # PostgreSQLデータ
   pgdata:
   ####################################################################
   # Let's Encrypt challenge共有

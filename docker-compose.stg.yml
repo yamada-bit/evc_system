@@ -1,29 +1,45 @@
 # version: '3.9'
+# Docker Compose v2 では version 指定は不要
 
 services:
+  # =========================
+  # PostgreSQL (STG)
+  # =========================
   db_stg:
     image: postgres:16
+    # コンテナ名を固定
     container_name: pg16_stg
+    # Docker 再起動時も自動起動
     restart: always
+    # DB接続情報を読み込み
     env_file:
       - .env.stg
     volumes:
+      # PostgreSQL データ永続化(container削除してもDB保持)
       - pgdata_stg:/var/lib/postgresql/data
     ports:
+      # localhost のみ公開
+      # ホスト5433 → コンテナ5432
+      # 外部アクセス防止のため 127.0.0.1 を指定
       - "127.0.0.1:5433:5432"
     logging:
       driver: "json-file"
       options:
+        # 1ログファイル最大50MB
         max-size: "50m"
+        # 最大5世代保持
         max-file: "5"
+  # =========================
+  # Django + Gunicorn (STG)
+  # =========================
   web_stg:
-    # build:
-    #   context: .
-    #   dockerfile: docker/Dockerfile.prod
-    # image: evc_web:${IMAGE_TAG}
-    image: evc_web:${IMAGE_TAG:-stg}  # IMAGE_TAGなければ stg使う
+    # deploy_stg.sh で build した image を利用
+    # IMAGE_TAGなければ stg使う
+    image: evc_web:${IMAGE_TAG:-stg}
     container_name: evc_web_stg
     restart: always
+    # Gunicorn 起動
+    # 本番相当WSGI運用
     command: >
       gunicorn config.wsgi:application
       --bind 0.0.0.0:8000
@@ -32,35 +48,47 @@ services:
       --error-logfile -
       --log-level info
     volumes:
+      # collectstatic 出力先(STG専用ディレクトリ)
       - ./evc_pj/static_stg:/staticfiles
+      # 永続データ
       - ./data_root_stg:/data_root
       - ./Google:/Google_data
     env_file:
       - .env.stg
     depends_on:
+      # DB起動後に web 起動
       - db_stg
     environment:
       # migrateはdeply_stg.shで実行
       # - RUN_MIGRATE=1   # migrate ON entrypoint.shで実行
+      # OAuth の HTTP 通信許可（STG専用）
+      # 本番では使用しない
       # Google Calendar http運用なのにoauthlibがhttps必須と拒否するので設定
       - OAUTHLIB_INSECURE_TRANSPORT=1
+      # Django settings.py で利用
       - ENV_FILE=.env.stg
     logging:
       driver: "json-file"
       options:
         max-size: "10m" # 10MBごとにローテーション
         max-file: "5" # 最大5世代保存
+  # =========================
+  # Nginx (STG)
+  # =========================
   nginx_stg:
     image: nginx:stable
     container_name: nginx_stg
     restart: always
     ports:
-      # - "443:443"
+      # STG 用公開ポート(PROD(80/443)と競合しない)
       - "8080:80"
       # - "8443:443"
     volumes:
+      # nginx 設定
       - ./nginx/stg.conf:/etc/nginx/conf.d/default.conf
+      # static 配信
       - ./evc_pj/static_stg:/staticfiles:ro
+      # media 配信
       - ./data_root_stg:/data_root
       # - certbot_conf_stg:/etc/letsencrypt
       # - certbot_www_stg:/var/www/certbot
@@ -83,7 +111,11 @@ services:
   #       certbot renew --webroot -w /var/www/certbot --quiet;
   #       sleep 12h & wait $${!};
   #     done;"
+# =========================
+# 永続ボリューム
+# =========================
 volumes:
+  # PostgreSQL データ保存
   pgdata_stg:
   # certbot_conf_stg:
   # certbot_www_stg:

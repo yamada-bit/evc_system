@@ -29,8 +29,9 @@ from typing import cast
 # 実行時の処理は何もしない。静的解析ツールやIDE向け
 
 from Evc_App.views import OwnerTestMixin
-from users.models import EvcUser,TtEvidence,MtAccount
-from commons.utils import ut_get_localdate,ut_get_client_ip,ut_get_localtoday
+from users.models import EvcUser,TtEvidence,MtAccount,MtPartner
+from commons.utils import (ut_get_localdate,ut_get_timezone_now,
+                           ut_get_client_ip,ut_get_localtoday)
 
 from Evc_App.forms import EvcEviListForm,EvcSConCreateForm
 
@@ -666,7 +667,7 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
                 # 取引先データ作成
                 partner_id = sv_create_partner_auto(partner, user_id, owner_id)
             publisher = form.cleaned_data.get('publisher')
-            publisher_id = sv_get_publisher_id(publisher, user_id)
+            publisher_id = get_publisher_id(evi_id, publisher, user_id)
             if not publisher_id and publisher:
                 publisher_id = sv_get_partner_id(publisher, owner_id)
                 if not publisher_id:
@@ -874,6 +875,32 @@ def get_scon_info(eviobj):
         'payment_date' : eviobj.payment_date or '',
     }
     return default_data
+
+def get_publisher_id(evi_id, publisher, user_id):
+    try:
+        eviobj = TtEvidence.objects.get(evidence_id=evi_id)
+    except TtEvidence.DoesNotExist:
+        logger.exception(f'TtEvidence DoesNotExist {evi_id}')
+        return ''
+    if eviobj and eviobj.publisher_id:
+        try:
+            partner_obj = MtPartner.objects.get(partner_id=eviobj.publisher_id)
+            if partner_obj.corporate_number and partner_obj.partner_name == 'API未登録':
+                if publisher != 'API未登録':
+                    partner_obj.partner_name = publisher
+                    if partner_obj.create_date:
+                        partner_obj.create_date = ut_get_localdate(partner_obj.create_date)
+                    partner_obj.update_user = user_id
+                    partner_obj.update_date = ut_get_timezone_now()
+                    partner_obj.save()
+                return eviobj.publisher_id
+        except MtPartner.DoesNotExist:
+            logger.exception(f'MtPartner DoesNotExist {eviobj.publisher_id}')
+        except Exception:
+            logger.exception(f'MtPartner exception {eviobj.publisher_id}')
+
+    publisher_id = sv_get_publisher_id(publisher, user_id)
+    return publisher_id
 
 class PdfMergeView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
