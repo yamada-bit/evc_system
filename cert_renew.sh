@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+cd /home/deploy/projects/evc_system
+
 exec >> /home/deploy/projects/evc_system/logs/cert_renew.log 2>&1
 
 echo "=== START $(date) ==="
