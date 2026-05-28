@@ -189,8 +189,8 @@ services:
     container_name: certbot_prod
     # restart: always
     # profiles : docker compose up -dで実行されない
-    profiles:
-      - tools
+    # profiles:
+    #   - tools
     
     volumes:
       # ACME challengeファイル共有    
