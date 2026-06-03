@@ -4,7 +4,7 @@ set -e  # エラーで即停止
 echo "===== デプロイ開始 ====="
 
 # 設定
-COMPOSE="docker compose -f docker-compose.prod.yml"
+COMPOSE="docker compose --env-file .env.prod -f docker-compose.prod.yml"
 PROJECT_DIR="/home/deploy/projects/evc_system"
 
 # 移動

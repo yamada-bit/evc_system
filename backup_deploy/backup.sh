@@ -13,13 +13,18 @@ mkdir -p $BACKUP_DIR/data_root
 echo "===== Backup Start $DATE ====="
 
 # ① DBバックアップ
-docker compose -f $PROJECT_DIR/docker-compose.prod.yml \
+docker compose \
+  --env-file $PROJECT_DIR/.env.prod \
+  -f $PROJECT_DIR/docker-compose.prod.yml \
   exec -T $CONTAINER_NAME \
   pg_dump -U $DB_USER -d $DB_NAME -Fc > $BACKUP_DIR/evc_db.dump
-docker compose -f $PROJECT_DIR/docker-compose.prod.yml \
+
+docker compose \
+  --env-file $PROJECT_DIR/.env.prod \
+  -f $PROJECT_DIR/docker-compose.prod.yml \
   exec -T $CONTAINER_NAME \
   pg_dump -U $DB_USER -d $KMS_DB_NAME -Fc > $BACKUP_DIR/kms_db.dump
-
+ 
 # docker compose -f $PROJECT_DIR/docker-compose.prod.yml \
 # exec -T db pg_dump -U postgres evc_db > $BACKUP_DIR/evc_db.sql
 # docker compose -f $PROJECT_DIR/docker-compose.prod.yml \

@@ -48,10 +48,15 @@ mkdir -p "$BACKUP_DIR"
 echo "===== Backup Start $DATE ====="
 
 # 1️⃣ DBバックアップ
-docker compose -f "$PROJECT_DIR/docker-compose.prod.yml" \
-exec -T $DB_CONTAINER pg_dump -U $DB_USER $DB_NAME > "$BACKUP_DIR/db.sql"
-docker compose -f "$PROJECT_DIR/docker-compose.prod.yml" \
-exec -T $DB_CONTAINER pg_dump -U $DB_USER kms_db > "$BACKUP_DIR/kms_db.sql"
+docker compose \
+  --env-file $PROJECT_DIR/.env.prod \
+  -f $PROJECT_DIR/docker-compose.prod.yml \
+  exec -T $DB_CONTAINER pg_dump -U $DB_USER $DB_NAME > "$BACKUP_DIR/db.sql"
+
+docker compose \
+  --env-file $PROJECT_DIR/.env.prod \
+  -f $PROJECT_DIR/docker-compose.prod.yml \
+  exec -T $DB_CONTAINER pg_dump -U $DB_USER kms_db > "$BACKUP_DIR/kms_db.sql"
 
 # 2️⃣ mediaディレクトリ
 # cp -a "$PROJECT_DIR/data_root/media" "$BACKUP_DIR/data_root"
