@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+
 # Create your models here.
 #OCRフォーム情報
 class TtOcrform(models.Model):
@@ -15,15 +16,14 @@ class TtOcrform(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', null=True, blank=True)
 
-    #管理画面に表示されるモデル内のデータを判別するための文字列を定義
-    def __str__(self):
-        return self.ocrform_name
-
     class Meta:
         managed = True
         verbose_name = _('フォーム情報')
         verbose_name_plural = _('フォーム情報')
         db_table = 'tt_ocrform'
+    #管理画面に表示されるモデル内のデータを判別するための文字列を定義
+    def __str__(self):
+        return self.ocrform_name
 
 #入力情報
 class TtEntry(models.Model):
@@ -42,13 +42,13 @@ class TtEntry(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.entry_name
     class Meta:
         managed = True
         verbose_name = _('入力情報')
         verbose_name_plural = _('入力情報')
         db_table = 'tt_entry'
+    def __str__(self):
+        return self.entry_name
 
 #勤務表情報
 class TtTimesheet(models.Model):
@@ -71,13 +71,13 @@ class TtTimesheet(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.timesheet_id
     class Meta:
         managed = True
         verbose_name = _('勤務表情報')
         verbose_name_plural = _('勤務表情報')
         db_table = 'tt_timesheet'
+    def __str__(self):
+        return self.timesheet_id
 
 #Ocr文書情報
 class TtOcrData(models.Model):
@@ -97,13 +97,14 @@ class TtOcrData(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.ocrdata_id
     class Meta:
         managed = True
         verbose_name = _('Ocr文書情報')
         verbose_name_plural = _('Ocr文書情報')
         db_table = 'tt_ocrdata'
+    def __str__(self):
+        return self.ocrdata_id
+
 #JAふくおか八女 文書情報
 class TtJafyame(models.Model):
     jafyame_id = models.CharField(primary_key=True, max_length=20)
@@ -125,30 +126,31 @@ class TtJafyame(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.jafyame_id
     class Meta:
         managed = True
         verbose_name = _('JAふくおか八女文書')
         verbose_name_plural = _('JAふくおか八女文書')
         db_table = 'tt_jafyame'
+    def __str__(self):
+        return self.jafyame_id
+
 #アクセスログ
 class TtAccessLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     owner_id = models.CharField(max_length=10, blank=True, null=True)
     access_user = models.CharField(max_length=50, null=False, blank=False)
     document_id = models.CharField(max_length=20, null=False, blank=False)
-    accessed_at = models.DateTimeField(auto_now_add=True)	
-    action = models.CharField(max_length=20, choices=[('view', 'View'), ('download', 'Download')])	
+    accessed_at = models.DateTimeField(auto_now_add=True)
+    action = models.CharField(max_length=20, choices=[('view', 'View'), ('download', 'Download')])
     create_user = models.CharField(max_length=30, blank=True, null=True)
     create_date = models.DateTimeField(blank=True, null=True)
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
-	
-    def __str__(self):	
-        return f'{self.access_user} accessed {self.document_id} at {self.accessed_at}'	
+
     class Meta:
         managed = True
         verbose_name = _('アクセスログ')
         verbose_name_plural = _('アクセスログ')
         db_table = 'tt_accesslog'
+    def __str__(self):
+        return f'{self.access_user} accessed {self.document_id} at {self.accessed_at}'

@@ -1,13 +1,11 @@
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase.cidfonts import UnicodeCIDFont
-from reportlab.pdfbase import pdfmetrics
-from reportlab.lib.utils import ImageReader
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.pagesizes import A3, landscape, portrait
-from reportlab.lib.units import mm
-from reportlab.platypus import Table
-from reportlab.platypus import TableStyle
 from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Table, TableStyle
+
 
 def create_pdf(response, year, month, pdf_list, getuji, emp_id, emp_name):
     title = 'title: 勤怠レポート'
@@ -19,7 +17,7 @@ def create_pdf(response, year, month, pdf_list, getuji, emp_id, emp_name):
     # pdfを描く場所を作成：位置を決める原点は左上にする(bottomup)
     # デフォルトの原点は左下
     pdf_canvas = canvas.Canvas(response, pagesize=size, bottomup=is_bottomup)
-    #pdf_canvas.setPageSize((1200, 850)) 
+    #pdf_canvas.setPageSize((1200, 850))
 
     pdfmetrics.registerFont(UnicodeCIDFont(font_name))
 
@@ -35,7 +33,7 @@ def create_pdf(response, year, month, pdf_list, getuji, emp_id, emp_name):
     #font_size = 10
     #pdf_canvas.setFont(font_name, font_size)
     #pdf_canvas.drawString(15 * mm, 270 * mm, f"社員番号  氏名  雇用形態  部門名  拠点名 ")
-    data = [[ f"社員番号","氏名","雇用形態","部門名","拠点名"]]
+    data = [[ "社員番号","氏名","雇用形態","部門名","拠点名"]]
     data.append([emp_id, emp_name, "","", ""])
 
     table = Table(

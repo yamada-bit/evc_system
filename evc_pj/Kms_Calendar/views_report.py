@@ -1,37 +1,48 @@
-import os
-import datetime
 import logging
+import os
+
 # import json
-import re   # 正規表現操作
+import re  # 正規表現操作
+
 # import calendar
 # import csv,urllib
-import psycopg
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+# from django.http import HttpResponse
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
+from django.shortcuts import redirect
 
-from django.shortcuts import render, resolve_url, redirect
-from django.views.generic import FormView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
 # from django.conf import settings
-from django.urls import reverse,reverse_lazy
-# from django.http import HttpResponse
-from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
+from django.urls import reverse
+from django.views.generic import FormView, ListView
 
-from Kms_Calendar.models import TtGaikinReport
-from users.models import EvcUser
-from commons.utils import ut_get_client_ip,ut_get_localtime,ut_get_localtoday
-
-from Kms_Calendar.forms import UploadReportForm,ReportListForm,EditReportForm
+from commons.utils import ut_get_client_ip, ut_get_localtime, ut_get_localtoday
 
 # from Evc_App.sv_json import sv_load_jsonfile,sv_json2textdatas,sv_datas2json
-from Evc_App.sv_file import (sv_file2url,sv_handle_uploaded_file,
-    get_imgfolder_upload,make_upload_dir,make_json_dir,
-    sv_get_owner_ryaku_name,sv_get_user_authority
+from Evc_App.sv_file import (
+    get_imgfolder_upload,
+    make_json_dir,
+    make_upload_dir,
+    sv_file2url,
+    sv_get_user_authority,
+    sv_handle_uploaded_file,
 )
-from Kms_Calendar.svk_report import (svk_create_report,svk_get_gaikin_rootfolder,svk_get_report_imagepath,
-                                     svk_make_report_dir,svk_physical_delete_report,svk_update_report)
+from Kms_Calendar.forms import EditReportForm, ReportListForm, UploadReportForm
+from Kms_Calendar.models import TtGaikinReport
+from Kms_Calendar.svk_report import (
+    svk_create_report,
+    svk_get_gaikin_rootfolder,
+    svk_get_report_imagepath,
+    svk_make_report_dir,
+    svk_physical_delete_report,
+    svk_update_report,
+)
+from users.models import EvcUser
+
 # from Fms_Ocrform.svt_entry import (sv_create_entry, sv_update_shiori,
 #                                       sv_delete_entry, sv_create_entry_image)
 # from Evc_App.sv_get_image_shape import sv_get_pdfpages
@@ -200,7 +211,7 @@ class KmsReportListView(LoginRequiredMixin, ListView):
         else:
             # request.GET : requestの情報を辞書型のデータで取得
             form = ReportListForm(self.request.GET or None)
-        self.form = form 
+        self.form = form
 
         if form.is_valid():
             # バリデーションを実行しデータが有効
@@ -210,7 +221,7 @@ class KmsReportListView(LoginRequiredMixin, ListView):
                 try:
                     report_obj =  TtGaikinReport.objects.get(report_id=report_id,delete_flg=0)
                     user_id = self.request.user.user_id
-                    # 外勤報告書情報削除/ファイル削除 
+                    # 外勤報告書情報削除/ファイル削除
                     # name = svk_delete_report(report_id, None, None, None, user_id)
                     name = svk_physical_delete_report(report_id)
                     if name:
@@ -245,7 +256,7 @@ class KmsReportListView(LoginRequiredMixin, ListView):
         list_url = re.sub('act=del', 'act=', list_url)
         self.request.session['list_url'] = list_url
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -302,7 +313,7 @@ class KmsReportListView(LoginRequiredMixin, ListView):
         if page_size:
             paginate_by = int(page_size)
         return paginate_by
-    
+
 # 検索条件で絞り込み
 def filter_report(queryset, report_month):
     # 処理年月: yyyy/mm yyyy-mm
@@ -333,7 +344,7 @@ class KmsEditReportView(LoginRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse('Kms_Calendar:edit_report', kwargs={'report_id': self.kwargs['report_id']})
-   
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         report_id = self.kwargs.get('report_id')
@@ -403,7 +414,7 @@ class KmsEditReportView(LoginRequiredMixin, FormView):
             #     if cnt and 0 < cnt:
             #         page_cnt = cnt
             # imageno_list = list(range(1, page_cnt + 1))
-     
+
             # page_obj = self.get_page_obj(imageno_list, image_no)
             # context['page_obj'] = page_obj
             # if page_obj.has_next():
@@ -417,7 +428,7 @@ class KmsEditReportView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         act = self.request.POST.get('submit_action')
- 
+
         # owner_id = self.request.session.get('owner_id')
         # image_no = self.kwargs.get('image_no') or 1
         report_id = form.cleaned_data.get('report_id')
@@ -462,8 +473,8 @@ class KmsEditReportView(LoginRequiredMixin, FormView):
                 processed_ym = ''
             notes = form.cleaned_data.get('notes')
 
-            # 外勤報告書情報削除/ファイル削除 
-            # name = svk_delete_report(report_id, report_name, processed_ym, notes, user_id)            
+            # 外勤報告書情報削除/ファイル削除
+            # name = svk_delete_report(report_id, report_name, processed_ym, notes, user_id)
             name = svk_physical_delete_report(report_id)
             if name:
                 basename = os.path.splitext(name)[0]
@@ -489,7 +500,7 @@ class KmsEditReportView(LoginRequiredMixin, FormView):
         logger.error(f'{ut_get_client_ip(self.request)} '
                      f'KmsEditReportView データ登録に失敗しました {err}')
         return super().form_invalid(form)
-    
+
     # 前頁・次頁対応ページング
     def get_page_obj(self, images, image_no):
         page_no = image_no
@@ -499,6 +510,6 @@ class KmsEditReportView(LoginRequiredMixin, FormView):
         except PageNotAnInteger:
             page_obj = paginator.page(1)
         except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)   
-        return page_obj 
+            page_obj = paginator.page(paginator.num_pages)
+        return page_obj
 

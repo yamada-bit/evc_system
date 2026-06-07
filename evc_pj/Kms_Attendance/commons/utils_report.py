@@ -1,20 +1,28 @@
-import datetime as dt
 import calendar
 import logging
 
-from django.utils import timezone
-from commons.mixins import MonthCalendarMixin
-
-from Kms_Attendance.models import (M_emp,M_holiday,
-                                    T_time_stamp,T_getuji_report,T_request,T_request_rest,
-                                    T_daily_report,M_yukyu
-                                    )
-
 #from django.db import connection
-from django.db.models import Q # Qオブジェクト
+from django.db.models import Q  # Qオブジェクト
+from django.utils import timezone
 
-from Kms_Attendance.commons.utils import (get_kbn_name,get_date2time_str,get_times,
-    add_weekday_to_date,is_holiday)
+from commons.mixins import MonthCalendarMixin
+from Kms_Attendance.commons.utils import (
+    add_weekday_to_date,
+    get_date2time_str,
+    get_kbn_name,
+    get_times,
+    is_holiday,
+)
+from Kms_Attendance.models import (
+    M_emp,
+    M_holiday,
+    M_yukyu,
+    T_daily_report,
+    T_getuji_report,
+    T_request,
+    T_request_rest,
+    T_time_stamp,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +30,7 @@ def get_int2datestr(date):
     try:
         str_date = str(date)
         return f'{str_date[:4]}/{str_date[4:6]}/{str_date[6:]}'
-    except Exception as e:
+    except Exception:
         return ''
 
 # 日報
@@ -94,7 +102,7 @@ def get_today_stamp(number, department, lodgment, employment, manager):
     obj_list = []
     dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
-    
+
     q_objects = Q(TARGET_DATE = today)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
         q_objects &= Q(EMP_ID=number)
@@ -139,7 +147,7 @@ def get_today_stamp(number, department, lodgment, employment, manager):
 def get_shime_status(year, month, number, department, lodgment, employment, manager):
     obj_list = []
     yearmonth = year * 100 + month
-    
+
     q_objects = Q(TARGET_MONTH = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
         q_objects &= Q(EMP_ID=number)
@@ -172,7 +180,7 @@ def get_getuji_report(year, month, number, department, lodgment, employment, man
     obj_list = []
     # dt_now = timezone.localtime()
     yearmonth = year * 100 + month
-    
+
     q_objects = Q(TARGET_MONTH = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
         q_objects &= Q(EMP_ID=number)
@@ -202,12 +210,12 @@ def get_getuji_report(year, month, number, department, lodgment, employment, man
 def get_holiday_report(year, number, department, lodgment, employment, manager):
     # obj_list = []
     # dt_now = timezone.localtime()
-    
+
     report_list = []
 
     queryset = M_emp.objects.exclude(DEL_FLG=1).order_by('LTD_CD', 'EMP_ID')
 
-    for rec in queryset: 
+    for rec in queryset:
         month1_list = []
         month2_list = []
         sum11 = 0
@@ -303,7 +311,7 @@ def get_holiday_report(year, number, department, lodgment, employment, manager):
 # 月次集計データ出力
 def get_output_month(year, month, number, department, lodgment, employment, manager):
     yearmonth = year * 100 + month
-    
+
     q_objects = Q(TARGET_MONTH = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
         q_objects &= Q(EMP_ID=number)
@@ -594,7 +602,7 @@ def get_paid_holiday_list(obj_emp, year, kbn):
         'expiration_count' : expiration_count,  # 失効
         'adjust_count' : all_count,     # 残数調整
         'remaining_count' : all_count,  # 残
-        })  
+        })
     lists.append(data)
     count = 0
     for obj_timestamp in timestamps:
@@ -612,7 +620,7 @@ def get_paid_holiday_list(obj_emp, year, kbn):
             'expiration_count' : '',  # 失効
             'adjust_count' : '',  # 残数調整
             'remaining_count' : all_count,   # 残
-            })  
+            })
         lists.append(data)
     data = ({
         'date' : '計',          # 日付
@@ -622,9 +630,9 @@ def get_paid_holiday_list(obj_emp, year, kbn):
         'expiration_count' : '-',   # 失効
         'adjust_count' : '-',       # 残数調整
         'remaining_count' : all_count,  # 残
-        })  
+        })
     lists.append(data)
-    
+
     return lists
 # 休暇情報
 def get_yukyu(obj_emp, year, kbn):

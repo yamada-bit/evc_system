@@ -1,16 +1,18 @@
+import logging
 import os
-import cv2
-import numpy as np
-import math
 import shutil
 
-import logging
-
+import cv2
+import numpy as np
 from django.conf import settings
 
 from Evc_App.sv_file import get_imgfolder_upload
-from Fms_Ocrform.svf_ocrform import get_ocrform_rootfolder,get_ocrform_imagefile,get_ocrform_image_dir
-from Evc_App.sv_get_image_shape import sv_get_image_angle,sv_imwrite
+from Evc_App.sv_get_image_shape import sv_get_image_angle, sv_imwrite
+from Fms_Ocrform.svf_ocrform import (
+    get_ocrform_image_dir,
+    get_ocrform_imagefile,
+    get_ocrform_rootfolder,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ def check_filename(file):
         filepath, ext = os.path.splitext(file)
         i = 1
         while i < 100000:
-            new_path = '{}({}){}'.format(filepath, i, ext)
+            new_path = f'{filepath}({i}){ext}'
             if not os.path.exists(new_path):
                 return new_path
             i += 1
@@ -392,7 +394,7 @@ def sort_point(rcnt):
     right_top = sorted(right, key=lambda x: x[1])[0]
     right_bottom = sorted(right, key=lambda x: x[1])[1]
     vertexs = [left_top, right_top, right_bottom, left_bottom]
-    # 四角形の傾きが逆だと変換がずれるので４点の比較から左上の座標のみ１点の比較 
+    # 四角形の傾きが逆だと変換がずれるので４点の比較から左上の座標のみ１点の比較
     return vertexs
 # 画像上の四角形マーク座標取得
 def svt_get_nparray(image_path):

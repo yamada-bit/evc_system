@@ -1,15 +1,10 @@
-from django import forms
-# from .models import SharedFile
 
+# from .models import SharedFile
 import os
-import datetime
+
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm,UserCreationForm
-from users.models import EvcUser,SysOwner,MtPartner,MtFolder
 
 # from django.core.validators import validate_email
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 # from django.utils.translation import gettext as _
 from Evc_App.forms import MultipleFileField, check_ym
 
@@ -37,7 +32,7 @@ class FileUploadForm(forms.Form):
     # file = forms.FileField(widget=forms.ClearableFileInput(attrs={'allow_multiple_selected': True}))
     file = MultipleFileField()
     shared_types = forms.ChoiceField(
-        label='区分', 
+        label='区分',
         required=False,
         widget=forms.RadioSelect,
         choices=(
@@ -58,12 +53,12 @@ class FileUploadForm(forms.Form):
         file = self.cleaned_data['file']
         for f in files:
             extension = os.path.splitext(f.name)[1]  # 拡張子を取得
-            if not extension.lower() in VALID_EXTENSIONS:
+            if extension.lower() not in VALID_EXTENSIONS:
                 raise forms.ValidationError(f.name + ' ファイル形式が正しくありません')
         return file
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    
+
 # 一覧表示
 class FileListForm(forms.Form):
     # shared_month = forms.CharField(
@@ -93,7 +88,7 @@ class FileListForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
         })
-    )    
+    )
     category = forms.fields.ChoiceField(
         required=False,
         widget=forms.widgets.Select
@@ -234,7 +229,7 @@ class FileEditForm(forms.Form):
             'type': 'date',
             'size': 10,
         })
-    )    
+    )
     notes = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={

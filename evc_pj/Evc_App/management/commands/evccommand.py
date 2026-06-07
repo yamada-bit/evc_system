@@ -1,9 +1,10 @@
-from django.core.management.base import BaseCommand
 import os
 import shutil
 
-from users.models import HtEvidence
+from django.core.management.base import BaseCommand
+
 from Evc_App.sv_file import sv_get_processed_ym_path
+from users.models import HtEvidence
 
 #  c:\EVCProject\Evc_Pj>c:\EVCProject\venv\Scripts\python.exe manage.py evccommand test1 c:\test.jpg
 

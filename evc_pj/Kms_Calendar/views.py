@@ -1,33 +1,37 @@
 import calendar
 import datetime
-import requests
-import jpholiday
+
 # import csv
 import logging
-
-from django.shortcuts import redirect,render
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse,JsonResponse
-from django.conf import settings
-
-from google_auth_oauthlib.flow import Flow
-# from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-
-from dateutil.relativedelta import relativedelta
 from collections import defaultdict
 
-from commons.mixins import MonthCalendarMixin
-from commons.utils import ut_get_client_ip,ut_get_localtoday
+import jpholiday
+import requests
+from dateutil.relativedelta import relativedelta
+from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect
+from django.views.generic import TemplateView
 
-from Kms_Calendar.google_calendar import (
-    get_calendar_service,dict_to_credentials,credentials_to_dict
-)
-from Kms_Calendar.excel_calendar import (
-    create_attendance_data,process_work_events,calendar_to_excel,update_attendance_to_excel
-)
+# from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import Flow
+
+from commons.mixins import MonthCalendarMixin
+from commons.utils import ut_get_client_ip, ut_get_localtoday
 from Evc_App.sv_file import sv_get_user_name
+from Kms_Calendar.excel_calendar import (
+    calendar_to_excel,
+    process_work_events,
+    update_attendance_to_excel,
+)
+from Kms_Calendar.google_calendar import (
+    credentials_to_dict,
+    dict_to_credentials,
+    get_calendar_service,
+)
+
 # from Kms_Attendance.models import M_holiday
 
 FORMAT_DATE = '%Y/%m/%d %H:%M:%S'
@@ -58,7 +62,7 @@ def ensure_authenticated(request):
             # トークンの有効期限が切れた場合、自動的に更新
             credentials.refresh(Request())
             request.session['google_credentials'] = credentials_to_dict(credentials)
-    except Exception as e:
+    except Exception:
         # 認証エラー時に再認証をトリガー
         logger.exception('exception credentials')
         # request.session['redirect_after_auth'] = request.build_absolute_uri()
@@ -99,7 +103,7 @@ def google_auth(request):
 # OAuth認証の疎通テストではログイン画面とリダイレクト先のホスト名が異なってしまうと、
 # 同一セッションとみなされなくなり上手く動かない
 def oauth2callback(request):
-    error = request.GET.get("error")  # キャンセルされた場合、"access_denied" になる    
+    error = request.GET.get("error")  # キャンセルされた場合、"access_denied" になる
     if error == "access_denied":
         return redirect('Kms_Calendar:calendar_model')
 
@@ -116,7 +120,7 @@ def oauth2callback(request):
     # logger.info(f'redirect_uri: {flow.redirect_uri}')
     # logger.info(f'build_absolute_uri: {request.build_absolute_uri()}')
     # logger.info(f'callback_uri: {settings.GOOGLE_REDIRECT_URI}?{request.GET.urlencode()}')
-    
+
     # Googleからのリダイレクトを処理
     # アクセストークンを取得し、セッションに保存
     try:
@@ -132,7 +136,7 @@ def oauth2callback(request):
         credentials = flow.credentials
         # アクセストークンをセッションに保存
         request.session['google_credentials'] = credentials_to_dict(credentials)
-    except Exception as e:
+    except Exception:
         logger.exception('fetch_token Exception')
     # # トークンを保存
     # creds = flow.credentials
@@ -170,7 +174,7 @@ def google_logout(request):
                 )
     except Exception:
         logger.exception('Exception')
-    
+
     # セッション情報を削除
     # request.session.flush()
     if 'google_credentials' in request.session:
@@ -291,7 +295,7 @@ class GoogleCalendarView(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
 # Google Calendar イベント取得
 """Googleカレンダーから指定期間のイベントを取得"""
 def get_calendar_events(service, year, month):
-    # today = datetime.datetime.now(datetime.timezone.utc) 
+    # today = datetime.datetime.now(datetime.timezone.utc)
     # start_of_day = datetime.datetime.combine(today, datetime.time.min).isoformat() + 'Z'
     # end_of_day = datetime.datetime.combine(today, datetime.time.max).isoformat() + 'Z'
 
@@ -313,7 +317,7 @@ def get_calendar_events(service, year, month):
         calendarId=calendar_id,
         timeMin=time_min,   # 取得する開始時刻
         timeMax=time_max,
-        # maxResults=100, 
+        # maxResults=100,
         singleEvents=True,  # 繰り返しインスタンスを展開
         orderBy='startTime'
     ).execute()
@@ -503,7 +507,7 @@ def export_calendar_to_excel(request):
     if not credentials_dict:
         return JsonResponse({'error': 'User not authenticated'}, status=401)
 
-    # Google Calendar APIクライアントの作成         
+    # Google Calendar APIクライアントの作成
     service = get_calendar_service(credentials_dict)
     this_year=ut_get_localtoday().year
     this_month=ut_get_localtoday().month
@@ -614,5 +618,5 @@ def export_work_schedule_to_excel(request, year, month):
     response['Content-Disposition'] = f'attachment; filename="work_schedule_{user_name}_{year}_{month}.xlsx"'
     # wb.save(response)
     response.write(output.getvalue())  # メモリからデータを書き込む
- 
+
     return response

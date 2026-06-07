@@ -1,13 +1,15 @@
-from django.urls import path, include
+from django.urls import path
 
-from . import views
-from . import views_user
-from . import views_partner
-from . import views_accg
-from . import views_category
-from . import views_summary
+from . import (
+    views,
+    views_accg,
+    views_category,
+    views_partner,
+    views_summary,
+    views_user,
+)
 
-app_name = 'Evc_Management' 
+app_name = 'Evc_Management'
 urlpatterns = [
     path('user/<user_id>',views_user.EvcUserView.as_view(),name='user'),
     path('user_guest/<user_id>',views_user.EvcUserGuestView.as_view(),name='user_guest'),

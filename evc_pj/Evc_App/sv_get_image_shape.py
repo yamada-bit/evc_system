@@ -1,19 +1,18 @@
-import os, sys
+import base64
+import logging
+import os
+from io import BytesIO
+
 import cv2
 import numpy as np
+
 # import pandas as pd
 # import matplotlib.pyplot as plt
-import PIL.Image    # exifから回転情報取得
-import logging
-import math
-
+import PIL.Image  # exifから回転情報取得
 from django.conf import settings
 from pypdf import PdfReader
 
-import base64
-from io import BytesIO
-
-from Evc_App.sv_file import TextData,TextDatas
+from Evc_App.sv_file import TextData, TextDatas
 
 logger = logging.getLogger(__name__)
 pil_logger = logging.getLogger('PIL')
@@ -57,7 +56,7 @@ def sv_get_image_shape(file_path):
         ret,dst = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         # 5x5のサイズのgaussianフィルタでノイズを抑制
         # blur = cv2.GaussianBlur(gray,(5,5),0)
-        # ret,dst = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)        
+        # ret,dst = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     elif flag_image_process == 'multy':
         # ヒストグラム平坦化
         dst = cv2.equalizeHist(gray)
@@ -79,7 +78,7 @@ def sv_get_image_shape(file_path):
         min_val = int(max(0, (1.0 - sigma) * med_val))
         max_val = int(max(255, (1.0 + sigma) * med_val))
         wkimg = cv2.Canny(image=gray, threshold1=min_val, threshold2=max_val)
-   
+
         # エッジの結合
         # 膨張:カーネル内に画素値が ‘1’ の画素が一つでも含まれれば，出力画像の注目画素の画素値を ‘1’ にします
         # 収縮:カーネルの領域に含まれる画素の画素値が全て1であれば1
@@ -100,7 +99,7 @@ def sv_get_image_shape(file_path):
 
     # 輪郭検出
     contours, hierarchy = cv2.findContours(dst, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-    
+
     for i in range(0, len(contours)):
         if 0 < len(contours[i]):
             # remove small objects
@@ -182,7 +181,7 @@ def sv_upload_file_base64(base64Data, path):
         try:
             img_base64 = base64Data.replace('data:image/jpeg;base64,', '')  # 冒頭の部分を削除
             img_binary = base64.b64decode(img_base64)   # base64に変換された画像データを元のバイナリデータに変換
-            
+
             # jpg = np.frombuffer(img_binary, dtype=np.uint8)
             # img = cv2.imdecode(jpg, cv2.IMREAD_COLOR)
             # 画像を保存する
@@ -240,21 +239,21 @@ def sv_get_cropped_image(imagefile, area, cropped_image_file, angle):
 #     elif orientation == 3:
 #         # Rotated 180 degrees
 #         # img = img.rotate(180)
-#         img = cv2.rotate(img, cv2.ROTATE_180)        
+#         img = cv2.rotate(img, cv2.ROTATE_180)
 #     elif orientation == 4:
 #         # Mirrored top to bottom
 #         # img = img.rotate(180).transpose(PIL.Image.FLIP_LEFT_RIGHT)
-#         img = cv2.rotate(img, cv2.ROTATE_180)        
+#         img = cv2.rotate(img, cv2.ROTATE_180)
 #         img = cv2.flip(img, 1)
 #     elif orientation == 5:
 #         # Mirrored along top-left diagonal
 #         # img = img.rotate(-90, expand=True).transpose(PIL.Image.FLIP_LEFT_RIGHT)
-#         img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)        
+#         img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
 #         img = cv2.flip(img, 1)
 #     elif orientation == 6:
 #         # Rotated 90 degrees
 #         # img = img.rotate(-90, expand=True)
-#         img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)        
+#         img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
 #     elif orientation == 7:
 #         # Mirrored along top-right diagonal
 #         # img = img.rotate(90, expand=True).transpose(PIL.Image.FLIP_LEFT_RIGHT)
@@ -362,7 +361,7 @@ def sv_get_contour_rect(filepath, page_no):
             # bounds.append(TextData(x1, y1, x2, y2, ''))
 
             # 輪郭の外接矩形を取得
-            x, y, w, h = cv2.boundingRect(contour)        
+            x, y, w, h = cv2.boundingRect(contour)
             bounds.append(TextData(x, y, x + w, y + h, ''))
         # rects = sorted(rects, key=lambda x: (x[0][1], x[0][0]))
         # bounds = sorted(bounds, key=lambda x: (x.y1, x.x1))
@@ -383,7 +382,7 @@ def sv_get_contour_rect(filepath, page_no):
     #     #     color = np.random.randint(0, 255, 3).tolist()
     #     #     cv2.drawContours(rect_image, rects, i, color, 2)
     #     #     cv2.putText(rect_image, str(i), tuple(rect[0]), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 3)
-        
+
     #     #     print('rect:\n', rect)
     #     for i, bound in enumerate(bounds):
     #         # color = np.random.randint(0, 255, 3).tolist()
@@ -495,7 +494,7 @@ def check_bounds(bounds):
 #         # ret, img_binary = cv2.threshold(img_gray, 180, 255, cv2.THRESH_BINARY)  # 輝度180を境界に二値化
 #         ret, img_binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-#         contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # 領域検出　
+#         contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # 領域検出
 #         # 輪郭の選択
 #         # 面積が小さい輪郭削除 「3000」のところの数値より小さい輪郭は削除
 #         # cnts = list(filter(lambda cnts: 3000 < cv2.contourArea(cnts), contours))
@@ -530,6 +529,6 @@ def sv_imwrite(filename, img, params=None):
             return True
         else:
             return False
-    except Exception as e:
+    except Exception:
         logger.exception(f'sv_imwrite exception {filename=}')
         return False

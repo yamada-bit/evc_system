@@ -13,16 +13,16 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings  # media/img画像表示
+from django.conf.urls.static import static  # media/img画像表示
 from django.contrib import admin
-from django.urls import path,include
-
-from django.conf.urls.static import static # media/img画像表示
-from django.conf import settings           # media/img画像表示
+from django.urls import include, path
 
 from accounts.views import EvcLoginView
 from Evc_App.views import health
-# admin.site.site_title = 'タイトルタグ' 
-# admin.site.site_header = 'サンプルアプリケーション' 
+
+# admin.site.site_title = 'タイトルタグ'
+# admin.site.site_header = 'サンプルアプリケーション'
 # admin.site.index_title = 'メニュー'
 admin.site.site_url = '/admin'
 

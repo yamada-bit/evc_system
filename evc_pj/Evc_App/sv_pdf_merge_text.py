@@ -1,8 +1,6 @@
-import os
 import io
 import logging
 
-from reportlab.pdfgen import canvas
 from pypdf import PdfReader, PdfWriter
 
 # from reportlab.lib.pagesizes import A4
@@ -10,6 +8,7 @@ from pypdf import PdfReader, PdfWriter
 # from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfgen import canvas
 
 from Evc_App.sv_create_image import sv_create_ocr_image
 from Evc_App.sv_extract_text import sv_extract_text
@@ -33,7 +32,7 @@ def add_text_to_pdf(response, org_path, texts):
     # PDFに追加するテキストを生成するために、バッファを使ってreportlabで作成
     # packet = io.BytesIO()
     # pdf_canvas = canvas.Canvas(packet, pagesize=size)
-    
+
     # 各ページにテキストを追加
     for page_num in range(len(pdf_reader.pages)):
         # 元のPDFページを取得
@@ -69,7 +68,7 @@ def add_text_to_pdf(response, org_path, texts):
         # ページをwriter(新しいPDF)に追加
         pdf_writer.add_page(page)
 
-    # 新しいPDFをHTTPレスポンスとして返す    
+    # 新しいPDFをHTTPレスポンスとして返す
     pdf_writer.write(response)
     return response
 
@@ -94,7 +93,7 @@ def add_text_area_to_pdf(response, pdfpath, img_upload_dir):
     font_name = 'HeiseiKakuGo-W5'   # reportlabにデフォルトで組み込まれているフォント
     pdfmetrics.registerFont(UnicodeCIDFont(font_name))
     font_size = 12
-    
+
     area_no = -1
     # 各ページにテキストを追加
     for page_num in range(len(pdf_reader.pages)):
@@ -129,7 +128,7 @@ def add_text_area_to_pdf(response, pdfpath, img_upload_dir):
                         # y = height - y2 * scy
                         h = y2 - y1
                         # フォントサイズを計算
-                        # font_size = get_resized_font_size(pdf_canvas, word, w, h, font_name)    
+                        # font_size = get_resized_font_size(pdf_canvas, word, w, h, font_name)
                         font_size = round(h * scy)  # バウンディングボックスの高さをフォントサイズとして使用
                         pdf_canvas.setFont(font_name, font_size)
                         # テキストを対応する位置に描画
@@ -195,7 +194,7 @@ def append_text(annotations, page_pdf, pdf_writer, page_size):
         w = x2 - x1
         h = y2 - y1
         # フォントサイズを計算
-        # font_size = get_resized_font_size(pdf_canvas, word, w, h, font_name)    
+        # font_size = get_resized_font_size(pdf_canvas, word, w, h, font_name)
         font_size = round(h * scy)  # バウンディングボックスの高さをフォントサイズとして使用
         pdf_canvas.setFont(font_name, font_size)
         # pdf_canvas.setFont("Helvetica", 10)
@@ -217,22 +216,22 @@ def get_resized_font_size(c, text, width, height, font_name, min_font_size=6, ma
     # 行数の計算（改行で分ける）
     lines = text.split("\n")
     num_lines = len(lines)
-    
+
     # 初期フォントサイズを最大値に設定
     test_font_size = max_font_size
     # 最大フォントサイズでの文字列の幅と高さを計算
     text_width = c.stringWidth(lines[0], font_name, test_font_size)
     text_height = test_font_size * num_lines  # 行数分の高さを計算
-    
+
     # 幅が収まらない場合、フォントサイズを縮小
     while text_width > width and test_font_size > min_font_size:
         test_font_size -= 1
         text_width = c.stringWidth(lines[0], font_name, test_font_size)
         text_height = test_font_size * num_lines
-    
+
     # 高さが収まらない場合、フォントサイズを縮小
     while text_height > height and test_font_size > min_font_size:
         test_font_size -= 1
         text_height = test_font_size * num_lines
-    
+
     return test_font_size

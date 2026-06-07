@@ -1,11 +1,18 @@
 from django.contrib import messages
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy
-from django.views.generic import \
-    ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.shortcuts import get_object_or_404, redirect
-from users.models import MtPhrase
+from django.urls import reverse_lazy
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
+
 from Evc_Owner.forms import PhraseForm
+from users.models import MtPhrase
+
 
 class PhraseListView(ListView):
     template_name = 'Evc_Owner/FE_Phrase_list.html'
@@ -28,7 +35,7 @@ class PhraseCreateView(CreateView):
         return initial
     def form_valid(self, form):
         result = super().form_valid(form)
-        messages.success(self.request, '「{}」を作成しました'.format(form.instance))
+        messages.success(self.request, f'「{form.instance}」を作成しました')
         return result
     def get_next_id(self):
         id = 'phrs'
@@ -37,13 +44,13 @@ class PhraseCreateView(CreateView):
             pre_id = lastobj.phrase_id
             try:
                 num = int(pre_id[-5:])
-                id = id + '_{:05d}'.format(num + 1)
+                id = id + f'_{num + 1:05d}'
             except Exception:   # ValueError
                 id = id + '_00001'
         else:
             id = id + '_00001'
         return id
-    
+
 class PhraseUpdateView(UpdateView):
     template_name = 'Evc_Owner/FE_Phrase_form.html'
     model = MtPhrase
@@ -53,7 +60,7 @@ class PhraseUpdateView(UpdateView):
 
     def form_valid(self, form):
         result = super().form_valid(form)
-        messages.success(self.request, '「{}」を更新しました'.format(form.instance))
+        messages.success(self.request, f'「{form.instance}」を更新しました')
         return result
 
 class PhraseDeleteView(DeleteView):
@@ -73,12 +80,12 @@ class PhraseDeleteView(DeleteView):
     #     print(form.errors)
     #     form.instance.user = self.request.user
     #     return super().form_invalid(form)
-    
+
 # 削除確認画面なしで、viewの定義もdefで始まる形（関数ベース汎用ビュー）
 def delete(request, pk):
     phrase = get_object_or_404(MtPhrase, phrase_id=pk)
     phrase_id = phrase.phrase_id
     phrase.delete()
     messages.success(
-        request, '「{}」を削除しました'.format(phrase_id))
+        request, f'「{phrase_id}」を削除しました')
     return redirect('Evc_Owner:phrase_list')

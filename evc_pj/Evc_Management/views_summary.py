@@ -1,44 +1,48 @@
 # import os
-import datetime
 import calendar
+import datetime
+
 # import threading
 # import base64
 import logging
-import re   # 正規表現操作
+import re  # 正規表現操作
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+# from django.http import JsonResponse
+# from django.http import HttpResponseRedirect
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+
+# from django.contrib import messages
+# from django.conf import settings
+# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 # import csv
 # from io import TextIOWrapper
 # from operator import attrgetter
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 # from dateutil.relativedelta import relativedelta
-
 # from django.shortcuts import redirect
 from django.views.generic import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from Evc_App.views import OwnerTestMixin
 
-# from django.contrib import messages
-# from django.conf import settings
-# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.urls import reverse
-# from django.http import JsonResponse
-# from django.http import HttpResponseRedirect
-from django.db.models import Count,Sum
-from django.db.models.functions import TruncMonth
-# from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
-
-from users.models import EvcUser,TtEvidence,SysOwner,MtPartner
-from commons.utils import ut_get_client_ip,ut_get_localtoday
-
-from Evc_Management.forms import EviSummaryForm,EviInquiryForm
+from commons.utils import ut_get_client_ip, ut_get_localtoday
 
 # from Evc_App.sv_json import sv_load_jsonfile,sv_get_textlines
-from Evc_App.sv_file import (sv_get_folder_id,sv_get_category_name,
-    sv_get_category_list,sv_get_partner_name,sv_get_publisher_name,
-    sv_get_partner_id,sv_get_partner_list,sv_get_publisher_id,sv_get_publisher_list,
-    sv_get_owner_ryaku_name
+from Evc_App.sv_file import (
+    sv_get_category_list,
+    sv_get_category_name,
+    sv_get_folder_id,
+    sv_get_owner_ryaku_name,
+    sv_get_partner_list,
+    sv_get_publisher_list,
 )
-from Evc_App.views_evidence import get_evidence_list_info,check_processed_date
+from Evc_App.views import OwnerTestMixin
+from Evc_App.views_evidence import check_processed_date, get_evidence_list_info
+from Evc_Management.forms import EviInquiryForm, EviSummaryForm
+
+# from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+from users.models import MtPartner, SysOwner, TtEvidence
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +66,10 @@ def get_publisher_list(owner_id):
     choices = []
     lists = sv_get_publisher_list(owner_id)
     for list in lists:
-        choices.append((list))
+        choices.append(list)
     lists = sv_get_partner_list(owner_id)
     for list in lists:
-        choices.append((list))
+        choices.append(list)
     return choices
 
 # 検索条件で絞り込み
@@ -161,7 +165,7 @@ class EvcEviSummaryView(LoginRequiredMixin, OwnerTestMixin, ListView):
         form.fields['category'].choices = get_category_choices(owner_id)
         form.fields['partner_cd'].choices = sv_get_partner_list(owner_id)
         form.fields['publisher_cd'].choices = sv_get_publisher_list(owner_id)
-        self.form = form 
+        self.form = form
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcEviSummaryView 検索条件で絞り込み')
         # 検索条件で絞り込み
@@ -256,7 +260,7 @@ class EvcEviSummaryView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # }
 
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -315,7 +319,7 @@ class EvcEviSummaryView(LoginRequiredMixin, OwnerTestMixin, ListView):
         if page_size:
             paginate_by = int(page_size)
         return paginate_by
-    
+
 # 実績照会
 class EvcEviInquiryView(LoginRequiredMixin, OwnerTestMixin, ListView):
     template_name = 'Evc_Management/FE_EviInquiry.html'
@@ -366,7 +370,7 @@ class EvcEviInquiryView(LoginRequiredMixin, OwnerTestMixin, ListView):
         form.fields['category'].choices = get_category_choices(owner_id)
         form.fields['partner_cd'].choices = sv_get_partner_list(owner_id)
         form.fields['publisher_cd'].choices = sv_get_publisher_list(owner_id)
-        self.form = form 
+        self.form = form
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcEviInquiryView 検索条件で絞り込み')
         # 検索条件で絞り込み
@@ -385,7 +389,7 @@ class EvcEviInquiryView(LoginRequiredMixin, OwnerTestMixin, ListView):
         lists = self.set_evidence_lists(queryset)
 
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -402,7 +406,7 @@ class EvcEviInquiryView(LoginRequiredMixin, OwnerTestMixin, ListView):
 
         context['process_title'] = '実績一覧'
         context['owner_ryaku_name'] = owner_ryaku_name
-        # path_lists = [sv_helpurl(), 'EviList_help.html'] 
+        # path_lists = [sv_helpurl(), 'EviList_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         if 'summary_url' in self.request.session:

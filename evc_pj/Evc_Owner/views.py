@@ -1,33 +1,38 @@
-import os
-import datetime
 import logging
+import os
 import shutil
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponseRedirect, JsonResponse
+
 # import json
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
-
-from django.shortcuts import render, resolve_url, redirect
-from django.views.generic import FormView,UpdateView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
-from django.conf import settings
-from django.urls import reverse,reverse_lazy
-from django.http import HttpResponseRedirect
-from django.http import JsonResponse
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.views.generic import FormView, ListView, UpdateView
 from sequences import get_next_value
 
-from users.models import EvcUser,SysOwner,MtFolder,TtEvidence,MtPartner,HtEvidence
 # from users.models import EvcUser,SysOwner,MtFolder,TtEvidence,MtPartner,HtEvidence,MtOwnerUser
-from commons.utils import (ut_get_hash,ut_get_client_ip,
-                           ut_get_localdate,ut_get_timezone_now,ut_get_localtoday)
+from commons.utils import (
+    ut_get_client_ip,
+    ut_get_hash,
+    ut_get_localdate,
+    ut_get_localtoday,
+    ut_get_timezone_now,
+)
 
+# from Evc_App.forms import EvcSelectOwnerForm
+from Evc_App.sv_file import make_dir
 from Evc_Owner.forms import (
-    EvcOwnerForm,EvcUpdateOwnerForm,OwnerListForm,
+    EvcOwnerForm,
+    EvcUpdateOwnerForm,
+    OwnerListForm,
     # SelectableUserListForm
 )
-# from Evc_App.forms import EvcSelectOwnerForm
-
-from Evc_App.sv_file import (make_dir, sv_get_owner_ryaku_name)
+from users.models import EvcUser, HtEvidence, MtFolder, MtPartner, SysOwner, TtEvidence
 
 logger = logging.getLogger(__name__)
 
@@ -180,11 +185,11 @@ def get_new_owner_id():
             num = 1
     id = 'SO00000000'
     if num < 9999:
-        id = prefix + '{:04d}'.format(num)
+        id = prefix + f'{num:04d}'
     else:
         num = 1
         while num < 10000:
-            id = prefix + '{:04d}'.format(num)
+            id = prefix + f'{num:04d}'
             exists = SysOwner.objects.filter(owner_id=id).exists()
             if not exists:
                 break
@@ -215,7 +220,7 @@ def sv_add_folder(login_user_id, owner_id, root_folder, categorys):
     create_date = ut_get_timezone_now()
     count = len(category_list)
     for i in range(1, count + 1):
-        id = owner_id + '_{:03d}'.format(i)  # 契約会社ID+連番（3桁）
+        id = owner_id + f'_{i:03d}'  # 契約会社ID+連番（3桁）
         # folder_path = os.path.join(root_folder, category_list[i - 1][2]).replace(os.sep,'/')
 
         obj = MtFolder(
@@ -351,7 +356,7 @@ class EvcUpdateOwnerView(LoginRequiredMixin, UpdateView):
         owner_id = self.kwargs.get('pk')
         if act == 'delete':   # 削除
             if owner_id:
-                #  契約会社削除/ファイル削除 
+                #  契約会社削除/ファイル削除
                 name = sv_delete_owner(owner_id)
             else:
                 name = False
@@ -491,7 +496,7 @@ class EvcOwnerListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         form = OwnerListForm(self.request.GET or None)
-        self.form = form 
+        self.form = form
 
         if form.is_valid():
             # 検索条件で絞り込み
@@ -515,7 +520,7 @@ class EvcOwnerListView(LoginRequiredMixin, ListView):
         # 一覧表示内容を取得
         lists = self.set_owner_lists(queryset)
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -585,7 +590,7 @@ class EvcSelectableUserListView(LoginRequiredMixin, ListView):
             form = SelectableUserListForm(None)
         form.fields['owner'].choices = self.get_owner_choices()
         form.fields['owner'].initial = owner_id
-        self.form = form 
+        self.form = form
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcSelectableUserListView')
 
@@ -599,7 +604,7 @@ class EvcSelectableUserListView(LoginRequiredMixin, ListView):
         # 一覧表示内容を取得
         lists = self.set_user_lists(queryset)
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -611,7 +616,7 @@ class EvcSelectableUserListView(LoginRequiredMixin, ListView):
             context['page_size'] = int(page_size)
         else:
             context['page_size'] = 10
-        # path_lists = [sv_helpurl(), 'PartnerList_help.html'] 
+        # path_lists = [sv_helpurl(), 'PartnerList_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         return context
@@ -729,5 +734,5 @@ class EvcSelectableUserListView(LoginRequiredMixin, ListView):
                 rtn = True
         except Exception:
             logger.exception('EvcSelectableUserListView MtOwnerUser exception')
-        return rtn    
+        return rtn
 """

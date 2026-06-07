@@ -1,27 +1,27 @@
 # import os
+import calendar
 import datetime
+
 # import math
 import hashlib
-import calendar
 import logging
 
 # import base64
 # パスワードを生成
 import secrets
 import string
+from decimal import ROUND_HALF_UP, Decimal
+
+from django.conf import settings
+
 # import shutil
 # import subprocess
 # import chardet
-
 # from Crypto.Cipher import AES
 # from Crypto.Util.Padding import pad
 # from Crypto.Util.Padding import unpad
 # from Crypto.Random import get_random_bytes
-
 from django.utils import timezone
-from django.utils.timezone import make_aware
-from django.conf import settings
-from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ def ut_get_timezone_now():
 def ut_get_localtime():
     return timezone.localtime()
 
-# ローカルの日付を取得 
+# ローカルの日付を取得
 def ut_get_localtoday():
     return timezone.localdate()
 
@@ -79,7 +79,7 @@ def ut_get_localdate(date):
             # date_utc = make_aware(date, timezone=datetime.timezone.utc)
             # localdate = timezone.localtime(date_utc)
             if timezone.is_naive(date): # 渡された日時が Naive だったら Aware に変換する
-                date = timezone.make_aware(date, datetime.timezone.utc)
+                date = timezone.make_aware(date, datetime.UTC)
             localdate = timezone.localtime(date)
         except Exception:
             logger.exception(f'ut_get_localdate exception {date=}')
@@ -243,7 +243,7 @@ def decimal_normalize(decimal_val):
 def decimal2comma(d):
     if not d:
         return '0'
-    str = '{:,}'.format(d)
+    str = f'{d:,}'
     return str
 
 # 文字列に変換する
@@ -304,7 +304,7 @@ def get_period():
 
 # # AES_KEYをsettingsから読み込みエンコード
 # # AES_KEY = settings.AES_KEY.encode('utf-8')
-# AES_KEY = b"cZERo135642Monsc" 
+# AES_KEY = b"cZERo135642Monsc"
 # def aes_encryption(data):
 #   """
 #   AESによる暗号化を行う

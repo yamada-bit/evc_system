@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 from django.utils.translation import gettext_lazy as _
 
+
 # 外勤報告書情報
 class TtGaikinReport(models.Model):
     report_id = models.CharField(primary_key=True, max_length=20)
@@ -20,10 +21,10 @@ class TtGaikinReport(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.report_name
     class Meta:
         managed = True
         verbose_name = _('外勤報告書情報')
         verbose_name_plural = _('外勤報告書情報')
         db_table = 'tt_gaikin_report'
+    def __str__(self):
+        return self.report_name

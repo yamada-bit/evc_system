@@ -1,12 +1,23 @@
 from django.contrib import admin
-from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
+from Fms_Ocrform.models import TtEntry, TtOcrform
+
 from .forms import EvcUserChangeForm, EvcUserCreationForm, OwnerForm
-from .models import (EvcUser,SysOwner,MtDept,MtFolder,MtPartner,TtEvidence,HtEvidence,
-                     MtAccount,MtPhrase)
-from Fms_Ocrform.models import TtOcrform,TtEntry,TtOcrData,TtTimesheet
+from .models import (
+    EvcUser,
+    HtEvidence,
+    MtAccount,
+    MtDept,
+    MtFolder,
+    MtPartner,
+    MtPhrase,
+    SysOwner,
+    TtEvidence,
+)
+
 
 class EvcUserAdmin(UserAdmin):
     fieldsets = (

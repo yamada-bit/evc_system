@@ -1,26 +1,31 @@
 # import os
-import datetime
 import logging
-# from django.utils.timezone import make_aware
-
-# from django.shortcuts import render, resolve_url, redirect
-from django.views.generic import FormView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from Evc_App.views import OwnerTestMixin
 
 from django.contrib import messages
-# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.urls import reverse,reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 
-from users.models import EvcUser
-from commons.utils import ut_get_hash,ut_get_client_ip,ut_get_timezone_now,ut_get_localdate
+# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.urls import reverse
 
-from Evc_Management.forms import EvcUserForm,EvcUserListForm
+# from django.utils.timezone import make_aware
+# from django.shortcuts import render, resolve_url, redirect
+from django.views.generic import FormView, ListView
 
-from Evc_App.sv_file import (sv_helpurl,
-    sv_get_owner_ryaku_name,sv_can_add_user,sv_can_add_adminuser
+from commons.utils import (
+    ut_get_client_ip,
+    ut_get_hash,
+    ut_get_localdate,
+    ut_get_timezone_now,
 )
+from Evc_App.sv_file import (
+    sv_can_add_adminuser,
+    sv_can_add_user,
+    sv_get_owner_ryaku_name,
+)
+from Evc_App.views import OwnerTestMixin
+from Evc_Management.forms import EvcUserForm, EvcUserListForm
+from users.models import EvcUser
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +85,7 @@ class EvcUserView(LoginRequiredMixin, OwnerTestMixin, FormView):
         owner_id = self.request.session.get('owner_id')
         owner_ryaku_name = sv_get_owner_ryaku_name(owner_id)
         context['owner_ryaku_name'] = owner_ryaku_name
-        # path_lists = [sv_helpurl(), 'User_help.html'] 
+        # path_lists = [sv_helpurl(), 'User_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         userobj = None
@@ -119,7 +124,7 @@ class EvcUserView(LoginRequiredMixin, OwnerTestMixin, FormView):
                         f'EvcUserView EvcUser レコードあり {user_id_hash=}')
             if kubun == '新規':
                 messages.error(self.request, '既にユーザが存在します')
-                return super().form_invalid(form)  
+                return super().form_invalid(form)
             # try:
             #     create_utc = make_aware(userobj.create_date, timezone=datetime.timezone.utc)
             #     userform.create_date = timezone.localtime(create_utc)
@@ -185,7 +190,7 @@ class EvcUserView(LoginRequiredMixin, OwnerTestMixin, FormView):
 
                 userform.update_date = ut_get_timezone_now()
                 userform.update_user = self.request.user.user_id
-                userform.save() 
+                userform.save()
                 if kubun == '削除':
                     messages.success(self.request, 'データを削除しました。')
                     logger.info(f'{ut_get_client_ip(self.request)} '
@@ -215,21 +220,21 @@ class EvcUserView(LoginRequiredMixin, OwnerTestMixin, FormView):
         #     #パスワードが変更されている場合
         #     user = EvcUser.objects.get(user_id=self.request.user.user_id)
         #     user.set_password(new_password)
-        #     user.save()     # パスワード変更で内部的にログアウトされる     
+        #     user.save()     # パスワード変更で内部的にログアウトされる
         #     user = authenticate(
         #         user_id=user.user_id,
         #         password=new_password,)
         #     if user is not None:
         #         login(self.request, user)   # 変更したパスワードで内部的にログイン
         #     else:
-        #         raise RuntimeError('認証エラー')        
+        #         raise RuntimeError('認証エラー')
 
         # return super().form_valid(form)   #ログアウトされる
         # return redirect('accounts:update')
         # user_id = form.cleaned_data.get('user_id')
         # url = reverse('Evc_Management:user', kwargs=dict(user_id=user_id))
         # return HttpResponseRedirect(url)
-        return HttpResponseRedirect(self.get_success_url())  
+        return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form):
         messages.error(self.request, 'データ登録に失敗しました')
@@ -301,7 +306,7 @@ class EvcUserGuestView(EvcUserView):
 
             userform.update_date = ut_get_timezone_now()
             userform.update_user = self.request.user.user_id
-            userform.save() 
+            userform.save()
             messages.success(self.request, 'データを登録しました。')
             logger.info(f'{ut_get_client_ip(self.request)} '
                         f'EvcUserView データを登録しました。 {user_id_hash=}')
@@ -310,7 +315,7 @@ class EvcUserGuestView(EvcUserView):
             logger.exception(f'{ut_get_client_ip(self.request)} '
                             f'EvcUserView exception {user_id_hash=}')
 
-        return HttpResponseRedirect(self.get_success_url())  
+        return HttpResponseRedirect(self.get_success_url())
 
 # ユーザ一覧
 class EvcUserListView(LoginRequiredMixin, OwnerTestMixin, ListView):

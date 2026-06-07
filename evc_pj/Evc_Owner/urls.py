@@ -1,9 +1,8 @@
 from django.urls import path
 
-from . import views
-from . import views_phrase
+from . import views, views_phrase
 
-app_name = 'Evc_Owner' 
+app_name = 'Evc_Owner'
 urlpatterns = [
     path('edit_owner/', views.EvcEditOwnerView.as_view(), name='edit_owner'),
     path('update_owner/<pk>/', views.EvcUpdateOwnerView.as_view(), name='update_owner'),

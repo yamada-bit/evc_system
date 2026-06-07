@@ -1,16 +1,14 @@
-import os
-import sys
-import argparse 
+import argparse
 import dataclasses
 import json
+import math
+import sys
 
+import pypdf
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LAParams, LTContainer, LTTextBox
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 from pdfminer.pdfpage import PDFPage
-import pypdf
-import math
-from typing import List
 
 
 @dataclasses.dataclass
@@ -20,15 +18,15 @@ class TextData:
     x2: int
     y2: int
     text: str
-    
-@dataclasses.dataclass        
+
+@dataclasses.dataclass
 class TextDatas:
     ocrtext_flg: int
     page_no: int
     area_no: int
     page_width: int
     page_height: int
-    textdata_list: List[TextData]
+    textdata_list: list[TextData]
 
 
 def main():
@@ -108,7 +106,7 @@ def find_textboxes(layout):
         return boxes
     else:
         return []
-    
+
 def obj_dict(obj):
     return obj.__dict__
 def sv_save_json(textdatas, json_file):

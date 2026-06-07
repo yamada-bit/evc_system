@@ -2,7 +2,14 @@ from django.contrib import admin
 
 # Register your models here.
 from Kms_Attendance.models import (
-    M_emp,M_ltd,M_holiday,M_tdfuken,M_work_pat,M_nendo,M_kbn,M_yukyu,
+    M_emp,
+    M_holiday,
+    M_kbn,
+    M_ltd,
+    M_nendo,
+    M_tdfuken,
+    M_work_pat,
+    M_yukyu,
 )
 
 admin.site.register(M_emp)

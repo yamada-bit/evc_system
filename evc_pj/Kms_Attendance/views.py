@@ -1,41 +1,67 @@
-import logging
 import datetime
+import logging
+
 # import locale
 # import urllib
 # import csv
 import uuid
 
-from django.shortcuts import render
-
-# Create your views here.
-from django.urls import reverse_lazy,reverse
-# from django.http import HttpResponse,Http404
-from django.shortcuts import redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView
-from django.views import View
-from django.views.generic import (CreateView,
-                                  ListView,
-                                  TemplateView,
-                                  FormView)
 # from urllib.parse import urlencode
 from django.contrib import messages
-from django.db.models import Q # Qオブジェクト
-# from dateutil.relativedelta import relativedelta
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
+from django.db.models import Q  # Qオブジェクト
 
-from Kms_Attendance.models import (
-    M_emp,M_kbn,T_time_stamp,T_request,T_request_rest,T_getuji_report,T_request_holiday
-)
-from Kms_Attendance.forms import (EvcLoginForm,
-    EditEmpForm,TimeStampEditForm,ClockForm,RequestEditForm,ApprovalForm)
+# from django.http import HttpResponse,Http404
+from django.shortcuts import redirect, render
+
+# Create your views here.
+from django.urls import reverse, reverse_lazy
+from django.views import View
+from django.views.generic import CreateView, FormView, ListView, TemplateView
+
 # 日次勤怠
 from commons.mixins import MonthCalendarMixin
-from commons.utils import (ut_get_hash,ut_get_client_ip,ut_get_localtime,
-                           ut_get_localdate,ut_get_timezone_now,ut_get_localtoday)
+from commons.utils import (
+    ut_get_client_ip,
+    ut_get_hash,
+    ut_get_localdate,
+    ut_get_localtime,
+    ut_get_localtoday,
+    ut_get_timezone_now,
+)
+from Kms_Attendance.commons.utils import (
+    bulk_request_time_stamp,
+    check_time,
+    get_date2int,
+    get_date2time_str,
+    get_kbn_name,
+    get_str2datetime,
+    get_time2date_str,
+    get_time_stamp,
+    get_times,
+    is_holiday,
+    is_nextday,
+    sv_get_kbn_choices,
+    sv_get_name_choices,
+)
+from Kms_Attendance.forms import (
+    ApprovalForm,
+    ClockForm,
+    EditEmpForm,
+    EvcLoginForm,
+    RequestEditForm,
+    TimeStampEditForm,
+)
 
-from Kms_Attendance.commons.utils import (sv_get_kbn_choices,sv_get_name_choices,
-    is_holiday,get_time_stamp,bulk_request_time_stamp,get_times,get_kbn_name,get_str2datetime,
-    get_date2time_str,get_time2date_str,check_time,get_date2int,is_nextday
+# from dateutil.relativedelta import relativedelta
+from Kms_Attendance.models import (
+    M_emp,
+    T_getuji_report,
+    T_request,
+    T_request_holiday,
+    T_request_rest,
+    T_time_stamp,
 )
 
 logger = logging.getLogger(__name__)
@@ -486,7 +512,7 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
             ids.append({'uuid':uuid, 'user_id':user_id})
         self.request.session['id_list'] = ids   # 一括承認で使用する対象データのリスト
         # 月次勤怠画面からの戻りで遷移する日付をセッション変数に
-        self.request.session['approval_date'] = td.strftime("%Y/%m/%d") 
+        self.request.session['approval_date'] = td.strftime("%Y/%m/%d")
 
         return approval_list
 
@@ -528,7 +554,7 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
                 del self.request.session['id_list']
 
         return self.get(request, *args, **kwargs)
-    
+
     # 勤怠承認List
     def get_approvals(self, queryset, td, works_status, number, kbn, full_name):
         timestamp_list = []
@@ -537,7 +563,7 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
         day = td.day
         target_date = year * 10000 + month * 100 + day
         # holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
-        
+
         q_objects = Q(TARGET_DATE=target_date)   # 「Q object」複雑な処理を実装できるクエリ
         if number is not None and number !='' and number != 0:
             q_objects &= Q(EMP_ID=number)
@@ -651,7 +677,7 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             else:
                 redirect_url = reverse('Kms_Attendance:monthly', kwargs={'year':year,'month':month,'mode':mode})
             # mode == 1:    # 日次勤怠画面->日次勤怠申請画面->日次勤怠画面
-            # mode == 2:    # 勤怠承認日次勤怠画面->日次勤怠申請画面->勤怠承認日次勤怠画面            
+            # mode == 2:    # 勤怠承認日次勤怠画面->日次勤怠申請画面->勤怠承認日次勤怠画面
             # mode == 3:    # 勤怠承認画面->日次勤怠申請画面->勤怠承認画面
             # mode == 4:    # 今日の出退勤レポート日次勤怠画面->日次勤怠申請画面->今日の出退勤レポート日次勤怠画面
             # mode == 5:    # 月締状況レポート->日次勤怠申請画面->月締状況レポート
@@ -682,7 +708,7 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
 
             if comment: # 打刻テーブル保存成功
                 messages.info(self.request, comment)
-                
+
                 self.save_request()  # 申請テーブル
                 self.save_request_rest(year, month, day)   # 申請休憩テーブル
                 if KBN == '2' or KBN == '3' or KBN == '5' or KBN == '7':
@@ -752,7 +778,7 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             corret_start = get_date2time_str(obj_timestamp.CORRET_START_TIME)
             corret_end = get_date2time_str(obj_timestamp.CORRET_END_TIME)
             work_stat = obj_timestamp.WORK_STAT
-            
+
         td = datetime.datetime(year, month, day)
         w = MonthCalendarMixin.week_names[td.weekday()]
 
@@ -804,7 +830,7 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             })
 
         return context
-    
+
     # 申請テーブル・申請休憩テーブルコンテキスト取得
     def get_request_context(self, context, year, month, day, obj_emp):
         target_date = year * 10000 + month * 100 + day
@@ -1021,7 +1047,7 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             obj.TRANSFER_DATE = target_date
             obj.REQUEST_DATE = get_date2int(ut_get_localtime())
             # obj.AGREE_DATE =
-            # obj.AGREE_LTD_CD = 
+            # obj.AGREE_LTD_CD =
             # obj.AGREE_EMP_ID = ''
             obj.MEMO = ''
             obj.save()

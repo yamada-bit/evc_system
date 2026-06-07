@@ -1,20 +1,19 @@
 # import os
-import logging
 import csv
+import logging
 from io import TextIOWrapper
 
-from django.views.generic import FormView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from Evc_App.views import OwnerTestMixin
-
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import FormView
 
-from users.models import MtAccount
 from commons.utils import ut_get_client_ip
 
-from Evc_Management.forms import EvcAccountSaveForm
 # from Evc_App.sv_json import sv_load_jsonfile,sv_get_textlines
-from Evc_App.sv_file import sv_helpurl,sv_get_owner_ryaku_name,sv_save_account
+from Evc_App.sv_file import sv_get_owner_ryaku_name, sv_save_account
+from Evc_App.views import OwnerTestMixin
+from Evc_Management.forms import EvcAccountSaveForm
+from users.models import MtAccount
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ class EvcAccountSaveView(LoginRequiredMixin, OwnerTestMixin, FormView):
         form = self.get_form()
         owner_id = self.request.session.get('owner_id')
         owner_ryaku_name = sv_get_owner_ryaku_name(owner_id)
-        # path_lists = [sv_helpurl(), 'AccountSave_help.html'] 
+        # path_lists = [sv_helpurl(), 'AccountSave_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         context = {
             'form': form,
@@ -105,7 +104,7 @@ class EvcAccountSaveView(LoginRequiredMixin, OwnerTestMixin, FormView):
             #     delete_flg = 1
             # else:
             #     delete_flg = 0
-                 
+
             data = {
                 'account_id': account_id,
                 'account_name': account_name,

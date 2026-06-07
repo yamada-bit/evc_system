@@ -1,14 +1,15 @@
-import datetime as dt
 import calendar
-import jpholiday
+import datetime as dt
 import logging
 
-from django.utils import timezone
-from commons.mixins import MonthCalendarMixin
-from Kms_Attendance.models import M_emp,M_kbn,M_holiday,M_work_pat,T_time_stamp
+import jpholiday
 
 #from django.db import connection
-from django.db.models import Q # Qオブジェクト
+from django.db.models import Q  # Qオブジェクト
+from django.utils import timezone
+
+from commons.mixins import MonthCalendarMixin
+from Kms_Attendance.models import M_emp, M_holiday, M_kbn, M_work_pat, T_time_stamp
 
 FORMAT_D = '%#d'
 FORMAT_MD = '%#m/%#d'
@@ -156,7 +157,7 @@ def sv_get_name_choices():
         if objs:
             for obj in objs:
                 choices.append((obj.EMP_ID, obj.EMP_NAME))
-    except Exception as e:
+    except Exception:
         logger.exception('M_emp exception : ')
     return choices
 # 出退勤区分選択リストの設定
@@ -168,7 +169,7 @@ def sv_get_kbn_choices():
         if kbns:
             for obj in kbns:
                 choices.append((obj.KBN, obj.KBN_NAME))
-    except Exception as e:
+    except Exception:
         logger.exception('M_kbn exception : ')
     return choices
 # 勤怠承認List
@@ -176,7 +177,7 @@ def get_approvals(year, month, day, works_status, number, kbn):
     timestamp_list = []
     target_date = year * 10000 + month * 100 + day
     holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
-    
+
     q_objects = Q(TARGET_DATE=target_date)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
         q_objects &= Q(EMP_ID=number)
@@ -263,7 +264,7 @@ def get_times(start, end, work_pat_cd):
             td2 = dt.datetime.strptime(end, '%Y/%m/%d %H:%M:%S')
             td = td2 - td1
             sec = td.total_seconds()
-        
+
             rd1 = get_time2date(obj_work_pat.REST1_START_TIME, td1.year, td1.month, td1.day)
             rd2 = get_time2date(obj_work_pat.REST1_END_TIME, td1.year, td1.month, td1.day)
 
@@ -301,7 +302,7 @@ def get_work1(start, end, work_pat_cd):
         td2 = dt.datetime.strptime(end, '%Y/%m/%d %H:%M:%S')
         td = td2 - td1
         sec = td.total_seconds()
-        
+
         rd1 = get_time2date(obj_work_pat.REST1_START_TIME, td1.year, td1.month, td1.day)
         rd2 = get_time2date(obj_work_pat.REST1_END_TIME, td1.year, td1.month, td1.day)
 
@@ -351,13 +352,13 @@ def get_compare_time_str(tstr1, tstr2):
         h = int(tstr1.split(':')[0])
         m =  int(tstr1.split(':')[1])
         td1 = dt.time(h, m, 0)
-    except Exception as e:
+    except Exception:
         return 0
     try:
         h = int(tstr2.split(':')[0])
         m =  int(tstr2.split(':')[1])
         td2 = dt.time(h, m, 0)
-    except Exception as e:
+    except Exception:
         return 0
 
     return 1 if td1 < td2 else 2
@@ -368,7 +369,7 @@ def get_date2time_str(tstr):
         return ''
     try:
         td = dt.datetime.strptime(tstr, '%Y/%m/%d %H:%M:%S')
-    except ValueError as e:
+    except ValueError:
         return ''
     return td.strftime('%H:%M')
 
@@ -382,9 +383,9 @@ def get_time2date_str(tstr, year, month, day, nextday=False):
         td = dt.datetime(year, month, day, h, m, 0)
         if nextday:
             td = td + dt.timedelta(days=1)
-    except ValueError as e:
+    except ValueError:
         return ''
-    except Exception as e:
+    except Exception:
         return ''
 
     return td.strftime('%Y/%m/%d %H:%M:%S')
@@ -397,10 +398,10 @@ def get_time2date(tstr, year, month, day, nextday=False):
         try:
             h = int(tstr.split(':')[0])
             m =  int(tstr.split(':')[1])
-        except ValueError as e:
+        except ValueError:
             h = 0
             m = 0
-        except Exception as e:
+        except Exception:
             h = 0
             m = 0
     td = dt.datetime(year, month, day, h, m, 0)
@@ -438,6 +439,6 @@ def is_nextday(start, end):
         td1 = get_date2int(dt.datetime.strptime(start, '%Y/%m/%d %H:%M:%S'))
         td2 = get_date2int(dt.datetime.strptime(end, '%Y/%m/%d %H:%M:%S'))
         return True if td1 < td2 else False
-    except Exception as e:
+    except Exception:
         return False
 

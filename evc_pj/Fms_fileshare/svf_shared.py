@@ -1,23 +1,29 @@
-import os
-import datetime
-import shutil
 import logging
+import os
+import shutil
+
 # import json
 # from decimal import Decimal
 from django.conf import settings
+
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 from sequences import get_next_value
 
-from Fms_fileshare.models import TtSharedFile
-from commons.utils import ut_get_localdate,ut_get_timezone_now,ut_get_localtoday
+from commons.utils import ut_get_localdate, ut_get_localtoday, ut_get_timezone_now
 
-from Evc_App.sv_file import (sv_delete_file, make_dir, sv_get_user_name,
-                             get_imgfolder_upload, get_jsonfolder,
-                             sv_get_textlines, sv_get_processed_ym_path
-)
 # from Evc_App.sv_search import sv_search_text
 from Evc_App.sv_create_image import sv_create_ocr_image
+from Evc_App.sv_file import (
+    get_imgfolder_upload,
+    get_jsonfolder,
+    make_dir,
+    sv_delete_file,
+    sv_get_processed_ym_path,
+    sv_get_user_name,
+)
+from Fms_fileshare.models import TtSharedFile
+
 # from Evc_App.sv_extract_text import sv_extract_text
 # from Evc_App.sv_json import sv_save_json, sv_save_detect_json
 
@@ -42,7 +48,7 @@ def svf_make_shared_dir(rootfolder):
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
         for i in range(1,13):
-            mm = '{:02d}'.format(i)
+            mm = f'{i:02d}'
             mm_dir = os.path.join(yy_dir, mm).replace(os.sep,'/')
             make_dir(mm_dir)
             img_dir = os.path.join(mm_dir, 'img').replace(os.sep,'/')
@@ -63,9 +69,9 @@ def svf_get_shared_imagepath(sharedfile_obj):
         # else:
         #     created_ym = sharedfile_obj.processed_ym
         created_ym = sharedfile_obj.processed_ym
-        dest_dir = sv_get_processed_ym_path(rootfolder, created_ym) 
+        dest_dir = sv_get_processed_ym_path(rootfolder, created_ym)
         for page_no in range(1, sharedfile_obj.page_count + 1):
-            page_id = sharedfile_obj.shared_id + '_{:03d}'.format(page_no)
+            page_id = sharedfile_obj.shared_id + f'_{page_no:03d}'
             filepath = os.path.join(dest_dir, 'img', page_id + '.jpg').replace(os.sep,'/')
             images.append(filepath)
     except Exception:
@@ -112,7 +118,7 @@ def svf_create_sharedfile(uploadfiles, user_id, owner_id):
             error_list.append(filename)
             sv_delete_file(new_path)    # アップロードファイル削除
             continue
-        
+
         textdatas = []
 
         logger.debug(f'extract text {filename=}')
@@ -176,7 +182,7 @@ def check_filename(file):
         filepath, ext = os.path.splitext(file)
         i = 1
         while i < 100000:
-            new_path = '{}({}){}'.format(filepath, i, ext)
+            new_path = f'{filepath}({i}){ext}'
             if not os.path.exists(new_path):
                 return new_path
             i += 1
@@ -189,7 +195,7 @@ def get_sharedfile_id():
     try:
         # シーケンス採番
         num = get_next_value(f'shared_{d}')
-        id = d + '_{:05d}'.format(num)
+        id = d + f'_{num:05d}'
         # lastobj = TtSharedFile.objects.all().order_by('-shared_id').first()
         # # first():存在しない場合Noneを返す
         # if lastobj:
@@ -376,7 +382,7 @@ def svf_physical_delete_sharedfile(shared_id):
 def delete_sharedfile(sharedfile_obj):
     shared_id = sharedfile_obj.shared_id
     # dest_dir = sv_get_category_path(owner_id, shared_obj.category_name)
-    # dest_file = sv_get_processed_ym_path(owner_id, shared_obj.processed_ym, shared_obj.pdf_name)  
+    # dest_file = sv_get_processed_ym_path(owner_id, shared_obj.processed_ym, shared_obj.pdf_name)
     dest_file = sharedfile_obj.file_path
 
     # 削除データも閲覧できるように画像ファイルは削除しない

@@ -1,7 +1,7 @@
 import logging
-from django.utils.deprecation import MiddlewareMixin
-
 import threading
+
+from django.utils.deprecation import MiddlewareMixin
 
 local = threading.local()
 
@@ -30,7 +30,7 @@ class EvcLoggingMiddlewareUser:
         setattr(local, 'user', None)
 
         return response
-class SampleMiddleware(object):
+class SampleMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -54,7 +54,7 @@ class EvcLoggingMiddleware(MiddlewareMixin):
     # Djangoのビューを呼び出す前に実行される処理を記述する
     def process_view(self, request, view_func, view_args, view_kwargs): # viewを呼び出す前に実行
         logger.info(request.get_full_path())
-    # ビューで例外が発生した場合に実行される処理を記述する    
+    # ビューで例外が発生した場合に実行される処理を記述する
     def process_exception(self, request, exception):
         logger.error(exception, exc_info=True)
     """ リクエスト時のハンドリング """
@@ -65,7 +65,7 @@ class EvcLoggingMiddleware(MiddlewareMixin):
             request_info = self.__get_request_info(request)
             user_info = self.__get_user_info__(request.user)
 
-            msg = u"{} {} \t{}".format(response.status_code, request_info, user_info)
+            msg = f"{response.status_code} {request_info} \t{user_info}"
             logger.info(msg)
         except:
             pass
@@ -74,33 +74,33 @@ class EvcLoggingMiddleware(MiddlewareMixin):
         return response
 
     def __get_request_info(self, request):
-        if request.method == u'GET':
+        if request.method == 'GET':
             params = self.__format_params__(dict(request.GET))
-        elif request.method == u'POST':
+        elif request.method == 'POST':
             params = self.__format_params__(dict(request.POST))
         else:
-            params = u''
+            params = ''
 
-        return u'{} {}\tparam:[{}]'.format(request.method, request.get_full_path(), params)
+        return f'{request.method} {request.get_full_path()}\tparam:[{params}]'
 
     def __get_user_info__(self, user):
         if user is None:
-            return u'user: - '
+            return 'user: - '
 
         try:
-            return u'user: {}({})'.format(user, user.id)
+            return f'user: {user}({user.id})'
         except:
-            return u'user: - '
+            return 'user: - '
 
     def __format_params__(self, params):
-        param_items = filter(lambda k, v:k != u'csrfmiddlewaretoken',params.items())
-        return u', '.join([u'{}={}'.format(key, self.__list_str__(value)) for (key, value) in param_items])
+        param_items = filter(lambda k, v:k != 'csrfmiddlewaretoken',params.items())
+        return ', '.join([f'{key}={self.__list_str__(value)}' for (key, value) in param_items])
 
     def __list_str__(self, params):
         if params is None:
-            return u''
+            return ''
         elif len(params) == 1:
-            return u'{}'.format(params[0])
-            
-        return u'[' + u', '.join(u'{}'.format(item) for item in params) + u']'
+            return f'{params[0]}'
+
+        return '[' + ', '.join(f'{item}' for item in params) + ']'
 

@@ -1,42 +1,51 @@
-import logging
-import datetime
-import urllib
 import csv
+import datetime
+import logging
+import urllib
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect
 
 # from django.shortcuts import render
-
 # Create your views here.
-from django.urls import reverse_lazy,reverse
-from django.http import HttpResponse,Http404
-from django.shortcuts import redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse, reverse_lazy
 from django.views import View
-from django.views.generic import (ListView,
-                                  DetailView,
-                                  CreateView,
-                                  DeleteView,
-                                  UpdateView,
-                                  TemplateView)
-from django.contrib import messages
-
-from .models import Company, Employee
-
-from Kms_Attendance.models import (
-    M_emp,T_getuji_report,T_daily_report,M_yukyu
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    TemplateView,
+    UpdateView,
 )
-from Kms_Attendance.forms import DailyReportEditForm,PaidHolidayEditForm
 
 # 日次勤怠
 from commons.mixins import MonthCalendarMixin
-from commons.utils import (ut_get_localtoday,ut_get_localtime,
-                           ut_get_localdate,ut_get_timezone_now)
-
-from Kms_Attendance.commons.utils_report import (get_int2datestr,
-    get_today_stamp,get_shime_status,get_getuji_report,get_csv_list,get_pdf_list,
-    get_paid_holiday_list,get_yukyu,
-    get_daily_report,get_holiday_report,get_output_month)
-
+from commons.utils import (
+    ut_get_localdate,
+    ut_get_localtime,
+    ut_get_localtoday,
+    ut_get_timezone_now,
+)
 from Kms_Attendance.commons.pdfmodule import create_pdf
+from Kms_Attendance.commons.utils_report import (
+    get_csv_list,
+    get_daily_report,
+    get_getuji_report,
+    get_holiday_report,
+    get_int2datestr,
+    get_output_month,
+    get_paid_holiday_list,
+    get_shime_status,
+    get_today_stamp,
+    get_yukyu,
+)
+from Kms_Attendance.forms import DailyReportEditForm, PaidHolidayEditForm
+from Kms_Attendance.models import M_emp, M_yukyu, T_daily_report, T_getuji_report
+
+from .models import Company, Employee
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +276,7 @@ class ReportToday(LoginRequiredMixin, TemplateView):
             user_id = obj.get('user_id', '')
             ids.append({'uuid':uuid, 'user_id':user_id})
         self.request.session['id_list'] = ids   # 対象データのユーザリスト
-        
+
         return context
 # 月締状況レポート
 class ReportTukishime(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
@@ -789,8 +798,8 @@ def CsvExport(request, year, month):
     response = HttpResponse(content_type='text/csv; charset=CP932')
     # response = HttpResponse(content_type='text/csv')    # BOM付きのUTF-8のCSVファイル
 
-    filename = urllib.parse.quote((u'勤怠_' + str(year) + str(month).zfill(2) + emp_id + '.csv').encode("utf8"))
-    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(filename)
+    filename = urllib.parse.quote(('勤怠_' + str(year) + str(month).zfill(2) + emp_id + '.csv').encode("utf8"))
+    response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{filename}'
     writer = csv.writer(response)
     # sio = io.StringIO()         # BOM付きのUTF-8のCSVファイル
     # writer = csv.writer(sio)    # BOM付きのUTF-8のCSVファイル
@@ -839,12 +848,12 @@ class PdfView(LoginRequiredMixin, View):
         except M_emp.DoesNotExist:
             raise Http404("Data does not exist")
 
-        filename = urllib.parse.quote((u'勤怠_' + str(year) + str(month).zfill(2) + emp_id + '.pdf').encode("utf8"))
+        filename = urllib.parse.quote(('勤怠_' + str(year) + str(month).zfill(2) + emp_id + '.pdf').encode("utf8"))
 
         # PDF出力
         response = HttpResponse(status=200, content_type='application/pdf')
         # response['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)  # ダウンロードする場合
-        response['Content-Disposition'] = 'filename="{}"'.format(filename)  # 画面に表示する場合
+        response['Content-Disposition'] = f'filename="{filename}"'  # 画面に表示する場合
 
         pdf_list = get_csv_list(obj_emp, year, month, 2)
         lists = get_getuji_report(year, month, emp_id, None, None, None, None)
@@ -867,7 +876,7 @@ def profile(request, id):
         return render(request, 'myapp/profile.html', context)
     else:
         raise Http404('No User matches the given query.')
-  
+
 """
 # 一覧画面
 class CompanyList(ListView):

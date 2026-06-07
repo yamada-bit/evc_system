@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
-
 from pathlib import Path
+
 from dotenv import load_dotenv  # 環境変数管理で.env ファイルを使う
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -102,7 +102,7 @@ if DEPLOY:
     SECURE_CONTENT_TYPE_NOSNIFF = True
 else:
     # プロキシ越しの場合は必須
-    USE_X_FORWARDED_HOST = True    
+    USE_X_FORWARDED_HOST = True
     # CSRF_TRUSTED_ORIGINS = [
     #     'http://stg.sysbevc.com:8080',
     #     'http://localhost:8080',
@@ -191,7 +191,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
             'min_length': 6,
-        }          
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',

@@ -1,18 +1,24 @@
-import os
-import io
 import logging
-import datetime
 import math
-import re   # 正規表現操作
-import json
+import os
+import re  # 正規表現操作
 
+from django.conf import settings
 from google.cloud import vision
 from google.oauth2 import service_account
 
-from django.conf import settings
-from commons.utils import ut_get_localtime,ut_get_localtoday
-from Evc_App.sv_file import TextData,TextDatas,DetectJson,DetectJsons,sv_get_textlines
-from Evc_App.sv_json import sv_save_responsetext,sv_save_detect_json,sv_load_detect_json
+from commons.utils import ut_get_localtime, ut_get_localtoday
+from Evc_App.sv_file import (
+    DetectJson,
+    TextData,
+    TextDatas,
+    sv_get_textlines,
+)
+from Evc_App.sv_json import (
+    sv_load_detect_json,
+    sv_save_detect_json,
+)
+
 # XTHRESHOLD=120   # 1cm : 100 / 254 * 300(DPI)
 # YTHRESHOLD=12    # 1mm : 10 / 254 * 300
 XTHRESHOLD = 80 # 1cm : 100 / 254 * 200(DPI)
@@ -57,7 +63,7 @@ def svf_extract_text(imagefiles, areas_dict):
 
             # if 1 < page_count and specif_page_list and page_no not in specif_page_list:
             #     continue
-            with io.open(input_file, 'rb') as image_file:
+            with open(input_file, 'rb') as image_file:
                 content = image_file.read()
             if GOOGLEOCR:
                 logger.debug(f'vision.Image {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
@@ -103,7 +109,7 @@ def svf_extract_text(imagefiles, areas_dict):
             areas = areas_dict.get(i)
             page_textdatas = get_area_textdatas(page_no, symbol_textdatas,
                                                  page_width, page_height, areas)
-       
+
             textdatas.extend(page_textdatas)
             logger.debug(f'get_area_textdatas {input_file} : {page_no}')
         except Exception:
@@ -569,7 +575,7 @@ def get_bounding_degree(word):
 
 # 取得データの回転角度を取得
 def get_rotate_angle(page):
-    rotate_flgs = [0, 0, 0, 0] 
+    rotate_flgs = [0, 0, 0, 0]
     rotate_angles = [0, -90, 90, 180]
     for block in page.blocks:
         for paragraph in block.paragraphs:
@@ -864,7 +870,7 @@ def sv_detect_trasa(imagefiles):
         input_file = imagefile
         try:
             page_no = i + 1
-            with io.open(input_file, 'rb') as image_file:
+            with open(input_file, 'rb') as image_file:
                 content = image_file.read()
             basename_without_ext = os.path.basename(input_file)
             if GOOGLEOCR:
@@ -993,7 +999,7 @@ def sv_extract_trasa_text(detect_dict, areas_dict, page_cnt):
             symbol_textdatas,page_width,page_height = get_symbols_textdatas(page_no, detect_dict.get(page_no - 1))
             page_textdatas = get_area_textdatas(page_no, symbol_textdatas,
                                                  page_width, page_height, areas_dict.get(page_no - 1))
-       
+
             textdatas.extend(page_textdatas)
         except Exception:
             logger.exception(f'sv_extract_trasa_text exception {page_no=}')

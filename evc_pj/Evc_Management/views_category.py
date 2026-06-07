@@ -1,32 +1,28 @@
 # import os
 # import datetime
 # import calendar
-import logging
 # import csv
-import datetime
+import logging
 
 # from io import TextIOWrapper
 # from operator import attrgetter
 from decimal import Decimal
-# from django.utils import timezone
-# from django.utils.timezone import make_aware
-
-from django.shortcuts import redirect
-from django.views.generic import FormView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-
-from Evc_App.views import OwnerTestMixin
 
 from django.contrib import messages
-from django.urls import reverse
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 
-from users.models import MtFolder
-from commons.utils import ut_get_timezone_now,ut_get_localdate,ut_get_client_ip
+# from django.utils import timezone
+# from django.utils.timezone import make_aware
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.views.generic import FormView, ListView
 
-from Evc_Management.forms import EvcCategoryListForm,EvcCategoryForm
-
+from commons.utils import ut_get_client_ip, ut_get_localdate, ut_get_timezone_now
 from Evc_App.sv_file import sv_get_owner_ryaku_name
+from Evc_App.views import OwnerTestMixin
+from Evc_Management.forms import EvcCategoryForm, EvcCategoryListForm
+from users.models import MtFolder
 
 logger = logging.getLogger(__name__)
 
@@ -43,13 +39,13 @@ class EvcCategoryListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # owner_id = get_owner_id(self.request.user.user_id)
         queryset = queryset.filter(owner_id=owner_id)
         form = EvcCategoryListForm(self.request.GET or None)
-        self.form = form 
+        self.form = form
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcCategoryListView 検索条件で絞り込み')
 
         lists = self.set_category_lists(queryset)
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -64,7 +60,7 @@ class EvcCategoryListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             context['page_size'] = int(page_size)
         else:
             context['page_size'] = 10
-        # path_lists = [sv_helpurl(), 'CategoryList_help.html'] 
+        # path_lists = [sv_helpurl(), 'CategoryList_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         return context
@@ -136,7 +132,7 @@ class EvcCategoryEditView(LoginRequiredMixin, OwnerTestMixin, FormView):
     def get_success_url(self):
         return reverse('Evc_Management:category_list')
         # return reverse('Evc_Management:category_edit', kwargs={'folder_id': self.kwargs['folder_id']})
-   
+
     def get_form_kwargs(self, *args, **kwargs):
         kwgs = super().get_form_kwargs(*args, **kwargs)
         return kwgs
@@ -150,7 +146,7 @@ class EvcCategoryEditView(LoginRequiredMixin, OwnerTestMixin, FormView):
         owner_ryaku_name = sv_get_owner_ryaku_name(owner_id)
         context['owner_ryaku_name'] = owner_ryaku_name
         context['kubun'] = 'new'
-        # path_lists = [sv_helpurl(), 'Category_help.html'] 
+        # path_lists = [sv_helpurl(), 'Category_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         if folder_id == '0':
@@ -185,7 +181,7 @@ class EvcCategoryEditView(LoginRequiredMixin, OwnerTestMixin, FormView):
         check = check_category_name(owner_id, folder_id, category_name)
         if not check:
             messages.error(self.request, '同じカテゴリ名が存在します。区別出来るようにして下さい。')
-            return super().form_invalid(form)     
+            return super().form_invalid(form)
         if kubun == 'new' or kubun == 'change': # 登録
             notes = form.cleaned_data.get('notes')
             display_order = form.cleaned_data.get('display_order')
@@ -281,11 +277,11 @@ def get_new_folder_id(owner_id):
         num = 1
     id = 'AUTO_00000'
     if num < 99999:
-        id = prefix + '_{:03d}'.format(num)
+        id = prefix + f'_{num:03d}'
     else:
         num = 1
         while num < 100000:
-            id = prefix + '_{:3d}'.format(num)
+            id = prefix + f'_{num:3d}'
             exists = MtFolder.objects.filter(folder_id=id).exists()
             if not exists:
                 break
@@ -293,7 +289,7 @@ def get_new_folder_id(owner_id):
     logger.debug(f'new folder_id {id}')
     return id
 
-# カテゴリデータ登録  
+# カテゴリデータ登録
 def sv_save_folder(data, owner_id, user_id, kubun):
     if kubun == 'new':
         folder_id = get_new_folder_id(owner_id)
@@ -336,7 +332,7 @@ def sv_save_folder(data, owner_id, user_id, kubun):
     except Exception:
         logger.exception(f'MtFolder save exception {folder_id} : {obj.category_name}')
     return False
-    
+
 # カテゴリデータ削除
 def sv_delete_folder(folder_id, user_id):
     try:

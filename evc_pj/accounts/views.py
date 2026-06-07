@@ -2,33 +2,33 @@
 # import datetime
 # import os
 import logging
-# from django.shortcuts import render
 
-# Create your views here.
-from django.views.generic import RedirectView,TemplateView
-
-from django.contrib.auth.views import (LoginView,LogoutView,PasswordChangeView,
-                                       PasswordResetView,PasswordResetDoneView,
-                                       PasswordResetConfirmView,PasswordResetCompleteView)
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy,reverse
-# from django.contrib.auth import logout as auth_logout
-from django.utils.translation import gettext_lazy as _
-
-from django.contrib import messages
 # from django.shortcuts import resolve_url, redirect
 # from django.contrib.auth import authenticate
 # from django.contrib.auth import login
 # from django.http import HttpResponseRedirect
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import (
+    LoginView,
+    LogoutView,
+    PasswordChangeView,
+)
+from django.urls import reverse, reverse_lazy
 
-from users.models import EvcUser
-from .forms import EvcLoginForm
+# from django.contrib.auth import logout as auth_logout
+# from django.shortcuts import render
+# Create your views here.
+from django.views.generic import RedirectView, TemplateView
 
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
-from commons.utils import ut_get_hash,ut_get_client_ip
-from Evc_App.sv_file import sv_get_owner_ryaku_name,sv_get_select_owner_list
+from commons.utils import ut_get_client_ip, ut_get_hash
+from Evc_App.sv_file import sv_get_owner_ryaku_name, sv_get_select_owner_list
+from users.models import EvcUser
+
+from .forms import EvcLoginForm
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ class EvcLoginView(LoginView):
     #         messages.error(self.request, "メールアドレスが正しくありません")
     #     # return self.render_to_response(self.get_context_data(form=form))
     #     return super().form_invalid(form)
- 
+
 # ログアウト機能の処理
 class EvcLogoutView(LogoutView):
     template_name = 'accounts/FE_Login.html'
@@ -181,7 +181,7 @@ class EvcRedirectView(LoginRequiredMixin, RedirectView):
             user_id_hs = ut_get_hash(user_id)
             logger.info(f'{ut_get_client_ip(self.request)} '
                         f'リダイレクト {user_id_hs} :{userobj.user_authority}: {url=}')
-"""            
+"""
 
 # パスワード変更画面
 class PasswordChange(LoginRequiredMixin, PasswordChangeView):
@@ -196,7 +196,7 @@ class PasswordChange(LoginRequiredMixin, PasswordChangeView):
         owner_id = self.request.session.get('owner_id')
         context['owner_ryaku_name'] = sv_get_owner_ryaku_name(owner_id)
         context['process_title'] = 'パスワード変更'
-        # path_lists = [sv_helpurl(), 'password_change_help.html'] 
+        # path_lists = [sv_helpurl(), 'password_change_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         return context
@@ -242,7 +242,7 @@ class PasswordChange(LoginRequiredMixin, PasswordChangeView):
 #     #     return resolve_url('user_detail', pk=self.request.user.pk)
 #     def get_object(self, queryset=None):
 #         return EvcUser.objects.get(user_id=self.request.user.user_id)
-    
+
 #     def form_valid(self, form):
 #         messages.success(self.request, 'データを登録しました。')
 #         return super().form_valid(form)

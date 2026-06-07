@@ -1,55 +1,65 @@
 # Create your views here.
-import os
-import datetime
-import calendar
 import logging
+import os
+
 # import json
-import re   # 正規表現操作
-# import calendar
-# import csv,urllib
-# import psycopg
-
-# from django.utils import timezone
-# from django.utils.timezone import make_aware
-
-from django.shortcuts import redirect
-from django.views.generic import FormView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
-# from django.conf import settings
-from django.urls import reverse,reverse_lazy
-# from django.http import HttpResponse
-from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
+import re  # 正規表現操作
 
 # from django.shortcuts import render, resolve_url, redirect
 # from django.views.generic import CreateView, DeleteView
-
 # from django.http import FileResponse, Http404
 # from django.shortcuts import get_object_or_404
-
 # from django.core.exceptions import PermissionDenied
 from typing import cast
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+# from django.http import HttpResponse
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+
+# import calendar
+# import csv,urllib
+# import psycopg
+# from django.utils import timezone
+# from django.utils.timezone import make_aware
+from django.shortcuts import redirect
+
+# from django.conf import settings
+from django.urls import reverse
+from django.views.generic import FormView, ListView
+
+from commons.utils import ut_get_client_ip, ut_get_localtime, ut_get_localtoday
+
+# from Evc_App.sv_json import sv_load_jsonfile,sv_json2textdatas,sv_datas2json
+from Evc_App.sv_file import (
+    get_imgfolder_upload,
+    make_json_dir,
+    make_upload_dir,
+    sv_file2url,
+    sv_get_category_list,
+    sv_get_owner_ryaku_name,
+    sv_handle_uploaded_file,
+)
+from Fms_fileshare.forms import FileEditForm, FileListForm, FileUploadForm
+
+# from .models import SharedFile
+# from .forms import FileUploadForm
+from Fms_fileshare.models import TtSharedFile
+from Fms_fileshare.svf_shared import (
+    svf_create_sharedfile,
+    svf_get_shared_imagepath,
+    svf_get_shared_rootfolder,
+    svf_make_shared_dir,
+    svf_physical_delete_sharedfile,
+    svf_update_sharedfile,
+)
+
 # クラス 'AnonymousUser' の属性 'user_id' にアクセスできません
 # 属性 'user_id' が不明ですPylancereportAttributeAccessIssueの対処のためcast
 # Pythonの型ヒント（Type Hint）用の関数で型安全性や読みやすさの向上が目的。
 # 実行時の処理は何もしない。静的解析ツールやIDE向け
 from users.models import EvcUser
-
-# from .models import SharedFile
-# from .forms import FileUploadForm
-
-from Fms_fileshare.models import TtSharedFile
-from commons.utils import ut_get_client_ip,ut_get_localtime,ut_get_localtoday
-
-from Fms_fileshare.forms import FileUploadForm,FileListForm,FileEditForm
-
-# from Evc_App.sv_json import sv_load_jsonfile,sv_json2textdatas,sv_datas2json
-from Evc_App.sv_file import (sv_file2url,sv_handle_uploaded_file,
-    get_imgfolder_upload,make_upload_dir,make_json_dir,
-    sv_get_owner_ryaku_name,sv_get_category_list
-)
-from Fms_fileshare.svf_shared import (svf_create_sharedfile,svf_get_shared_rootfolder,svf_get_shared_imagepath,
-                                     svf_make_shared_dir,svf_physical_delete_sharedfile,svf_update_sharedfile)
 
 VALID_EXTENSIONS = ['.pdf','.jpg','.jpeg','.png','.bmp','.gif','.tif','.tiff']
 IMAGE_EXTENTIONS = ['.jpg','.jpeg','.png']
@@ -229,7 +239,7 @@ class FmsFileListView(LoginRequiredMixin, ListView):
         # ChoiceFieldに選択肢の設定
         form.fields['category'].choices = get_category_choices(owner_id)
         form.fields['uploader_cd'].choices = get_uploader_list(owner_id)
-        self.form = form 
+        self.form = form
 
         if form.is_valid():
             # バリデーションを実行しデータが有効
@@ -241,7 +251,7 @@ class FmsFileListView(LoginRequiredMixin, ListView):
                     # request_user = cast(EvcUser, self.request.user)
                     # user_id = request_user.user_id
                     # # user_id = self.request.user.user_id
-                    # 共有ファイル情報削除/ファイル削除 
+                    # 共有ファイル情報削除/ファイル削除
                     # name = svf_delete_sharedfile(shared_id, None, None, None, user_id)
                     name = svf_physical_delete_sharedfile(shared_id)
                     if name:
@@ -299,7 +309,7 @@ class FmsFileListView(LoginRequiredMixin, ListView):
         list_url = re.sub('act=del', 'act=', list_url)
         self.request.session['list_url'] = list_url
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -421,7 +431,7 @@ def filter_file(queryset, serach_data, owner_id):
     #             queryset = queryset.filter(processed_ym__lte=date_to).order_by('processed_ym')
     #     except Exception:
     #         pass
-        
+
     # 共有名
     if shared_name:
         queryset = queryset.filter(shared_name__contains=shared_name)
@@ -459,7 +469,7 @@ class FmsFileEditView(LoginRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse('Fms_fileshare:file_edit', kwargs={'shared_id': self.kwargs['shared_id']})
-   
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         shared_id = self.kwargs.get('shared_id')
@@ -530,7 +540,7 @@ class FmsFileEditView(LoginRequiredMixin, FormView):
             #     if cnt and 0 < cnt:
             #         page_cnt = cnt
             # imageno_list = list(range(1, page_cnt + 1))
-     
+
             # page_obj = self.get_page_obj(imageno_list, image_no)
             # context['page_obj'] = page_obj
             # if page_obj.has_next():
@@ -544,7 +554,7 @@ class FmsFileEditView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         act = self.request.POST.get('submit_action')
- 
+
         # owner_id = self.request.session.get('owner_id')
         # image_no = self.kwargs.get('image_no') or 1
         shared_id = form.cleaned_data.get('shared_id')
@@ -563,7 +573,7 @@ class FmsFileEditView(LoginRequiredMixin, FormView):
             # else:
             #     processed_ym = ''
             notes = form.cleaned_data.get('notes')
-            shared_type =  form.cleaned_data.get('shared_type') 
+            shared_type =  form.cleaned_data.get('shared_type')
 
             #  共有ファイル情報データ更新
             id = svf_update_sharedfile(shared_id, shared_name, shared_type, shared_date, notes, user_id)
@@ -595,8 +605,8 @@ class FmsFileEditView(LoginRequiredMixin, FormView):
             #     processed_ym = ''
             notes = form.cleaned_data.get('notes')
 
-            # 共有ファイル情報削除/ファイル削除 
-            # name = svk_delete_sharedfile(shared_id, shared_name, shared_date, notes, user_id)            
+            # 共有ファイル情報削除/ファイル削除
+            # name = svk_delete_sharedfile(shared_id, shared_name, shared_date, notes, user_id)
             name = svf_physical_delete_sharedfile(shared_id)
             if name:
                 basename = os.path.splitext(name)[0]
@@ -622,7 +632,7 @@ class FmsFileEditView(LoginRequiredMixin, FormView):
         logger.error(f'{ut_get_client_ip(self.request)} '
                      f'FmsFileEditView データ登録に失敗しました {err}')
         return super().form_invalid(form)
-    
+
     # 前頁・次頁対応ページング
     def get_page_obj(self, images, image_no):
         page_no = image_no
@@ -632,8 +642,8 @@ class FmsFileEditView(LoginRequiredMixin, FormView):
         except PageNotAnInteger:
             page_obj = paginator.page(1)
         except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)   
-        return page_obj 
+            page_obj = paginator.page(paginator.num_pages)
+        return page_obj
 
 """
 class FileUploadView(LoginRequiredMixin, CreateView):

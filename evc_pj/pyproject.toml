@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "DJ",  # flake8-django
+  "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # 行の長さ制限（行長は formatter に任せる）
+    "E711",  # `if x == None:` のような条件式を許容
+#    "E712",  # `if x == True:` のような条件式を許容
+    "F841",  # is assigned to but never used
+    "DJ001", # 既存DBとの互換性維持
+             # CharFieldはnull=Trueは使わずblank=Trueだけ使うのが一般的
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*.py" = ["E501", "F401"]

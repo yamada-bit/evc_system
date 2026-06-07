@@ -51,11 +51,6 @@
                 <li {% if process_title == "勤怠管理" %}class="active"{% endif %}>
                   <a href="{% url 'Kms_Calendar:calendar_model' %}" class="op"><span class="material-symbols-outlined">login</span>勤怠管理</a>
                 </li>
-                {% comment "下記の部分はコメントアウト" %}
-                <li {% if process_title == "出退勤" %}class="active"{% endif %}>
-                  <a href="{% url 'Kms_Attendance:index' %}" class="op"><span class="material-symbols-outlined">login</span>出退勤</a>
-                </li>
-                {% endcomment%}
                 {% else %}
                 <li {% if process_title == "出退勤サービス" %}class="active"{% endif %}>
                   <a href=""><span class="material-symbols-outlined">upload_file</span>出退勤サービス</a>
@@ -64,6 +59,13 @@
                 <li {% if process_title == "伝票処理（電帳法対応）" %}class="active"{% endif %}>
                   <a href="{% url 'Evc_App:upload' %}" class="op"><span class="material-symbols-outlined">upload_file</span>伝票処理（電帳法対応）</a>
                 </li>
+                {% comment "下記の部分はコメントアウト" %}
+                {% if user.user_authority == "スーパーバイザ" %}
+                <li {% if process_title == "出退勤" %}class="active"{% endif %}>
+                  <a href="{% url 'Kms_Attendance:index' %}" class="op"><span class="material-symbols-outlined">login</span>出退勤</a>
+                </li>
+                {% endif %}
+                {% endcomment%}
                 <li {% if process_title == "経費精算サービス" %}class="active"{% endif %}>
                   <a href=""><span class="material-symbols-outlined">upload_file</span>経費精算サービス</a>
                 </li>

@@ -1,19 +1,20 @@
-import re
-import requests
-import datetime
 import logging
 import math
-import requests
+import re
 import xml.etree.ElementTree as ET
 
+import requests
 from django.conf import settings
 
-from commons.utils import ut_get_timezone_now,ut_get_localdate
-
+from commons.utils import ut_get_localdate, ut_get_timezone_now
 from Evc_App.sv_file import (
-    sv_get_partner_id,sv_get_publisher_id,
-    sv_get_partner_name,sv_get_partner_ryaku_name,sv_conv_company,
-    sv_save_detect,get_new_partner_id
+    get_new_partner_id,
+    sv_conv_company,
+    sv_get_partner_id,
+    sv_get_partner_name,
+    sv_get_partner_ryaku_name,
+    sv_get_publisher_id,
+    sv_save_detect,
 )
 from users.models import MtPartner
 
@@ -48,7 +49,7 @@ def closer_rect(target, textdata1, textdata2):
         return None
     d1 = distance(target, textdata1)
     d2 = distance(target, textdata2)
-    
+
     if d1 < d2:
         return textdata1
     else:
@@ -331,7 +332,7 @@ def extract_partner(text):
     patterns = [
         r'(株式会社|\(株\)|（株）|有限会社|\(有\)|（有）|合同会社)[\u4E00-\u9FFF\u3040-\u30FF\uFF66-\uFF9F\w]+',          # 株式会社○○
         r'[\u4E00-\u9FFF\u3040-\u30FF\uFF66-\uFF9F\w]+(株式会社|\(株\)|（株）|有限会社|\(有\)|（有）|合同会社|\.co\.jp)', # ○○株式会社
-    ]    
+    ]
     # for pattern in pattern_tupple:
     # Python3の文字列に対しては、\wはデフォルトで全角の日本語や英数字などにもマッチ
     try:
@@ -350,7 +351,7 @@ def extract_partner(text):
     except Exception:
         logger.exception(f'extract_partner exception {text=}')
         return False
-       
+
     return False
 
 def extract_name(text):
@@ -530,7 +531,7 @@ def extract_registration(textdatalist):
                 return reg_no[1:], textdata
             # T・ハイフン・スペースを除去して数字のみにする
             # reg_no = re.sub(r'[^0-9]', '', reg_number)
-            
+
             return reg_no, textdata
     return None, None
 # =========================
@@ -594,7 +595,7 @@ def get_company_info(corporate_number: str):
         'type': '12'    # XML
     }
     response = requests.get(url, params=params)
-    
+
     if response.status_code != 200:
         logger.warning(f'法人名取得 エラー {corporate_number=} status={response.status_code}')
         return None
@@ -778,7 +779,7 @@ def extract_parties(text, items):
 
     # ① 発行元確定
     if corporate_number:
-        # 発行元（登録番号ベース）        
+        # 発行元（登録番号ベース）
         issuer = fetch_company_name_from_invoice_api(corporate_number)
         issuer_method = 'invoice_api'
 

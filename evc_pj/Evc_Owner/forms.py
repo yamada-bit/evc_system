@@ -1,7 +1,7 @@
 from django import forms
-from users.models import SysOwner,MtPhrase
-
 from django.core.exceptions import ValidationError
+
+from users.models import MtPhrase, SysOwner
 
 
 # 契約会社登録画面
@@ -111,7 +111,7 @@ class EvcUpdateOwnerForm(forms.ModelForm):
 
 # 契約会社一覧表示画面
 class OwnerListForm(forms.Form):
-    # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))        
+    # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))
     owner = forms.CharField(
         max_length=50,
         required=False,
@@ -135,7 +135,7 @@ class OwnerListForm(forms.Form):
         # initial=10,
         required=False,
         widget=forms.widgets.Select
-    )    
+    )
 
 class PhraseForm(forms.ModelForm):
     """
@@ -180,7 +180,7 @@ class SelectableUserListForm(forms.Form):
         # initial=10,
         required=False,
         widget=forms.widgets.Select
-    )    
+    )
     # class Meta:
     #     model = TtEvidence
     #     fields = ['partner_name', 'partner_ryaku_name',

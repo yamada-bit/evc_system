@@ -1,14 +1,16 @@
+import csv
 import datetime
 import logging
-import csv,urllib,os
+import urllib
+from decimal import ROUND_HALF_UP, Decimal
+
 # import io   # BOM付きのUTF-8のCSVファイル
 from django.http import HttpResponse
-from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
-# from django.http import FileResponse
 
-from commons.utils import ut_get_localtime,ut_get_localtoday
-from users.models import SysOwner,MtPartner,MtAccount
-from Evc_App.sv_file import sv_get_partner_name,sv_get_publisher_name
+# from django.http import FileResponse
+from commons.utils import ut_get_localtime, ut_get_localtoday
+from Evc_App.sv_file import sv_get_partner_name, sv_get_publisher_name
+from users.models import MtAccount, MtPartner, SysOwner
 
 logger = logging.getLogger(__name__)
 
@@ -149,11 +151,11 @@ def filter_create_date(queryset, day):
     # todayをUTCに変換
         today_start_str = str(day) + ' 00:00:00'
         today_start = datetime.datetime.strptime(today_start_str, '%Y-%m-%d %H:%M:%S')
-        today_start = today_start.astimezone(datetime.timezone.utc)
+        today_start = today_start.astimezone(datetime.UTC)
         # today_start = today_start - datetime.timedelta(hours=9)
         today_end_str = str(day) + ' 23:59:59'
         today_end = datetime.datetime.strptime(today_end_str, '%Y-%m-%d %H:%M:%S')
-        today_end = today_end.astimezone(datetime.timezone.utc)
+        today_end = today_end.astimezone(datetime.UTC)
         # today_end = today_end + datetime.timedelta(hours=15)
         queryset = queryset.filter(create_date__range=(today_start, today_end))
     except Exception:
@@ -177,7 +179,7 @@ def sv_response_evidence(queryset):
 
     csvfile = 'エビデンス' + str_time + '.csv'
     filename = urllib.parse.quote((csvfile).encode('utf8'))
-    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(filename)
+    response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{filename}'
 
     # writer = csv.writer(response, quoting=csv.QUOTE_ALL)    # 全てのフィールドをクォートします。
     writer = csv.writer(response)
@@ -239,7 +241,7 @@ def sv_response_partner(queryset):
 
     csvfile = '取引先' + str_time + '.csv'
     fname = urllib.parse.quote((csvfile).encode('utf8'))
-    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(fname)
+    response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{fname}'
 
     writer = csv.writer(response)
     header = ['取引先ID','取引先','取引先名（略称）','法人番号','取引先区分','担当者部門','担当者','担当者メールアドレス','郵便番号','住所','ビル・棟名他','電話番号','FAX番号','削除フラグ']
@@ -296,7 +298,7 @@ def sv_response_partner_sample():
 
     csvfile = '取引先' + str_time + '.csv'
     fname = urllib.parse.quote((csvfile).encode('utf8'))
-    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(fname)
+    response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{fname}'
     try:
         writer = csv.writer(response)
         header = ['取引先ID','取引先','取引先名（略称）','法人番号','取引先区分','担当者部門','担当者','担当者メールアドレス','郵便番号','住所','ビル・棟名他','電話番号','FAX番号','削除フラグ']
@@ -309,11 +311,11 @@ def sv_response_partner_sample():
 
     # response['content_type'] = 'text/csv'
     # response['Content-Disposition'] = 'attachment; filename=' + fname
-    
+
     # if os.path.exists(csvfile):
     #     response = FileResponse(open(csvfile, 'rb'))
 
-    # return response        
+    # return response
 # 履歴 検索条件で絞り込み
 def sv_filter_history(owner_id, request, queryset):
     kubun = request.GET.get('kubun')
@@ -435,7 +437,7 @@ def sv_response_history(queryset):
 
     csvfile = 'エビデンス変更履歴' + str_time + '.csv'
     filename = urllib.parse.quote((csvfile).encode('utf8'))
-    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(filename)
+    response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{filename}'
 
     # writer = csv.writer(response, quoting=csv.QUOTE_ALL)    # 全てのフィールドをクォートします。
     writer = csv.writer(response)
@@ -492,5 +494,5 @@ def sv_response_history(queryset):
         except Exception:
             logger.exception('sv_response_history writerow exception')
     logger.debug(f'sv_response_history {csvfile}')
-            
+
     return response

@@ -1,40 +1,55 @@
-import os
-import datetime
-# import threading
-# import base64
-import logging
+
 # import re   # 正規表現操作
 import json
 
-from django.shortcuts import redirect
-from django.views.generic import FormView
-from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
-from django.contrib import messages
-# from django.conf import settings
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.urls import reverse
+# import threading
+# import base64
+import logging
+import os
+
 # from django.http import HttpResponseRedirect
-# from django.db.models import F  
+# from django.db.models import F
 from typing import cast
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+
+# from django.conf import settings
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.views.generic import FormView
+
+from commons.utils import ut_get_client_ip, ut_get_localtime
+from Evc_App.forms import EvcSelectOwnerForm, EvcUploadAreaForm, EvcUploadFileForm
+from Evc_App.sv_create_image import sv_create_ocr_image
+from Evc_App.sv_evidence import sv_create_evidence
+from Evc_App.sv_file import (
+    get_imgfolder_upload,
+    get_rootfolder,
+    make_evidence_image_dir,
+    make_json_dir,
+    make_processed_ym_dir,
+    make_upload_dir,
+    sv_delete_file,
+    sv_file2url,
+    sv_get_filepath,
+    sv_get_owner_ryaku_name,
+    sv_get_select_owner_list,
+    sv_handle_uploaded_file,
+)
+from Evc_App.sv_get_image_shape import (
+    sv_get_image_angle,
+    sv_get_image_shape,
+    sv_upload_file_base64,
+)
+
 # クラス 'AnonymousUser' の属性 'user_id' にアクセスできません
 # 属性 'user_id' が不明ですPylancereportAttributeAccessIssueの対処のためcast
 # Pythonの型ヒント（Type Hint）用の関数で型安全性や読みやすさの向上が目的。
 # 実行時の処理は何もしない。静的解析ツールやIDE向け
 from users.models import EvcUser
-
-from commons.utils import ut_get_client_ip,ut_get_localtime
-from Evc_App.forms import EvcUploadFileForm,EvcUploadAreaForm,EvcSelectOwnerForm
-
-from Evc_App.sv_create_image import sv_create_ocr_image
-from Evc_App.sv_file import (sv_file2url,sv_handle_uploaded_file,sv_get_filepath,
-    get_rootfolder,get_imgfolder_upload,make_upload_dir,make_json_dir,make_processed_ym_dir,make_evidence_image_dir,
-    sv_get_select_owner_list,sv_get_owner_ryaku_name,sv_helpurl,sv_delete_file
-)
-from Evc_App.sv_evidence import sv_create_evidence
-
-from Evc_App.sv_get_image_shape import sv_get_image_shape,sv_get_image_angle,sv_upload_file_base64
-
 
 VALID_EXTENSIONS = ['.pdf','.jpg','.jpeg','.png','.bmp','.gif','.tif','.tiff']
 IMAGE_EXTENTIONS = ['.jpg','.jpeg','.png']
@@ -65,7 +80,7 @@ class EvcSelectOwnerView(LoginRequiredMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['process_title'] = '契約会社選択'
-        # path_lists = [sv_helpurl(), 'SelectOwner_help.html'] 
+        # path_lists = [sv_helpurl(), 'SelectOwner_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         return context
@@ -85,7 +100,7 @@ class EvcSelectOwnerView(LoginRequiredMixin, FormView):
                         f'EvcSelectOwnerView select owner {owner_id=}')
         else:
             messages.error(self.request, '契約会社を選択してください。')
-            return super().form_invalid(form) 
+            return super().form_invalid(form)
             # url = settings.LOGIN_URL   # ログイン画面に戻す
             # return HttpResponseRedirect(url)    # ログイン画面に戻す
         return super().form_valid(form)
@@ -128,7 +143,7 @@ class EvcUploadView(LoginRequiredMixin, OwnerTestMixin, FormView):
         form = self.get_form()
         owner_id = self.request.session.get('owner_id')
         owner_ryaku_name = sv_get_owner_ryaku_name(owner_id)
-        # path_lists = [sv_helpurl(), 'FileSave_help.html'] 
+        # path_lists = [sv_helpurl(), 'FileSave_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         context = {
             'form': form,
@@ -244,7 +259,7 @@ class EvcUploadView(LoginRequiredMixin, OwnerTestMixin, FormView):
                         else:
                             postext = get_image_shape(img)  # スマホは画像の分割領域を取得
                         areafiles.append({'name':filename, 'path':path, 'imgpath':img, 'areas':postext})
-                    self.request.session['area_files'] = areafiles 
+                    self.request.session['area_files'] = areafiles
                     if act == 'cropimage':
                         # スマホは「画面分割プレビュー画面」へ遷移する
                         logger.info(f'{ut_get_client_ip(self.request)} '
@@ -294,7 +309,7 @@ class EvcUploadView(LoginRequiredMixin, OwnerTestMixin, FormView):
         err = form.errors.as_text()
         logger.error(f'{ut_get_client_ip(self.request)} '
                      f'EvcUploadView アップロードに失敗しました {err}')
-        return super().form_invalid(form) 
+        return super().form_invalid(form)
 
 # ファイルアップロード画像分割(PC)
 class EvcUploadAreaView(LoginRequiredMixin, OwnerTestMixin, FormView):
@@ -342,7 +357,7 @@ class EvcUploadAreaView(LoginRequiredMixin, OwnerTestMixin, FormView):
         #             areafiles2.append(file)
         #         self.request.session['area_files'] = areafiles2
 
-        # path_lists = [sv_helpurl(), 'UploadArea_help.html'] 
+        # path_lists = [sv_helpurl(), 'UploadArea_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         context = {
             'form': form,
@@ -377,9 +392,9 @@ class EvcUploadAreaView(LoginRequiredMixin, OwnerTestMixin, FormView):
             pagebtn = form.cleaned_data.get('pagebtn')
             if pagebtn: # ページ移動
                 if pagebtn == 'back_btn':
-                    pageno = image_no - 1 
+                    pageno = image_no - 1
                 else:
-                    pageno = image_no + 1 
+                    pageno = image_no + 1
                 act = 'save' if 0 < pageno else 'none'
             else:
                 act = 'none'
@@ -456,13 +471,13 @@ class EvcUploadAreaView(LoginRequiredMixin, OwnerTestMixin, FormView):
         #     sv_delete_file(imgpath)
         return redirect('Evc_App:upload')
         # return self.render_to_response(self.get_context_data(form=form))
-    
+
     def form_invalid(self, form):
         messages.error(self.request, 'アップロードに失敗しました')
         err = form.errors.as_text()
         logger.error(f'{ut_get_client_ip(self.request)} '
                      f'EvcUploadAreaView アップロードに失敗しました {err}')
-        return super().form_invalid(form) 
+        return super().form_invalid(form)
     # 前頁・次頁対応ページング
     def get_page_obj(self, images, image_no):
         page_no = image_no
@@ -472,8 +487,8 @@ class EvcUploadAreaView(LoginRequiredMixin, OwnerTestMixin, FormView):
         except PageNotAnInteger:
             page_obj = paginator.page(1)
         except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)   
-        return page_obj 
+            page_obj = paginator.page(paginator.num_pages)
+        return page_obj
 # 画像の分割領域を取得
 def get_image_shape(filepath):
     jsontext = ''
@@ -506,7 +521,7 @@ class EvcUploadCropimageView(EvcUploadAreaView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['process_title']= '切り出し確認'
-        # path_lists = [sv_helpurl(), 'UploadCropimage_help.html'] 
+        # path_lists = [sv_helpurl(), 'UploadCropimage_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         return context

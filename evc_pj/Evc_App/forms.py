@@ -1,7 +1,8 @@
-import os
-from django import forms
 # from django.db import models
 import datetime
+import os
+
+from django import forms
 
 # import random, string
 # from django.conf import settings
@@ -65,7 +66,7 @@ class EvcUploadFileForm(forms.Form):
     # file = forms.FileField(widget=forms.ClearableFileInput(attrs={'allow_multiple_selected': True}))
     file = MultipleFileField()
     evidence_kubuns = forms.ChoiceField(
-        label='エビデンス区分', 
+        label='エビデンス区分',
         required=False,
         widget=forms.RadioSelect,
         choices=(
@@ -91,7 +92,7 @@ class EvcUploadFileForm(forms.Form):
         file = self.cleaned_data['file']
         for f in files:
             extension = os.path.splitext(f.name)[1]  # 拡張子を取得
-            if not extension.lower() in VALID_EXTENSIONS:
+            if extension.lower() not in VALID_EXTENSIONS:
                 raise forms.ValidationError(f.name + ' ファイル形式が正しくありません')
         return file
     # def save(self):
@@ -100,7 +101,7 @@ class EvcUploadFileForm(forms.Form):
     #     for pdf in upload_files:
     #         default_storage.save(os.path.join(temp_dir, pdf.name), pdf).replace(os.sep,'/')    # 一時フォルダにPDFを保存
     #     return temp_dir
-    
+
     # def create_dir(self, n):
     #     return 'pdf\\' + ''.join(random.choices(string.ascii_letters + string.digits, k=n))
 
@@ -140,12 +141,12 @@ class EvcEviListForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
         })
-    )    
-    # today_check = forms.BooleanField(label='本日のみ', required=False, initial=True)    
-    # user_check = forms.BooleanField(label='ログインユーザのみ', required=False, initial=True)    
+    )
+    # today_check = forms.BooleanField(label='本日のみ', required=False, initial=True)
+    # user_check = forms.BooleanField(label='ログインユーザのみ', required=False, initial=True)
 
     today_kubuns = forms.ChoiceField(
-        label='作成日区分', 
+        label='作成日区分',
         required=True,
         widget=forms.RadioSelect,
         choices=(
@@ -155,7 +156,7 @@ class EvcEviListForm(forms.Form):
         initial='today'
     )
     user_kubuns = forms.ChoiceField(
-        label='ユーザ区分', 
+        label='ユーザ区分',
         required=True,
         widget=forms.RadioSelect,
         choices=(
@@ -244,7 +245,7 @@ class EvcEviListForm(forms.Form):
             'pattern': '^[0-9]+$',
             'type': 'search',
             'size': 12,
-        }))                                
+        }))
     # amount = forms.IntegerField(max_length=12)
     amount_choice = forms.fields.ChoiceField(
         choices=(
@@ -296,7 +297,7 @@ class EvcEviListForm(forms.Form):
         widget=forms.widgets.Select
     )
     duplist = forms.CharField(required=False, widget=forms.HiddenInput)
- 
+
     # duplist = forms.MultipleChoiceField(
     #       label='チェック',
     #       required=False,
@@ -306,7 +307,7 @@ class EvcEviListForm(forms.Form):
     #         (1, '重複のみ検索'),
     #       ),
     #       widget=forms.CheckboxSelectMultiple(attrs={
-    #            'id': 'duplist','class': 'form-check-duplist'}))    
+    #            'id': 'duplist','class': 'form-check-duplist'}))
 
     # class Meta:
     #     model = TtEvidence
@@ -414,7 +415,7 @@ class EvcSConCreateForm(forms.Form):
             'pattern': '^[0-9]+$',
             'type': 'search',
             'size': 12,
-        }))                                
+        }))
 
     # amount = forms.IntegerField(
     #     required=False,
@@ -460,7 +461,7 @@ class EvcSConCreateForm(forms.Form):
         label='重複許可',
         required=False,
         widget=forms.CheckboxInput(attrs={'class': 'duplicate-checkbox'}),
-    )               
+    )
     def __init__(self, categories=None, partners=None, publishers=None, accounts=None, *args, **kwargs):
         if categories:
             self.base_fields['category'].choices = categories

@@ -1,15 +1,13 @@
-import datetime
-import uuid
-from django.db import models
-
 # Create your models here.
 from django.contrib import auth
-from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import PermissionsMixin
+from django.core.mail import send_mail
+from django.core.validators import MinValueValidator
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.core.mail import send_mail
-from django.core.validators import MaxValueValidator, MinValueValidator
+
 
 class UserManager(BaseUserManager):
     # venv\Lib\site-packages\django\contrib\auth\models.py
@@ -33,7 +31,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
         return self._create_user(user_id, user_name, password, **extra_fields)
- 
+
     def create_superuser(self, user_id, user_name, password, **extra_fields):
         extra_fields.setdefault('delete_flg', 0)
         extra_fields.setdefault('is_staff', True)
@@ -55,7 +53,7 @@ class UserManager(BaseUserManager):
                 )
         elif not isinstance(backend, str):
             raise TypeError(
-                "backend must be a dotted import path string (got %r)." % backend
+                f"backend must be a dotted import path string (got {backend!r})."
             )
         else:
             backend = auth.load_backend(backend)
@@ -114,7 +112,7 @@ class EvcUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'user_id'
     EMAIL_FIELD = "user_id"
     REQUIRED_FIELDS = ['user_name']
- 
+
     class Meta:
         verbose_name = _("user")
         verbose_name_plural = _("users")
@@ -127,7 +125,7 @@ class EvcUser(AbstractBaseUser, PermissionsMixin):
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         send_mail(subject, message, from_email, [self.user_id], **kwargs)
-    
+
 #契約会社マスタ
 class SysOwner(models.Model):
     owner_id = models.CharField(verbose_name='契約会社ID', max_length=10,  primary_key=True)
@@ -144,16 +142,16 @@ class SysOwner(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', null=True, blank=True)
 
-    #管理画面に表示されるモデル内のデータを判別するための文字列を定義
-    def __str__(self):
-        return self.owner_name
 
     class Meta:
         managed = True # migrationsの管理対象とする
         verbose_name = _('契約会社')
         verbose_name_plural = _('契約会社')
         db_table = 'sys_owner'
- 
+    #管理画面に表示されるモデル内のデータを判別するための文字列を定義
+    def __str__(self):
+        return self.owner_name
+
 #部署マスタ
 class MtDept(models.Model):
     dept_id = models.CharField(verbose_name='部署ID', max_length=10,  primary_key=True)
@@ -166,15 +164,15 @@ class MtDept(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', null=True, blank=True)
 
-    #管理画面に表示されるモデル内のデータを判別するための文字列を定義
-    def __str__(self):
-        return self.dept_name
 
     class Meta:
         managed = True
         verbose_name = _('部署')
         verbose_name_plural = _('部署')
         db_table = 'mt_dept'
+    #管理画面に表示されるモデル内のデータを判別するための文字列を定義
+    def __str__(self):
+        return self.dept_name
 #フォルダ管理マスタ
 class MtFolder(models.Model):
     folder_id = models.CharField(primary_key=True, max_length=20)
@@ -191,13 +189,13 @@ class MtFolder(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return (self.owner_id or 'None') + ':' + (self.category_name or 'None')
     class Meta:
         managed = True
         verbose_name = _('フォルダ管理')
         verbose_name_plural = _('フォルダ管理')
         db_table = 'mt_folder'
+    def __str__(self):
+        return (self.owner_id or 'None') + ':' + (self.category_name or 'None')
 
 #取引先マスタ
 class MtPartner(models.Model):
@@ -222,13 +220,13 @@ class MtPartner(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.partner_name
     class Meta:
         managed = True
         verbose_name = _('取引先')
         verbose_name_plural = _('取引先')
         db_table = 'mt_partner'
+    def __str__(self):
+        return self.partner_name
 
 #エビデンス情報
 class TtEvidence(models.Model):
@@ -255,14 +253,14 @@ class TtEvidence(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.evidence_name
     class Meta:
         managed = True
         verbose_name = _('エビデンス情報')
         verbose_name_plural = _('エビデンス情報')
         db_table = 'tt_evidence'
-    
+    def __str__(self):
+        return self.evidence_name
+
     # def save(self, *args, **kwargs):
         # if not self.create_date:
         #     # self.create_date = timezone.now()   # 新規作成時の時刻を保存
@@ -297,13 +295,14 @@ class HtEvidence(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.evidence_name
     class Meta:
         managed = True
         verbose_name = _('エビデンス履歴情報')
         verbose_name_plural = _('エビデンス履歴情報')
         db_table = 'ht_evidence'
+    def __str__(self):
+        return self.evidence_name
+
 #科目マスタ
 class MtAccount(models.Model):
     account_id = models.CharField(verbose_name='科目ID', max_length=20,  primary_key=True)
@@ -315,15 +314,15 @@ class MtAccount(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', null=True, blank=True)
 
-    #管理画面に表示されるモデル内のデータを判別するための文字列を定義
-    def __str__(self):
-        return self.account_name
 
     class Meta:
         managed = True
         verbose_name = _('科目')
         verbose_name_plural = _('科目')
         db_table = 'mt_account'
+    #管理画面に表示されるモデル内のデータを判別するための文字列を定義
+    def __str__(self):
+        return self.account_name
 
 #カテゴリフレーズマスタ
 class MtPhrase(models.Model):
@@ -336,14 +335,13 @@ class MtPhrase(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', null=True, blank=True)
 
-    def __str__(self):
-        return (self.phrase or 'None') + ':' + (self.category_name or 'None')
-
     class Meta:
         managed = True
         verbose_name = _('カテゴリフレーズ')
         verbose_name_plural = _('カテゴリフレーズ')
         db_table = 'mt_phrase'
+    def __str__(self):
+        return (self.phrase or 'None') + ':' + (self.category_name or 'None')
 
 #検出情報
 class TtDetect(models.Model):
@@ -358,14 +356,14 @@ class TtDetect(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', null=True, blank=True)
 
-    def __str__(self):
-        return (self.evidence_id or 'None') + ':' + (self.category_name or 'None')
-
     class Meta:
         managed = True
         verbose_name = _('検出情報')
         verbose_name_plural = _('検出情報')
         db_table = 'tt_detect'
+
+    def __str__(self):
+        return (self.evidence_id or 'None') + ':' + (self.category_name or 'None')
 
 # #契約会社対応ユーザマスタ
 # class MtOwnerUser(models.Model):
@@ -381,7 +379,7 @@ class TtDetect(models.Model):
 
 #     #管理画面に表示されるモデル内のデータを判別するための文字列を定義
 #     def __str__(self):
-#         return self.owner_id + ' : ' + self.user_id 
+#         return self.owner_id + ' : ' + self.user_id
 
 #     class Meta:
 #         managed = True # migrationsの管理対象とする

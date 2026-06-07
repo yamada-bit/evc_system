@@ -1,56 +1,78 @@
-import os
-import datetime
+
 # import threading
 # import base64
 import logging
-import re   # 正規表現操作
 import math
+import os
+import re  # 正規表現操作
 
-from django.http import JsonResponse
-from django.http import HttpResponse,Http404
-from django.shortcuts import render, redirect
-from django.views.generic import FormView,ListView,View
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
+# from django.http import HttpResponseRedirect
+# from django.db.models import F
+from decimal import ROUND_HALF_UP, Decimal
+from typing import cast
+
 # from django.conf import settings
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 from dateutil.relativedelta import relativedelta
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.http import Http404, HttpResponse, JsonResponse
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.views.generic import FormView, ListView, View
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.urls import reverse,reverse_lazy
-# from django.http import HttpResponseRedirect
-# from django.db.models import F  
-from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
-from typing import cast
+from commons.utils import (
+    ut_get_client_ip,
+    ut_get_localdate,
+    ut_get_localtoday,
+    ut_get_timezone_now,
+)
+from Evc_App.forms import EvcEviListForm, EvcSConCreateForm
+from Evc_App.sv_evidence import (
+    sv_create_evidence_image,
+    sv_delete_evidence,
+    sv_update_evidence,
+    sv_update_partner,
+    sv_update_publisher,
+    sv_update_shiori,
+)
+from Evc_App.sv_export_csv import (
+    sv_filter_evidence,
+    sv_filter_today,
+    sv_response_evidence,
+)
+from Evc_App.sv_file import (
+    SearchKey,
+    sv_create_partner_auto,
+    sv_delete_detect,
+    sv_file2url,
+    sv_get_account_id,
+    sv_get_account_list,
+    sv_get_category_list,
+    sv_get_corporate_number,
+    sv_get_detect_partner_name,
+    sv_get_detect_publisher_name,
+    sv_get_evidence_filename,
+    sv_get_evidence_imagepath,
+    sv_get_owner_ryaku_name,
+    sv_get_partner_id,
+    sv_get_partner_list,
+    sv_get_partner_name,
+    sv_get_publisher_id,
+    sv_get_publisher_list,
+    sv_get_publisher_name,
+    sv_get_user_authority,
+)
+from Evc_App.sv_pdf_merge_text import add_text_to_pdf
+
 # クラス 'AnonymousUser' の属性 'user_id' にアクセスできません
 # 属性 'user_id' が不明ですPylancereportAttributeAccessIssueの対処のためcast
 # Pythonの型ヒント（Type Hint）用の関数で型安全性や読みやすさの向上が目的。
 # 実行時の処理は何もしない。静的解析ツールやIDE向け
-
 from Evc_App.views import OwnerTestMixin
-from users.models import EvcUser,TtEvidence,MtAccount,MtPartner
-from commons.utils import (ut_get_localdate,ut_get_timezone_now,
-                           ut_get_client_ip,ut_get_localtoday)
-
-from Evc_App.forms import EvcEviListForm,EvcSConCreateForm
-
-from Evc_App.sv_file import (SearchKey,sv_file2url,sv_get_user_authority,
-    sv_get_partner_id,sv_get_category_list,sv_get_partner_name,sv_get_publisher_name,
-    sv_get_detect_partner_name,sv_get_detect_publisher_name,sv_delete_detect,
-    sv_get_partner_list,sv_get_publisher_id,sv_get_publisher_list,sv_create_partner_auto,
-    sv_get_account_list,sv_get_account_id,
-    sv_get_owner_ryaku_name,sv_get_evidence_filename,
-    sv_get_evidence_imagepath,sv_get_corporate_number,
-    get_rootfolder,get_imgfolder_upload,
-)
-
-from Evc_App.sv_evidence import (sv_update_evidence,sv_update_shiori,
-                                 sv_delete_evidence,sv_create_evidence_image,
-                                 sv_update_partner,sv_update_publisher,sv_update_use_count)
-
-from Evc_App.sv_export_csv import sv_filter_evidence,sv_response_evidence,sv_filter_today
-from Evc_App.sv_pdf_merge_text import add_text_to_pdf,add_text_area_to_pdf
+from users.models import EvcUser, MtAccount, MtPartner, TtEvidence
 
 VALID_EXTENSIONS = ['.pdf','.jpg','.jpeg','.png','.bmp','.gif','.tif','.tiff']
 IMAGE_EXTENTIONS = ['.jpg','.jpeg','.png']
@@ -58,7 +80,7 @@ IMAGE_EXTENTIONS = ['.jpg','.jpeg','.png']
 
 logger = logging.getLogger(__name__)
 
-# ListView ---> 
+# ListView --->
 #   modelで指定したデータベーステーブルからQuerySetを取得する
 #   「object_list」という変数にQuerySetを格納する
 #   HTMLテンプレートへコンテキストとしてQuerySetを渡す
@@ -109,7 +131,7 @@ class EvcEviListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # ChoiceFieldに選択肢の設定
         form.fields['category'].choices = self.get_category_choices(owner_id)
         form.fields['account_choice'].choices = self.get_account_choices(owner_id)
-        self.form = form 
+        self.form = form
         request_user = cast(EvcUser, self.request.user)
         user_id = request_user.user_id
         user_authority = sv_get_user_authority(user_id)   # ユーザ権限
@@ -146,7 +168,7 @@ class EvcEviListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             #            'partner_id','publisher_id','total_amount','-evidence_id')
             # if act == 'duplicate':  # 重複データ検索ボタン  管理者権限以上で表示
             # ページ移動するとactがクリアされるのでduplistを使う
-            dup = self.request.GET.get('duplist') 
+            dup = self.request.GET.get('duplist')
             if dup == 'duplist':    # 重複データ検索ボタン  管理者権限以上で表示
                 queryset = TtEvidence.objects.filter(owner_id=owner_id,evidence_id__in=dup_ids)\
                     .order_by('-processed_date','partner_id','publisher_id','total_amount','-evidence_id')
@@ -207,7 +229,7 @@ class EvcEviListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             # if kubun == 'none':
             #     info = self.check_duplicate(owner_id)
             #     if info:
-            #         messages.success(self.request, 
+            #         messages.success(self.request,
             #                            '重複データがあります。確認してください。' + '\n' + info)
         else:
             # セッションデータクリア
@@ -247,7 +269,7 @@ class EvcEviListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             self.request.session['evilist'] = evilists
 
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -271,7 +293,7 @@ class EvcEviListView(LoginRequiredMixin, OwnerTestMixin, ListView):
 
         context['process_title'] = 'エビデンス一覧表示'
         context['owner_ryaku_name'] = owner_ryaku_name
-        # path_lists = [sv_helpurl(), 'EviList_help.html'] 
+        # path_lists = [sv_helpurl(), 'EviList_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
 
@@ -449,7 +471,7 @@ def get_evidence_list_info(eviobj):
         'evi_id': eviobj.evidence_id,
     }
     return data
-    
+
 # 重複エビデンスの情報
 def check_duplicate(owner_id):
     dup_list = []
@@ -479,7 +501,7 @@ def check_duplicate(owner_id):
                     amount = evi['total_amount']
                     if amount:
                         amount = math.floor(amount)
-                        amount = '{:,}'.format(amount)
+                        amount = f'{amount:,}'
                     procressed = evi['processed_date']
                     # info = 'カテゴリ:'+str(category)+'\n'
                     # info += '取引先:'+str(partner)+'\n'
@@ -560,7 +582,7 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
 
     def get_success_url(self):
         return reverse('Evc_App:sconcreate', kwargs={'evi_id': self.kwargs['evi_id']})
-   
+
     def get_form_kwargs(self, *args, **kwargs):
         kwgs = super().get_form_kwargs(*args, **kwargs)
         # owner_id = get_owner_id(self.request.user.user_id)
@@ -580,7 +602,7 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
         owner_id = self.request.session.get('owner_id')
         owner_ryaku_name = sv_get_owner_ryaku_name(owner_id)
         context['owner_ryaku_name'] = owner_ryaku_name
-        # path_lists = [sv_helpurl(), 'SConCreate_help.html'] 
+        # path_lists = [sv_helpurl(), 'SConCreate_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         try:
@@ -594,7 +616,7 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
             filepath = sv_get_evidence_filename(eviobj)
             # filepath = b_pdf.decode('utf-8')
             url = sv_file2url(filepath)
-            imagpath = sv_get_evidence_imagepath(eviobj)  
+            imagpath = sv_get_evidence_imagepath(eviobj)
             if not os.path.exists(imagpath):    # 画像がなければ作成
                 sv_create_evidence_image(evi_id)
             imgurl = sv_file2url(imagpath)
@@ -646,7 +668,7 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
     def form_valid(self, form):
         #  name='submit_action' を3つのformに定義(idは別)
         act = self.request.POST.get('submit_action')
- 
+
         # if 'callfrom' in self.request.session:
         #     del self.request.session['callfrom']
         owner_id = self.request.session.get('owner_id')
@@ -713,7 +735,7 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
             # # 個別の引数として渡される
             # # エビデンス情報テーブル更新
             # id = sv_update_evidence(**params)
-            
+
             if id:
                 # 期限切れのチェック　作成日が取引日の２ヶ月以内
                 date_ok = check_processed_date(evi_id, process_date)
@@ -756,7 +778,7 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
             return redirect('Evc_App:evidence_list')
         elif act == 'delete':   # 削除
             evi_id = form.cleaned_data.get('evidence_id')
-            #  エビデンス情報削除/ファイル削除 
+            #  エビデンス情報削除/ファイル削除
             name = sv_delete_evidence(evi_id, user_id, owner_id)
             if name:
                 basename = os.path.splitext(name)[0]
@@ -796,8 +818,8 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
         except PageNotAnInteger:
             page_obj = paginator.page(1)
         except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)   
-        return page_obj 
+            page_obj = paginator.page(paginator.num_pages)
+        return page_obj
     # カテゴリ選択リストの設定
     def get_category_choices(self, owner_id):
         choices = []
@@ -813,7 +835,7 @@ class EvcSConCreateView(LoginRequiredMixin, OwnerTestMixin, FormView):
 def get_scon_info(eviobj):
     try:
         amount = eviobj.total_amount.quantize(Decimal('0'), rounding=ROUND_HALF_UP)
-        amount = '{:,}'.format(amount)
+        amount = f'{amount:,}'
     except Exception:
         amount = ''
     processed_date = eviobj.processed_date
@@ -928,8 +950,8 @@ class PdfMergeView(LoginRequiredMixin, View):
         # PDF出力
         response = HttpResponse(status=200, content_type='application/pdf')
         # response['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)  # ダウンロードする場合
-        response['Content-Disposition'] = 'filename="{}"'.format(filename)  # 画面に表示する場合
-        
+        response['Content-Disposition'] = f'filename="{filename}"'  # 画面に表示する場合
+
         # PDFに透明テキストを追加
         response = add_text_to_pdf(response, filepath, fulltexts)
 

@@ -1,15 +1,19 @@
-import os
 import dataclasses
 import datetime
 import logging
-
+import os
 from decimal import Decimal
-from typing import List
-from sequences import get_next_value
 
 from django.conf import settings
-from users.models import SysOwner,EvcUser,MtFolder,MtPartner,MtAccount,TtDetect
-from commons.utils import ut_get_hash,ut_get_timezone_now,ut_get_localdate,ut_get_localtoday
+from sequences import get_next_value
+
+from commons.utils import (
+    ut_get_hash,
+    ut_get_localdate,
+    ut_get_localtoday,
+    ut_get_timezone_now,
+)
+from users.models import EvcUser, MtAccount, MtFolder, MtPartner, SysOwner, TtDetect
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +33,8 @@ class DetectJson:
 class DetectJsons:
     filename: str
     pdfpath: str
-    detect_list: List[DetectJson]
-    
+    detect_list: list[DetectJson]
+
 @dataclasses.dataclass
 class TextData:
     x1: int
@@ -38,7 +42,7 @@ class TextData:
     x2: int
     y2: int
     text: str
-    
+
 @dataclasses.dataclass
 class TextDatas:
     ocrtext_flg: int
@@ -46,7 +50,7 @@ class TextDatas:
     area_no: int
     page_width: int
     page_height: int
-    textdata_list: List[TextData]
+    textdata_list: list[TextData]
 
 # 全文検索データ
 @dataclasses.dataclass
@@ -58,7 +62,7 @@ class FullText:
 class FullTexts:
     filename: str
     pdfpath: str
-    fulltext_list: List[FullText]
+    fulltext_list: list[FullText]
 
 # 検索条件
 @dataclasses.dataclass
@@ -135,7 +139,7 @@ def make_dir(path):
         if not os.path.isdir(path):
             os.makedirs(path)   # 再帰的にディレクトリを作成する
             logger.debug(f'makedirs {path=}')
-    
+
 # アップロードファイル格納のためのフォルダ作成
 def make_upload_dir(rootfolder):
     upload_path = os.path.join(rootfolder, 'upload').replace(os.sep,'/')
@@ -155,7 +159,7 @@ def make_evidence_image_dir(rootfolder):
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
         for i in range(1,13):
-            mm = '{:02d}'.format(i)
+            mm = f'{i:02d}'
             mm_dir = os.path.join(yy_dir, mm).replace(os.sep,'/')
             make_dir(mm_dir)
             img_dir = os.path.join(mm_dir, 'img').replace(os.sep,'/')
@@ -193,7 +197,7 @@ def make_processed_ym_dir(rootfolder):
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
         for i in range(1,13):
-            mm = '{:02d}'.format(i)
+            mm = f'{i:02d}'
             mm_dir = os.path.join(yy_dir, mm).replace(os.sep,'/')
             make_dir(mm_dir)
     except Exception:
@@ -336,7 +340,7 @@ def is_line(y1, y2, pre_y1, pre_y2):
 
 # TextDatasデータを読み込む（行ごとに文字列を連結なし)
 # page_no : -1 で全ページ
-def sv_get_textdatas_area(textdatas, page_no, area_no): 
+def sv_get_textdatas_area(textdatas, page_no, area_no):
     textdatas_area = []
     for pagedata in textdatas:
         if page_no == -1 or pagedata.page_no == page_no:
@@ -558,7 +562,7 @@ def sv_get_evidence_imagepath(evi_obj):
     rootfolder = get_rootfolder(evi_obj.owner_id)
     # img_dir = get_evidence_image_dir(rootfolder)
     # filepath = os.path.join(img_dir, evi_obj.evidence_id + '.jpg').replace(os.sep,'/')
-    dest_dir = sv_get_processed_ym_path(rootfolder, evi_obj.processed_ym)  
+    dest_dir = sv_get_processed_ym_path(rootfolder, evi_obj.processed_ym)
     filepath = os.path.join(dest_dir, 'img', evi_obj.evidence_id + '.jpg').replace(os.sep,'/')
     return filepath
 
@@ -730,11 +734,11 @@ def get_new_partner_id():
             num = 1
     id = 'AUTO_00000'
     if num < 99999:
-        id = prefix + '{:05d}'.format(num)
+        id = prefix + f'{num:05d}'
     else:
         num = 1
         while num < 100000:
-            id = prefix + '{:05d}'.format(num)
+            id = prefix + f'{num:05d}'
             exists = MtPartner.objects.filter(partner_id=id).exists()
             if not exists:
                 break
@@ -770,7 +774,7 @@ def sv_create_partner_auto(name, user_id, owner_id):
         id = None
 
     return id
-# 取引先データ登録  
+# 取引先データ登録
 def sv_save_partner(data, user_id, kubun):
     if kubun == 'new':
         partner_id = get_new_partner_id()
@@ -823,8 +827,8 @@ def sv_save_partner(data, user_id, kubun):
     except Exception:
         logger.exception(f'MtPartner save exception {partner_id} : {obj.partner_name}')
     return False
-    
-# 取引先データ削除   
+
+# 取引先データ削除
 def sv_delete_partner(partner_id, user_id):
     try:
         partner_obj = MtPartner.objects.get(partner_id=partner_id)
@@ -874,7 +878,7 @@ def sv_get_account_id(name, user_id, owner_id, create):
     logger.debug(f'account_id  {name} : {account_id}')
     return account_id
 
-# 科目データ登録  
+# 科目データ登録
 def sv_save_account(data, user_id, kubun):
     if kubun == 'new':
         account_id = get_new_account_id()
@@ -930,11 +934,11 @@ def get_new_account_id():
             num = 1
     id = 'acct_00000'
     if num < 99999:
-        id = prefix + '{:05d}'.format(num)
+        id = prefix + f'{num:05d}'
     else:
         num = 1
         while num < 100000:
-            id = prefix + '{:05d}'.format(num)
+            id = prefix + f'{num:05d}'
             exists = MtAccount.objects.filter(account_id=id).exists()
             if not exists:
                 break

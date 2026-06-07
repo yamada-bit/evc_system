@@ -3,37 +3,35 @@
 # import calendar
 # import threading
 # import base64
-import logging
 import csv
+import logging
 from io import TextIOWrapper
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+
 # from operator import attrgetter
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
-
 from django.shortcuts import redirect
-from django.views.generic import FormView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from Evc_App.views import OwnerTestMixin
 
-from django.contrib import messages
 # from django.conf import settings
 # from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse
-from django.http import JsonResponse
-# from django.db.models import Sum
-# from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+from django.views.generic import FormView, ListView
 
-from users.models import MtPartner
 from commons.utils import ut_get_client_ip
-
-from Evc_Management.forms import PartnerListForm,EvcPartnerForm,EvcPartnerSaveForm
+from Evc_App.sv_export_csv import sv_response_partner
 
 # from Evc_App.sv_json import sv_load_jsonfile,sv_get_textlines
-from Evc_App.sv_file import (
-    sv_save_partner,sv_delete_partner,sv_get_owner_ryaku_name
-)
+from Evc_App.sv_file import sv_delete_partner, sv_get_owner_ryaku_name, sv_save_partner
+from Evc_App.views import OwnerTestMixin
+from Evc_Management.forms import EvcPartnerForm, EvcPartnerSaveForm, PartnerListForm
 
-from Evc_App.sv_export_csv import sv_response_partner
+# from django.db.models import Sum
+# from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+from users.models import MtPartner
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +48,7 @@ class EvcPartnerListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # owner_id = get_owner_id(self.request.user.user_id)
         queryset = queryset.filter(owner_id=owner_id)
         form = PartnerListForm(self.request.GET or None)
-        self.form = form 
+        self.form = form
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcPartnerListView 検索条件で絞り込み')
 
@@ -73,7 +71,7 @@ class EvcPartnerListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # 一覧表示内容を取得
         lists = self.set_partner_lists(queryset)
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -88,7 +86,7 @@ class EvcPartnerListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             context['page_size'] = int(page_size)
         else:
             context['page_size'] = 10
-        # path_lists = [sv_helpurl(), 'PartnerList_help.html'] 
+        # path_lists = [sv_helpurl(), 'PartnerList_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         return context
@@ -193,7 +191,7 @@ class EvcPartnerView(LoginRequiredMixin, OwnerTestMixin, FormView):
     def get_success_url(self):
         return reverse('Evc_Management:partner_list')
         # return reverse('Evc_Management:partner', kwargs={'partner_id': self.kwargs['partner_id']})
-   
+
     def get_form_kwargs(self, *args, **kwargs):
         kwgs = super().get_form_kwargs(*args, **kwargs)
         return kwgs
@@ -207,7 +205,7 @@ class EvcPartnerView(LoginRequiredMixin, OwnerTestMixin, FormView):
         owner_ryaku_name = sv_get_owner_ryaku_name(owner_id)
         context['owner_ryaku_name'] = owner_ryaku_name
         context['kubun'] = 'new'
-        # path_lists = [sv_helpurl(), 'Partner_help.html'] 
+        # path_lists = [sv_helpurl(), 'Partner_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
         if partner_id == '0':
@@ -258,7 +256,7 @@ class EvcPartnerView(LoginRequiredMixin, OwnerTestMixin, FormView):
             charge_email = form.cleaned_data.get('charge_email')
             zip3 = form.cleaned_data.get('zip3')
             zip4 = form.cleaned_data.get('zip4')
-            if zip3 and zip4: 
+            if zip3 and zip4:
                 zip_code = zip3 + '-' + zip4
             else:
                 zip_code = ''
@@ -370,7 +368,7 @@ class EvcPartnerSaveView(LoginRequiredMixin, OwnerTestMixin, FormView):
         form = self.get_form()
         owner_id = self.request.session.get('owner_id')
         owner_ryaku_name = sv_get_owner_ryaku_name(owner_id)
-        # path_lists = [sv_helpurl(), 'PartnerSave_help.html'] 
+        # path_lists = [sv_helpurl(), 'PartnerSave_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         context = {
             'form': form,
@@ -450,7 +448,7 @@ class EvcPartnerSaveView(LoginRequiredMixin, OwnerTestMixin, FormView):
                 delete_flg = 1
             else:
                 delete_flg = 0
-                 
+
             data = {
                 'partner_id': partner_id,
                 'partner_name': partner_name,

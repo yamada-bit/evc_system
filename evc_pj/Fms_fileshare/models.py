@@ -1,6 +1,4 @@
 from django.db import models
-from users.models import EvcUser
-
 from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
@@ -32,10 +30,10 @@ class TtSharedFile(models.Model):
     update_user = models.CharField(max_length=30, blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return self.shared_name
     class Meta:
         managed = True
         verbose_name = _('共有ファイル情報')
         verbose_name_plural = _('共有ファイル情報')
         db_table = 'tt_sharedfile'
+    def __str__(self):
+        return self.shared_name

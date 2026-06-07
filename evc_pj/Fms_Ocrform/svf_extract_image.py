@@ -1,8 +1,9 @@
-import fitz  # PyMuPDF
-import os
-import cv2	
-import numpy as np	
 import logging
+import os
+
+import cv2
+import fitz  # PyMuPDF
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ def extract_image_from_pdf(pdf_path, output_dir, img1_path):
     except Exception:
         logger.exception(f'extract_image_from_pdf exception {basename_without_ext}')
     doc.close()
-            
+
     return matching_pages
 
 def feature_matching(img1_path, img2_path):
@@ -139,7 +140,7 @@ def convert_selected_pages_to_images(input_pdf, pages_to_convert, output_folder)
     # 各ページごとに画像を生成
     for page_number in pages_to_convert:
         images = convert_from_path(input_pdf, first_page=page_number, last_page=page_number, dpi=dpi)
-        
+
         # 画像を保存
         image = images[0]  # 一ページ分だけリストに入っているので、最初の要素を選択
         image.save(f"{output_folder}/page_{page_number}.png", "PNG")

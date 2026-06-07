@@ -1,17 +1,13 @@
-import os
-import datetime
 import json
+
 # import re   # 正規表現操作
 import logging
-
-from google.cloud import vision
-from google.oauth2 import service_account
-from django.conf import settings
+import os
 
 from google.cloud.vision import AnnotateImageResponse
 
 from commons.utils import ut_get_localtime
-from Evc_App.sv_file import TextData,TextDatas,FullText,FullTexts
+from Evc_App.sv_file import FullText, FullTexts, TextData, TextDatas
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +43,11 @@ def sv_save_responsetext(imagefile, fulltext, json_dir):
 
 def sv_save_detect_as_json(response, filename):
     data = AnnotateImageResponse.to_json(response)
-    with open(filename, mode='wt', encoding='utf-8') as file:
+    with open(filename, mode='w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False, indent=2)
-        
+
 def sv_load_detect_from_json(filename):
-    with open(filename, mode='r', encoding='utf-8') as file:
+    with open(filename, encoding='utf-8') as file:
         temp = json.load(file)
     response = AnnotateImageResponse.from_json(temp)
     return response
@@ -68,7 +64,7 @@ def sv_save_detect_json(evi_id, detecttext_list, json_dir):
 
 def sv_load_detect_json(evi_id, json_dir, page_no):
     jsonfile = os.path.join(json_dir, evi_id + '_detect.json').replace(os.sep,'/')
-    with open(jsonfile, mode='r', encoding='utf-8') as file:
+    with open(jsonfile, encoding='utf-8') as file:
         detectlist = json.load(file)
     response = None
     for data in detectlist:
@@ -145,7 +141,7 @@ def sv_load_jsonfile(pdffile, json_dir):
     jsonfile = os.path.join(json_dir, basename_without_ext + '.json').replace(os.sep,'/')
     if os.path.exists(jsonfile):
         try:
-            with open(jsonfile, 'r', encoding='utf-8') as f:
+            with open(jsonfile, encoding='utf-8') as f:
                 dict_list = json.load(f)
             textdatas = dic_to_class(dict_list)
             logger.debug(f'json read {basename_without_ext}')
@@ -159,7 +155,7 @@ def sv_load_jsonfile(pdffile, json_dir):
 
     return textdatas
 
-# 辞書型のデータからTextDatasクラスオブジェクトに 
+# 辞書型のデータからTextDatasクラスオブジェクトに
 def dic_to_class(dictdatas):
     textdatas = []
     for pagedata in dictdatas:
@@ -180,7 +176,7 @@ def dic_to_class(dictdatas):
 def sv_load_fulltext(jsonfile):
     fulltext_lists = []
     if os.path.exists(jsonfile):
-        with open(jsonfile, 'r', encoding='utf-8') as f:
+        with open(jsonfile, encoding='utf-8') as f:
             dict_list = json.load(f)
         for fulltexts in dict_list:
             # textdatas.append(TextDatas(**pagedata))
@@ -220,7 +216,7 @@ def textdatas_to_fulltexts(pdffile, textdatas, jsonfile):
     for fulltexts in fulltext_lists:
         if fulltexts.pdfpath.lower() == pdffile.lower():
         # if basename_without_ext == fulltexts.filename:
-            fulltext_lists.remove(fulltexts) 
+            fulltext_lists.remove(fulltexts)
             break
     fulltext_list = []
     for pagedata in textdatas:
@@ -245,7 +241,7 @@ def sv_replace_fulltext_pdfpath(json_dir, pdfname, old, new):
         logger.debug('json write : fullTextLists.json')
     except Exception:
         logger.exception('fulltext json write exception : fullTextLists.json')
-            
+
 # 全文データを変更
 def sv_replace_fulltext(json_dir, fulltext, pdfpath):
     jsonfile = os.path.join(json_dir, 'fullTextLists.json').replace(os.sep,'/')
@@ -274,7 +270,7 @@ def sv_delete_fulltext(json_dir, pdfpath):
         return
     for fulltexts in fulltext_lists:
         if fulltexts.pdfpath.lower() == pdfpath.lower():
-            fulltext_lists.remove(fulltexts) 
+            fulltext_lists.remove(fulltexts)
             break
     try:
         json_string = json.dumps(fulltext_lists, default=obj_dict, ensure_ascii=False, indent=2)

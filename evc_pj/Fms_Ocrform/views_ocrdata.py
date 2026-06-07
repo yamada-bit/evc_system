@@ -1,87 +1,105 @@
-import os
 import datetime
+import json
+
 # import threading
 # import base64
 import logging
-import re   # 正規表現操作
-import json
+import os
+import re  # 正規表現操作
 
-# from django.http import JsonResponse
-# from django.http import HttpResponse,Http404
-from django.shortcuts import render, redirect
-from django.views.generic import FormView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 # from django.conf import settings
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 # from dateutil.relativedelta import relativedelta
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.urls import reverse,reverse_lazy
 # from django.http import HttpResponseRedirect
-from django.db.models import F  
 # from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
-from django.db.models import Q
+from django.db.models import F, Q
 
-from Evc_App.views import OwnerTestMixin
-from users.models import EvcUser
-from Fms_Ocrform.models import TtOcrform,TtEntry,TtOcrData,TtTimesheet,TtJafyame
+# from django.http import JsonResponse
+# from django.http import HttpResponse,Http404
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.views.generic import FormView, ListView
 
-from commons.utils import ut_get_localdate,ut_get_client_ip,ut_get_localtime
-
+from commons.utils import ut_get_client_ip, ut_get_localdate, ut_get_localtime
 from Evc_App.sv_file import (
-    sv_handle_uploaded_file,make_processed_ym_dir,sv_file2url,
-    get_imgfolder_upload,make_upload_dir,make_json_dir,
-    sv_get_category_list,
+    get_imgfolder_upload,
+    make_json_dir,
+    make_processed_ym_dir,
+    make_upload_dir,
+    sv_file2url,
     sv_get_owner_ryaku_name,
+    sv_handle_uploaded_file,
 )
 from Evc_App.sv_get_image_shape import sv_get_pdfpages
-
-from Fms_Ocrform.forms import (EvcUploadEntryForm,EvcOcrDataListForm,EvcEditOcrDataForm,
-                               EvcTimesheetListForm,EvcEditTimesheetForm,
-                               EvcJafyameListForm,EvcEditJafyameForm,
-                               EvcEntryListForm,EvcEditEntryForm)
-from Fms_Ocrform.svf_common import (str2int,svf_make_ocrdata_image_dir,
-                                    svf_get_ocrdata_rootfolder,svf_get_ocrdata_imagepath,
-                                    svf_get_jafyame_imagepath)
-
+from Evc_App.views import OwnerTestMixin
+from Fms_Ocrform.forms import (
+    EvcEditEntryForm,
+    EvcEditJafyameForm,
+    EvcEditOcrDataForm,
+    EvcEditTimesheetForm,
+    EvcEntryListForm,
+    EvcJafyameListForm,
+    EvcOcrDataListForm,
+    EvcTimesheetListForm,
+    EvcUploadEntryForm,
+)
+from Fms_Ocrform.models import TtEntry, TtJafyame, TtOcrData, TtOcrform, TtTimesheet
+from Fms_Ocrform.svf_common import (
+    str2int,
+    svf_get_jafyame_imagepath,
+    svf_get_ocrdata_imagepath,
+    svf_get_ocrdata_rootfolder,
+    svf_make_ocrdata_image_dir,
+)
+from Fms_Ocrform.svf_ocrdata import (
+    svf_create_ocrdata,
+    svf_delete_ocrdata,
+    svf_filter_jafyame,
+    svf_filter_timesheet,
+    svf_update_entry,
+    svf_update_jafyame,
+    svf_update_ocrdata,
+    svf_update_shiori,
+    svf_update_timesheet,
+)
 from Fms_Ocrform.svf_ocrform import svf_get_area_jsonstr
-from Fms_Ocrform.svf_ocrdata import (svf_create_ocrdata,svf_update_shiori,svf_update_ocrdata,
-                                    svf_update_timesheet,svf_update_jafyame,svf_update_entry,
-                                    svf_delete_ocrdata,
-                                    svf_filter_timesheet,svf_filter_jafyame,
-                                    svf_create_access_log)
 from Fms_Ocrform.svt_tnw import svt_export_zip
+from users.models import EvcUser
 
 VALID_EXTENSIONS = ['.pdf','.jpg','.jpeg','.png','.bmp','.gif','.tif','.tiff']
 IMAGE_EXTENTIONS = ['.jpg','.jpeg','.png']
 # UPLOAD_DIR = settings.MEDIA_ROOT.parent.parent.joinpath('media/upload')
-# モデルの選択を辞書で管理	
-MODEL_CLASSES = {	
+# モデルの選択を辞書で管理
+MODEL_CLASSES = {
     'entry': TtEntry,
-    'ocrdata': TtOcrData,	
-    'timesheet': TtTimesheet,	
+    'ocrdata': TtOcrData,
+    'timesheet': TtTimesheet,
     'jafyame': TtJafyame,	# JAふくおか八女
-}	
-PROCESS_TITLE = {	
+}
+PROCESS_TITLE = {
     'entry': '生産履歴票保存',
-    'ocrdata': '送り状保存',	
-    'timesheet': '勤務表保存',	
-    'jafyame': 'JAふくおか八女',	
-}	
-PROCESS_TITLE_LIST = {	
+    'ocrdata': '送り状保存',
+    'timesheet': '勤務表保存',
+    'jafyame': 'JAふくおか八女',
+}
+PROCESS_TITLE_LIST = {
     'entry': '生産履歴票一覧',
-    'ocrdata': '送り状一覧',	
-    'timesheet': '勤務表一覧',	
-    'jafyame': 'JAふくおか八女一覧',	
-}	
-PROCESS_TITLE_EDIT = {	
+    'ocrdata': '送り状一覧',
+    'timesheet': '勤務表一覧',
+    'jafyame': 'JAふくおか八女一覧',
+}
+PROCESS_TITLE_EDIT = {
     'entry': '検索条件編集',
-    'ocrdata': '検索条件編集',	
-    'timesheet': '検索条件編集',	
-    'jafyame': '検索条件編集',	
-}	
+    'ocrdata': '検索条件編集',
+    'timesheet': '検索条件編集',
+    'jafyame': '検索条件編集',
+}
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +109,7 @@ class EvcUploadOcrDataView(LoginRequiredMixin, FormView):
     form_class = EvcUploadEntryForm
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        model_name = self.kwargs['model_name']  # URLからモデル名を取得	
+        model_name = self.kwargs['model_name']  # URLからモデル名を取得
         process_title = PROCESS_TITLE.get(model_name)
         form = self.get_form()
         context.update({
@@ -108,7 +126,7 @@ class EvcUploadOcrDataView(LoginRequiredMixin, FormView):
         return kwgs
 
     def form_valid(self, form):
-        model_name = self.kwargs['model_name']  # URLからモデル名を取得	
+        model_name = self.kwargs['model_name']  # URLからモデル名を取得
         logger.info(f'{ut_get_client_ip(self.request)} '
                     f'EvcUploadOcrDataView {model_name=} {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
 
@@ -192,7 +210,7 @@ class EvcUploadOcrDataView(LoginRequiredMixin, FormView):
         err = form.errors.as_text()
         logger.error(f'{ut_get_client_ip(self.request)} '
                      f'EvcUploadOcrDataView アップロードに失敗しました {err}')
-        return super().form_invalid(form) 
+        return super().form_invalid(form)
     # フォームの選択肢を取得
     def get_ocrform_choices(self, owner_id):
         choices = []
@@ -209,7 +227,7 @@ class EvcUploadOcrDataView(LoginRequiredMixin, FormView):
                 choices.append((item.get('ocrform_id'), item.get('ocrform_name')))
         return choices
 
-# ListView ---> 
+# ListView --->
 #   modelで指定したデータベーステーブルからQuerySetを取得する
 #   「object_list」という変数にQuerySetを格納する
 #   HTMLテンプレートへコンテキストとしてQuerySetを渡す
@@ -235,7 +253,7 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             template_name = self.template_name
 
         return [template_name]
-    
+
     def get_queryset(self):
         # queryset = super().get_queryset().order_by(F('processed_date').desc(nulls_last=True))
         # queryset = super().get_queryset()
@@ -244,7 +262,7 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         if not model_class:
             return []
         queryset = model_class.objects.all().order_by(F('create_date').desc(nulls_last=True))
- 
+
         owner_id = self.request.session.get('owner_id')
         if not owner_id:
             logger.error(f'{ut_get_client_ip(self.request)} '
@@ -268,7 +286,7 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             return []
         # # ChoiceFieldに選択肢の設定
         # form.fields['category'].choices = self.get_category_choices(owner_id)
-        self.form = form 
+        self.form = form
 
         # logger.debug(f'{ut_get_client_ip(self.request)} '
         #             f'EvcOcrDataListView query {self.request.GET.dict()}')
@@ -278,7 +296,7 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             act = self.request.GET.get('act')   # 削除ボタンがクリックされたらテキスト'del'が設定されている
             user_id = self.request.user.user_id
             if ocrdata_id and act == 'del':
-                #  文書情報削除/ファイル削除 
+                #  文書情報削除/ファイル削除
                 name = svf_delete_ocrdata(model_name, ocrdata_id, user_id, owner_id)
                 if name:
                     basename = os.path.splitext(name)[0]
@@ -353,7 +371,7 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
                 self.request.session['ocrdata_lists'] = ocrdata_lists
 
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         model_name = self.kwargs.get('model_name')
@@ -505,7 +523,7 @@ def get_ocrdata_list_info(ocrdata_obj):
             'ocrdata_id': ocrdata_obj.entry_id,
         }
     return data
-    
+
 # 検索条件編集
 class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
     template_name = 'Fms_Ocrform/FE_EditOcrData.html'
@@ -521,7 +539,7 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
                       )
 
     def get_template_names(self):
-        model_name = self.kwargs['model_name']  # URLからモデル名を取得	
+        model_name = self.kwargs['model_name']  # URLからモデル名を取得
         if model_name == 'ocrdata':
             template_name = 'Fms_Ocrform/FE_EditOcrData.html'
         elif model_name == 'timesheet':
@@ -538,7 +556,7 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
         '''
         モデルによってフォームを動的に変更する
         '''
-        model_name = self.kwargs['model_name']  # URLからモデル名を取得	
+        model_name = self.kwargs['model_name']  # URLからモデル名を取得
         if model_name == 'ocrdata':
             form_class = EvcEditOcrDataForm
         elif model_name == 'timesheet':
@@ -550,7 +568,7 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
         else:
             form_class = self.form_class
         return form_class
-   
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         model_name = self.kwargs.get('model_name')
@@ -631,7 +649,7 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
                 if cnt and 0 < cnt:
                     page_cnt = cnt
             imageno_list = list(range(1, page_cnt + 1))
-    
+
             page_obj = self.get_page_obj_entry(imageno_list, image_no)  # ページ遷移
             context['page_obj'] = page_obj
             if page_obj.has_next():
@@ -727,7 +745,7 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
                 }
                 # JAふくおか八女 情報テーブル更新
                 id = svf_update_jafyame(ocrdata_id, data_dict, user_id)
-            
+
             if id:
                 messages.success(self.request, 'データを登録しました')
                 logger.info(f'{ut_get_client_ip(self.request)} '
@@ -768,7 +786,7 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
         elif act == 'delete':   # 削除
             user_id = self.request.user.user_id
             ocrdata_id = form.cleaned_data.get('ocrdata_id')
-            #  文書情報削除/ファイル削除 
+            #  文書情報削除/ファイル削除
             name = svf_delete_ocrdata(model_name, ocrdata_id, user_id, owner_id)
             if name:
                 basename = os.path.splitext(name)[0]
@@ -816,9 +834,9 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
             self.set_entry_pages(json_str, image_no)    # セッション変数に編集内容を保存
             ocrdata_id = form.cleaned_data.get('ocrdata_id')
             if act == 'back_btn':
-                pageno = image_no - 1 
+                pageno = image_no - 1
             else:
-                pageno = image_no + 1 
+                pageno = image_no + 1
             if 0 < pageno:
                 return redirect('Fms_Ocrform:ocrdata_edit',
                                  model_name=model_name,
@@ -853,7 +871,7 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
             # JSONデータをPythonオブジェクト(list型)へ変換
             text = get_jsontext_list(entry.entry_detail, i)
             entry_pages.append({'name':filename, 'path':path, 'imgpath':img, 'text':text})
-        self.request.session['entry_pages'] = entry_pages 
+        self.request.session['entry_pages'] = entry_pages
         return entry_pages
     # セッション変数に編集内容を保存
     def set_entry_pages(self, json_str, image_no):
@@ -880,8 +898,8 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
         except PageNotAnInteger:
             page_obj = paginator.page(1)
         except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)   
-        return page_obj 
+            page_obj = paginator.page(paginator.num_pages)
+        return page_obj
     # 前頁・次頁対応ページング（ページ遷移）
     def get_page_obj_entry(self, images, image_no):
         page_no = image_no
@@ -891,8 +909,8 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
         except PageNotAnInteger:
             page_obj = paginator.page(1)
         except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)   
-        return page_obj 
+            page_obj = paginator.page(paginator.num_pages)
+        return page_obj
 # フォーム初期表示のために情報を取得
 def get_scon_info(ocrdata_obj):
     model_class = type(ocrdata_obj)
@@ -952,7 +970,7 @@ def get_scon_info(ocrdata_obj):
 # [{'item_no':'item_no','item_name':'item_name',...},...{}]
 def get_jsontext_list(json_text, page_no):
     dicts = []
-    # json.loads 関数 JSON 形式の文字列データから、Python オブジェクト(dict, list)を作成 
+    # json.loads 関数 JSON 形式の文字列データから、Python オブジェクト(dict, list)を作成
     object_list = json.loads(json_text) # JSONデータをPythonオブジェクト(list型)へ変換
     if object_list:
         try:

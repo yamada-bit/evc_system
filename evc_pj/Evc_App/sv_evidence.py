@@ -1,32 +1,42 @@
-import os
-import datetime
-import shutil
-import logging
 import json
+import logging
+import os
+import shutil
 from decimal import Decimal
+
 from django.conf import settings
+from django.db.models import F
+
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 from sequences import get_next_value
-from django.db.models import F
 
-from users.models import TtEvidence,MtPartner,HtEvidence,TtDetect,MtFolder
-from commons.utils import ut_get_timezone_now,ut_get_localdate,ut_get_localtoday
-
-from Evc_App.sv_file import (sv_delete_file,
-    get_rootfolder,get_imgfolder_upload,
-    get_jsonfolder,get_evidence_image_dir,sv_get_evidence_imagepath,
-    sv_get_textlines,sv_get_processed_ym_path,sv_get_evidence_filename,sv_delete_detect
-)
-from Evc_App.sv_search import sv_search_text
+from commons.utils import ut_get_localdate, ut_get_localtoday, ut_get_timezone_now
 from Evc_App.sv_create_image import sv_create_ocr_image
 from Evc_App.sv_extract_text import sv_extract_text
+from Evc_App.sv_file import (
+    get_imgfolder_upload,
+    get_jsonfolder,
+    get_rootfolder,
+    sv_delete_detect,
+    sv_delete_file,
+    sv_get_evidence_filename,
+    sv_get_evidence_imagepath,
+    sv_get_processed_ym_path,
+    sv_get_textlines,
+)
+from Evc_App.sv_get_image_shape import sv_get_cropped_image, sv_get_image_angle
+
 # from Evc_App.sv_extract_azure import sv_extract_azure
-from Evc_App.sv_json import (sv_save_json,sv_save_detect_json
+from Evc_App.sv_json import (
+    sv_save_detect_json,
     # ,sv_save_fulltext,sv_load_jsonfile,
     # sv_replace_fulltext,sv_delete_fulltext
+    sv_save_json,
 )
-from Evc_App.sv_get_image_shape import sv_get_cropped_image,sv_get_image_angle
+from Evc_App.sv_search import sv_search_text
+from users.models import HtEvidence, MtFolder, MtPartner, TtDetect, TtEvidence
+
 OCR_DPI = 200     # 解像度でGoogle Cloud Vision APIのblockの区切りが違う
 # OCR_DPI = 300     # 解像度でGoogle Cloud Vision APIのblockの区切りが違う
 
@@ -82,7 +92,7 @@ def sv_create_evidence(uploadfiles, user_id, owner_id, areas_flg, evidence_kubun
         #     toppage = ocrimages.pop(0)    # 先頭ページのみ残す
         #     delete_files(ocrimages)
         #     ocrimages = [toppage]
-        
+
         # OCR機能を使って、テキスト抽出しTextDataデータに変換
         textdatas, detecttext_list, google_cnt = sv_extract_text(ocrimages, areas_dict, specif_page_list)
         logger.debug(f'extract text {filename=}')
@@ -205,7 +215,7 @@ def sv_create_evidence_page(filepath, textdatas, page_no, user_id, owner_id, are
         else:
             page = page_no if 0 < page_no else 1
             area = i
-            evidence_id = evi_id + '_{:03d}{:02d}'.format(page, area)
+            evidence_id = evi_id + f'_{page:03d}{area:02d}'
 
         # テキストデータおよび検索キーを取り出す
         search = sv_search_text(pagedatas, user_id, owner_id, area_no, evidence_id)
@@ -226,12 +236,12 @@ def sv_create_evidence_page(filepath, textdatas, page_no, user_id, owner_id, are
         if page_no == -1:
             pdf_name = basename_without_ext
         else:
-            pdf_name = basename_without_ext + '_Page{}'.format(page_no)
+            pdf_name = basename_without_ext + f'_Page{page_no}'
         # pdf_name = basename_without_ext + '_Page{}'.format(page_no) + '({}/{})'\
         #     .format(area_no, area_count)
         #  複数領域の場合、'(1/4)'の形式で分割エリア番号を追加
         if 1 < area_count:
-            pdf_name = pdf_name + ' ({}/{})'.format(area_no, area_count)
+            pdf_name = pdf_name + f' ({area_no}/{area_count})'
 
         # エビデンス情報テーブル登録処理
         id = save_evidence_data(user_id,owner_id,filepath,pdf_name,search,fulltext,google_pages,evidence_id)
@@ -348,7 +358,7 @@ def check_filename(file):
         filepath, ext = os.path.splitext(file)
         i = 1
         while i < 100000:
-            new_path = '{}({}){}'.format(filepath, i, ext)
+            new_path = f'{filepath}({i}){ext}'
             if not os.path.exists(new_path):
                 return new_path
             i += 1
@@ -377,7 +387,7 @@ def get_evidence_id():
     try:
         # シーケンス採番
         num = get_next_value(d)
-        id = d + '_{:05d}'.format(num)
+        id = d + f'_{num:05d}'
     except Exception:   # ValueError
         id = d + '_00001'
 
@@ -410,10 +420,10 @@ def save_evidence_data(user_id, owner_id, file_path, pdf_name, search, jsontext,
     #     'attribute': {
     #         'attribute': {
     #             '品名': 'PC',
-    #             '仕様': 'CPUXXXX',	
-    #             'メモリ': '5M',	
+    #             '仕様': 'CPUXXXX',
+    #             'メモリ': '5M',
     #             'Disk容量': '100G',
-    #             '金額': 120000,	
+    #             '金額': 120000,
     #         }
     #     }
     # }
@@ -467,9 +477,9 @@ def sv_update_evidence(evidence_id, search, account_id, account_desc, duplicate_
         try:
             total_amount = Decimal(search.total_amount)
         except Exception:
-            total_amount = None 
+            total_amount = None
     else:
-        total_amount = None 
+        total_amount = None
     # if evi_obj.category_name != category:
     #     new_path = sv_change_category(owner_id, evi_obj.pdf_name, evi_obj.category_name, category)
     #     # evi_obj.pdf_name = os.path.splitext(os.path.basename(new_path))[0]
@@ -542,7 +552,7 @@ def sv_update_shiori(evidence_id, fulltext, user_id, owner_id):
     #         json_dir = get_jsonfolder(rootfolder)
     #         if json_dir:
     #             # old_path = sv_get_category_path(owner_id, evi_obj.category_name)
-    #             # filepath = sv_get_processed_ym_path(owner_id, evi_obj.processed_ym, evi_obj.pdf_name)  
+    #             # filepath = sv_get_processed_ym_path(owner_id, evi_obj.processed_ym, evi_obj.pdf_name)
     #             filepath = sv_get_evidence_filename(evi_obj)
 
     #             sv_replace_fulltext(json_dir, fulltext, filepath)
@@ -621,7 +631,7 @@ def sv_delete_evidence(evidence_id, user_id, owner_id):
 def delete_evidence_file(evi_obj):
     evidence_id = evi_obj.evidence_id
     # dest_dir = sv_get_category_path(owner_id, evi_obj.category_name)
-    # dest_file = sv_get_processed_ym_path(owner_id, evi_obj.processed_ym, evi_obj.pdf_name)  
+    # dest_file = sv_get_processed_ym_path(owner_id, evi_obj.processed_ym, evi_obj.pdf_name)
     dest_file = sv_get_evidence_filename(evi_obj)
     # evidence_data:PDFファイルのパス
     other_obj = TtEvidence.objects.filter(evidence_data=evi_obj.evidence_data)\
@@ -660,12 +670,12 @@ def sv_copy_htevidence(evi_obj, user_id, rireki_kbn):
                 id = d + '_00001'
             else:
                 num = int(pre_id[-5:])
-                id = d + '_{:05d}'.format(num + 1)
+                id = d + f'_{num + 1:05d}'
         except Exception:
            id = d + '_00001'
     else:
         id = d + '_00001'
- 
+
     try:
         obj = HtEvidence.objects.create(
             r_evidence_id = id,
@@ -693,7 +703,7 @@ def sv_copy_htevidence(evi_obj, user_id, rireki_kbn):
             create_user = user_id,
             update_date = ut_get_timezone_now(),
             update_user = user_id
-        )    
+        )
         logger.info(f'履歴情報テーブル登録 {evi_obj.pdf_name} : {evi_obj.evidence_id} -> {id}')
     except Exception:
         logger.exception(f'HtEvidence create exception {evi_obj.evidence_id} {id}')

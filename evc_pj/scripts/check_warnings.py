@@ -1,9 +1,10 @@
+# ruff: noqa: E402
 import os
 import sys
 import warnings
-from pathlib import Path
-from io import StringIO
 from contextlib import redirect_stderr
+from io import StringIO
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
@@ -14,6 +15,7 @@ os.environ.setdefault(
 )
 
 import django
+
 django.setup()
 
 # 自作コードは厳格

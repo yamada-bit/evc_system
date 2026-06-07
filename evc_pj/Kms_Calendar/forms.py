@@ -1,12 +1,10 @@
-import os
 import datetime
+import os
+
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm,UserCreationForm
-from users.models import EvcUser,SysOwner,MtPartner,MtFolder
 
 # from django.core.validators import validate_email
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
+
 # from django.utils.translation import gettext as _
 
 VALID_EXTENSIONS = ['.pdf','.jpg','.jpeg','.png','.bmp','.gif','.tif','.tiff']
@@ -64,12 +62,12 @@ class UploadReportForm(forms.Form):
         file = self.cleaned_data['file']
         for f in files:
             extension = os.path.splitext(f.name)[1]  # 拡張子を取得
-            if not extension.lower() in VALID_EXTENSIONS:
+            if extension.lower() not in VALID_EXTENSIONS:
                 raise forms.ValidationError(f.name + ' ファイル形式が正しくありません')
         return file
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    
+
 # 外勤報告書情報一覧表示
 class ReportListForm(forms.Form):
     # report_month = forms.CharField(

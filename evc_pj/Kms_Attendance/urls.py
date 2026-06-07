@@ -1,8 +1,9 @@
 """
 Definition of urls for SbKintai.
 """
-from django.urls import path, include
-from Kms_Attendance import views,views_report
+from django.urls import path
+
+from Kms_Attendance import views, views_report
 
 app_name = 'Kms_Attendance'     # 名前空間の設定
 # {% url 'Kms_Attendance:index' %}    名前空間を指定

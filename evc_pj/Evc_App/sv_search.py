@@ -1,16 +1,22 @@
 import datetime
-import re   # 正規表現操作
 import logging
-from django.db.models import Q  # 条件を一つでも満たすものを取得する場合Q objectsと|を使う
+import re  # 正規表現操作
+
+from django.db.models import (
+    Q,  # 条件を一つでも満たすものを取得する場合Q objectsと|を使う
+)
 
 from commons.utils import ut_get_localtoday
-from Evc_App.sv_file import (SearchKey,
+from Evc_App.sv_file import (
+    SearchKey,
     sv_get_category_list,
-    sv_get_textlines,sv_get_textdatas_area,sv_get_textlines_lf,
+    sv_get_textdatas_area,
+    sv_get_textlines,
+    sv_get_textlines_lf,
 )
+
 # from Evc_App.sv_extract_text import remove_all_whitespace
 from Evc_App.sv_search_company import detect_partner
-
 from users.models import MtPhrase
 
 logger = logging.getLogger(__name__)
@@ -32,7 +38,7 @@ def sv_search_text(textdatas, user_id, owner_id, area_no, evidence_id):
         textdatalist = sv_get_textdatas_area(textdatas, -1, area_no)
 
         texts = ''.join(textlines)  # 全文データを作成
-        # 改行、タブ、スペースなどをまとめて削除 
+        # 改行、タブ、スペースなどをまとめて削除
         # \s --> [\t\n\r\f\v] 	任意の空白文字
         texts = re.sub(r'\s+', '', texts)   # remove_all_whitespace(texts)
         # pattern_dict = {}
@@ -88,7 +94,7 @@ def get_matched_string(pattern, string):
     except Exception:
         logger.exception(f'get_matched_string exception {pattern=}')
         return False
-        
+
 # カテゴリ検索(フォルダ管理マスタ)
 def get_matched_category(owner_id, string):
     categorys = sv_get_category_list(owner_id)
@@ -308,7 +314,7 @@ def check_date(y, m, d, line, result):
         ymd = datetime.date(y, m, d)
     except Exception:
         logger.exception(f'check_date exception {line=}')
-    return ymd    
+    return ymd
 # クレジット決済を判定のため
 def get_creditcard(string):
     pattern = r'クレジットカード|クレジット支払'
@@ -428,7 +434,7 @@ def extract_amount_dict(lines, nonmark):
                     start, end = result.span()
                     matched_pattern = line[start:end] # start <= x < end
                     # text = line[start:]
-                    text = line # 左記の金額　に対処するため行の文字列全体　
+                    text = line # 左記の金額　に対処するため行の文字列全体
                     amount = amount_dict.get(matched_pattern, 0)
                     if nonmark:
                         price = search_price(key, text) # 同じ行は円￥がない数値も金額に
@@ -465,7 +471,7 @@ def extract_amount_dict(lines, nonmark):
 # ピリオド＋3桁の数値をカンマ＋3桁の数値に
 def rep_period(text):
     regex = re.compile(r'\.(\d{3})')    # 再利用したい部分を ()
-    text = regex.sub(r',\1', text)      # 置換したい部分に1番目の再利用したい部分 
+    text = regex.sub(r',\1', text)      # 置換したい部分に1番目の再利用したい部分
     # text = repr(text)   # エスケープシーケンスを無視（無効化）したraw文字列
     # text = text.replace('\\','¥')
     return text

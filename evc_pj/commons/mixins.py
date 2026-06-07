@@ -1,14 +1,16 @@
 import calendar
 import datetime
 from collections import deque
+
 # import itertools
 # from django import forms
 from django.utils import timezone
 
+
 class BaseCalendarMixin:
     """カレンダー関連Mixinの、基底クラス"""
     first_weekday = 6  # 0は月曜から、1は火曜から。6なら日曜日からになります。
-    week_names = ['月', '火', '水', '木', '金', '土', '日'] 
+    week_names = ['月', '火', '水', '木', '金', '土', '日']
 
     def setup_calendar(self):
         """内部カレンダーの設定処理
@@ -75,7 +77,7 @@ class MonthCalendarMixin(BaseCalendarMixin):
         month_days = calendar.monthrange(date.year, date.month)
         #month_days = range(calendar.monthrange(date.year, date.month)[1])
         return month_days
- 
+
     def get_current_month(self, year, month):
         """現在の月を返す"""
         if month and year:

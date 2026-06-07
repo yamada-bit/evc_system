@@ -1,46 +1,52 @@
-import os
 # import datetime
 # import calendar
 # import threading
 # import base64
 import logging
-import re   # 正規表現操作
+import os
+import re  # 正規表現操作
+from decimal import ROUND_HALF_UP, Decimal
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+# from django.conf import settings
+# from django.http import JsonResponse
+from django.db.models import Sum
+
 # import csv
 # from io import TextIOWrapper
 # from operator import attrgetter
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 # from dateutil.relativedelta import relativedelta
-
 from django.shortcuts import redirect
-from django.views.generic import FormView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-
-from django.contrib import messages
-# from django.conf import settings
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse
-# from django.http import JsonResponse
-from django.db.models import Sum
-from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+from django.views.generic import FormView, ListView
 
-from users.models import EvcUser,SysOwner,HtEvidence,MtPartner,TtEvidence,MtAccount
-from commons.utils import ut_get_localdate,ut_get_client_ip
-
-from Evc_Management.forms import (
-    EvcEviHistoryListForm,EvcSConShowForm,EvcUseGoogleForm
-)
-# from Evc_App.sv_json import sv_load_jsonfile,sv_get_textlines
-from Evc_App.sv_file import (SearchKey,sv_file2url,sv_get_user_name,
-    sv_get_category_list,sv_get_select_owner_list,sv_get_partner_name,sv_get_publisher_name,
-    sv_get_owner_ryaku_name,sv_get_evidence_filename,
-    sv_get_evidence_imagepath
-)
+from commons.utils import ut_get_client_ip, ut_get_localdate
 
 # from Evc_App.sv_export_csv import sv_response_partner,sv_response_partner_sample
-from Evc_App.sv_export_csv import sv_filter_history,sv_response_history
+from Evc_App.sv_export_csv import sv_filter_history, sv_response_history
+
+# from Evc_App.sv_json import sv_load_jsonfile,sv_get_textlines
+from Evc_App.sv_file import (
+    sv_file2url,
+    sv_get_category_list,
+    sv_get_evidence_filename,
+    sv_get_evidence_imagepath,
+    sv_get_owner_ryaku_name,
+    sv_get_select_owner_list,
+    sv_get_user_name,
+)
 from Evc_App.views import OwnerTestMixin
-from Evc_App.views_evidence import get_scon_info,get_evidence_list_info
+from Evc_App.views_evidence import get_evidence_list_info, get_scon_info
+from Evc_Management.forms import (
+    EvcEviHistoryListForm,
+    EvcSConShowForm,
+    EvcUseGoogleForm,
+)
+from users.models import EvcUser, HtEvidence, MtPartner, SysOwner, TtEvidence
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +68,7 @@ class EvcEviHistoryListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # # form = EvidenceListForm(self.request.GET or None, initial=initial_dict)
         form = EvcEviHistoryListForm(self.request.GET or None)
         form.fields['category'].choices = self.get_category_choices(owner_id)
-        self.form = form 
+        self.form = form
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcEviHistoryListView 検索条件で絞り込み')
         # logger.debug(f'{ut_get_client_ip(self.request)} '
@@ -104,7 +110,7 @@ class EvcEviHistoryListView(LoginRequiredMixin, OwnerTestMixin, ListView):
                 del self.request.session['hlist_url']
 
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -122,10 +128,10 @@ class EvcEviHistoryListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # 検索実行しないでページ遷移した場合、checkが外れるのでcontextを使う
         kubun = self.request.GET.get('kubun')
         context['kbn'] = kubun or 'none'
-        # path_lists = [sv_helpurl(), 'EviHistoryList_help.html'] 
+        # path_lists = [sv_helpurl(), 'EviHistoryList_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
-        
+
         return context
     # カテゴリ選択リストの設定
     def get_category_choices(self, owner_id):
@@ -184,7 +190,7 @@ class EvcSConShowView(LoginRequiredMixin, OwnerTestMixin, FormView):
 
     def get_success_url(self):
         return reverse('Evc_Management:sconshow', kwargs={'r_evi_id': self.kwargs['r_evi_id'], 'mode': self.kwargs['mode']})
-   
+
     def get_form_kwargs(self, *args, **kwargs):
         kwgs = super().get_form_kwargs(*args, **kwargs)
         # # owner_id = get_owner_id(self.request.user.user_id)
@@ -227,7 +233,7 @@ class EvcSConShowView(LoginRequiredMixin, OwnerTestMixin, FormView):
             filepath = sv_get_evidence_filename(r_eviobj)
             # filepath = b_pdf.decode('utf-8')
             url = sv_file2url(filepath)
-            imagpath = sv_get_evidence_imagepath(r_eviobj)  
+            imagpath = sv_get_evidence_imagepath(r_eviobj)
             imgurl = sv_file2url(imagpath)
 
             ext = os.path.splitext(os.path.basename(filepath))[1]
@@ -381,7 +387,7 @@ def get_obj_data(item):
     data['update_date'] = update_date
     data['user_name'] = user_name
     return data
-    
+
 # CSVダウンロードリクエスト
 def export_history_csv(request):
     logger.info(f'{ut_get_client_ip(request)} '
@@ -430,10 +436,10 @@ class EvcUseGoogleView(LoginRequiredMixin, OwnerTestMixin, ListView):
         #     'processed_ym','owner_id','partner_id','category_name','google_amount','create_user')
         # r_queryset = HtEvidence.objects.filter(google_amount__isnull=False).values_list(
         #     'processed_ym','owner_id','partner_id','category_name','google_amount','create_user')
-        
+
         form = EvcUseGoogleForm(self.request.GET or None)
         form.fields['owner'].choices = self.get_owner_choices(self.request.user.user_id)
-        self.form = form 
+        self.form = form
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcUseGoogleView 検索条件で絞り込み')
 
@@ -482,7 +488,7 @@ class EvcUseGoogleView(LoginRequiredMixin, OwnerTestMixin, ListView):
                 lists.append(list)
             lists = sorted(lists, key = lambda x : x.get('create_date'))
         return lists
-            
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # search formを渡す
@@ -500,7 +506,7 @@ class EvcUseGoogleView(LoginRequiredMixin, OwnerTestMixin, ListView):
         # 検索実行しないでページ遷移した場合、checkが外れるのでcontextを使う
         kubun = self.request.GET.get('kubun')
         context['kbn'] = kubun or 'none'
-        # path_lists = [sv_helpurl(), 'UseGoogle_help.html'] 
+        # path_lists = [sv_helpurl(), 'UseGoogle_help.html']
         # help_url = os.path.join(*path_lists).replace(os.sep,'/')
         # context['help_url'] = help_url
 
@@ -530,9 +536,9 @@ class EvcUseGoogleView(LoginRequiredMixin, OwnerTestMixin, ListView):
             queryset = queryset.filter(processed_ym__lte=shori_date_to)
 
         if kubun == 'summ':
-            # 指定なし⇒明細をそのまま表示する。（並びは作成年月日の昇順）	
-            # 集計⇒処理年月別、契約会社別グルーピングして、Google件数を集計して表示する。	
-            #（取引先名、カテゴリ、利用者　）空白とする。	
+            # 指定なし⇒明細をそのまま表示する。（並びは作成年月日の昇順）
+            # 集計⇒処理年月別、契約会社別グルーピングして、Google件数を集計して表示する。
+            #（取引先名、カテゴリ、利用者　）空白とする。
             queryset = queryset.values('processed_ym','owner_id').annotate(total=Sum('google_amount')).order_by('processed_ym','owner_id')
         return queryset
 

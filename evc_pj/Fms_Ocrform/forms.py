@@ -1,6 +1,7 @@
-import os
-from django import forms
 import datetime
+import os
+
+from django import forms
 
 # from django.core.exceptions import ValidationError
 
@@ -33,7 +34,7 @@ class EvcSaveOcrformForm(forms.Form):
         file = self.cleaned_data['file']
         for f in files:
             extension = os.path.splitext(f.name)[1]  # 拡張子を取得
-            if not extension.lower() in VALID_EXTENSIONS:
+            if extension.lower() not in VALID_EXTENSIONS:
                 raise forms.ValidationError(f.name + ' ファイル形式が正しくありません')
         return file
 # フォーム編集画面
@@ -100,7 +101,7 @@ class EvcUploadEntryForm(forms.Form):
     # file = forms.FileField(widget=forms.ClearableFileInput(attrs={'allow_multiple_selected': True}))
     file = MultipleFileField()
     evidence_kubuns = forms.ChoiceField(
-        label='エビデンス区分', 
+        label='エビデンス区分',
         required=False,
         widget=forms.RadioSelect,
         choices=(
@@ -131,14 +132,14 @@ class EvcUploadEntryForm(forms.Form):
         file = self.cleaned_data['file']
         for f in files:
             extension = os.path.splitext(f.name)[1]  # 拡張子を取得
-            if not extension.lower() in VALID_EXTENSIONS:
+            if extension.lower() not in VALID_EXTENSIONS:
                 raise forms.ValidationError(f.name + ' ファイル形式が正しくありません')
         return file
     def __init__(self, ocrforms=None, *args, **kwargs):
         if ocrforms:
             self.base_fields['ocrform'].choices = ocrforms
         super().__init__(*args, **kwargs)
-    
+
 # エントリー一覧表示画面
 class EvcEntryListForm(forms.Form):
     pdf_name = forms.CharField(
@@ -173,7 +174,7 @@ class EvcEntryListForm(forms.Form):
         # initial=10,
         required=False,
         widget=forms.widgets.Select
-    )    
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -214,7 +215,7 @@ class EvcEditEntryForm(forms.Form):
             # 'disabled': 'disabled',
         })
     )
-               
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -265,7 +266,7 @@ class EvcTimesheetListForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
         })
-    )    
+    )
     category = forms.fields.ChoiceField(
         required=False,
         widget=forms.widgets.Select
@@ -433,7 +434,7 @@ class EvcOcrDataListForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
         })
-    )    
+    )
     tr_no = forms.CharField(
         max_length=20,
         required=False,
@@ -546,7 +547,7 @@ class EvcJafyameListForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
         })
-    )    
+    )
     dept = forms.CharField(
         max_length=50,
         required=False,
@@ -653,7 +654,7 @@ class EvcEditJafyameForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
         })
-    )    
+    )
     dept = forms.CharField(
         max_length=20,
         required=False,

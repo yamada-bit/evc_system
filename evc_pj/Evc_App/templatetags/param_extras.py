@@ -12,7 +12,7 @@ def url_replace(request, key, value):
 #     url_dict = request.GET.copy()
 #     for k, v in kwargs.items():
 #         url_dict[k] = v
-#     return url_dict.urlencode()    
+#     return url_dict.urlencode()
 @register.simple_tag
 def query_replace(request, key, value):
     url_dict = request.GET.copy()

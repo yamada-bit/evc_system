@@ -1,17 +1,17 @@
-import os
-import openpyxl
 import datetime
-import re
 import logging
+import os
 import platform
-
-# from django.conf import settings
-
-from dateutil.relativedelta import relativedelta
-from openpyxl.styles import Font, Border, PatternFill, Alignment
+import re
 from io import BytesIO
 
-if platform.system() == 'Windows':			
+import openpyxl
+
+# from django.conf import settings
+from dateutil.relativedelta import relativedelta
+from openpyxl.styles import Alignment, Border, Font, PatternFill
+
+if platform.system() == 'Windows':
     EXCEL_TEMPLATE_FOLDER = '../data/excel_template' # 勤務表を作成するテンプレートファイルを保存するフォルダ
 else:
     EXCEL_TEMPLATE_FOLDER = '/data_root/data/excel_template' # 勤務表を作成するテンプレートファイルを保存するフォルダ
@@ -210,7 +210,7 @@ def copy_row_with_style(sheet, src_row, tgt_row, last_col):
 """数式のセル参照を相対的に変換する（行のシフト）"""
 def shift_formula(formula, inserted_row):
     # 数式のセル参照を +1する（挿入された行より下の行番号を +1）
-    if not formula or not formula.startswith("="):  
+    if not formula or not formula.startswith("="):
         return formula  # 数式でなければそのまま返す
     def shift_match(match):
         col, row = match.groups()
@@ -255,7 +255,7 @@ def update_conditional_formatting(sheet, insert_row):
                         updated_formula.append(increment_formula_row_numbers(formula, insert_row))
                     rule.formula = updated_formula  # 更新
             new_rules.append(rule)
-        
+
         updated_rules[key] = new_rules  # ルールを保存
 
     # 既存の条件付き書式を削除
@@ -343,7 +343,7 @@ def process_work_events(events):
     for date, record in attendance.items(): # 各要素のキーkeyと値value
         try:
             if record["start"] and record["end"]:
-                total_hours = (record["end"] - record["start"]).seconds / 3600 
+                total_hours = (record["end"] - record["start"]).seconds / 3600
                 # total_hours = (record["end"] - record["start"]).seconds / 3600 - record["break"]
                 attendance[date]["total_hours"] = round(total_hours, 2)
         except Exception:

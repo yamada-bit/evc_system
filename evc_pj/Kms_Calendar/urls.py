@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views, views_report
 
 app_name = 'Kms_Calendar'           # 名前空間の設定
@@ -14,7 +15,7 @@ urlpatterns = [
     # path('upload/', views.upload_csv_and_register, name='upload'),
     path('export_calendar/<int:year>/<int:month>/', views.export_calendar_model_to_excel, name='export_calendar'),
     path('export_work_schedule/<int:year>/<int:month>/', views.export_work_schedule_to_excel, name='export_work_schedule'),
-    path('upload_report/',views_report.KmsUploadReportView.as_view(),name='upload_report'), 
+    path('upload_report/',views_report.KmsUploadReportView.as_view(),name='upload_report'),
     path('report_list/',views_report.KmsReportListView.as_view(),name='report_list'),
     path('edit_report/<report_id>/',views_report.KmsEditReportView.as_view(),name='edit_report'),
 ]

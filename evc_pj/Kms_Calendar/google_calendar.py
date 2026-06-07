@@ -1,11 +1,10 @@
-import os
 import datetime
 import logging
-
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
+import os
 
 from django.conf import settings
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +47,7 @@ def dict_to_credentials(credentials_dict):
         # expiryをdatetimeに復元
         expiry=expiry_date,
     )
-# Google Calendar APIクライアントの作成 
+# Google Calendar APIクライアントの作成
 def get_calendar_service(credentials_dict):
     # credentials = Credentials(**credentials_dict)
     credentials = dict_to_credentials(credentials_dict)

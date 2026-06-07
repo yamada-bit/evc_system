@@ -1,19 +1,21 @@
-import os
 # import dataclasses
-import datetime
-import shutil
-import logging
 import json
+import logging
+import os
+import shutil
+
 # import random
 # import io
 # import csv
 import zipfile
+from urllib.parse import quote
+
 # import configparser
 # import re
 import cv2
 import numpy as np
-
-from urllib.parse import quote
+from django.conf import settings
+from django.http import HttpResponse
 
 # from typing import List
 # from decimal import Decimal
@@ -21,25 +23,28 @@ from urllib.parse import quote
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 from sequences import get_next_value
-from django.http import HttpResponse
-from django.conf import settings
 
 from commons.utils import ut_get_localtime
-from Fms_Ocrform.models import TtOcrform,TtEntry
-
 from Evc_App.sv_create_image import sv_create_ocr_image
-from Evc_App.sv_file import (sv_delete_file,
+from Evc_App.sv_file import (
     get_imgfolder_upload,
+    sv_delete_file,
 )
-from Evc_App.sv_json import sv_save_detect_json,sv_datas2json,sv_json2textdatas
-from Evc_App.sv_get_image_shape import sv_get_image_angle,sv_imwrite
-
-from Fms_Ocrform.svf_ocrform import get_ocrform_rootfolder,get_ocrform_image_dir
-from Fms_Ocrform.svf_common import (str2int,isint,zen2han,check_large,check_digits,
-    svf_get_areas_dict,svf_draw_area,svf_get_json_text_page
+from Evc_App.sv_get_image_shape import sv_get_image_angle, sv_imwrite
+from Evc_App.sv_json import sv_datas2json, sv_json2textdatas, sv_save_detect_json
+from Fms_Ocrform.models import TtEntry, TtOcrform
+from Fms_Ocrform.svf_common import (
+    check_digits,
+    check_large,
+    str2int,
+    svf_draw_area,
+    svf_get_areas_dict,
+    svf_get_json_text_page,
+    zen2han,
 )
 from Fms_Ocrform.svf_extract_text import svf_extract_text
-from Fms_Ocrform.svt_adjust_image import svt_get_matrix,svt_adjust_image_trapezoid
+from Fms_Ocrform.svf_ocrform import get_ocrform_image_dir, get_ocrform_rootfolder
+from Fms_Ocrform.svt_adjust_image import svt_adjust_image_trapezoid, svt_get_matrix
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +71,9 @@ def get_tnw_filename(seisansya_code):
     except Exception:   # ValueError
         num = 1
     # 出力年月日時分秒-生産者コード(5桁以下はゼロ埋め)-ランダム数8桁
-    # num = random.randrange(10**8, 10**9) 
+    # num = random.randrange(10**8, 10**9)
     # name = time + '-{:05d}'.format(seisansya_code) + '-{:08d}'.format(num)
-    name = time + '-' + seisansya_code + '-{:08d}'.format(num)
+    name = time + '-' + seisansya_code + f'-{num:08d}'
     return name
 
 def obj_dict(obj):
@@ -110,7 +115,7 @@ def save_tnwjson(json_dir, entry_detail, filename):
                         if item_json == table_id:
                             table_json = item_json
                         else:
-                            # line_dict = table_dict.get(ids[1], False) 
+                            # line_dict = table_dict.get(ids[1], False)
                             # if not line_dict:
                             #     line_dict = {}
                             # line_dict[ids[2]] = item_text
@@ -136,12 +141,12 @@ def save_tnwjson(json_dir, entry_detail, filename):
                     # elif item_json == 'seisansya_code':
                     #     seisansya_code = str2int(item_text)
                     #     filename = get_tnw_filename(seisansya_code)
-                out_dict['image_filename'] = filename + '-{}.jpg'.format(page_no)
+                out_dict['image_filename'] = filename + f'-{page_no}.jpg'
 
                 if table_json:
                     out_dict[table_json] = table_list
                 json_outstr = json.dumps(out_dict, default=obj_dict, ensure_ascii=False, indent=2)
-                jsonfile = os.path.join(json_dir, filename + '-{}.json'.format(page_no)).replace(os.sep,'/')
+                jsonfile = os.path.join(json_dir, filename + f'-{page_no}.json').replace(os.sep,'/')
 
                 with open(jsonfile, 'w', encoding='utf-8') as f:
                     f.write(json_outstr)
@@ -172,16 +177,16 @@ def svt_export_zip(request, entry_id, zip=False):
             filename = save_tnwjson(trasajson_dir, entry.entry_detail, filename)
 
             entryimg_dir = get_ocrform_image_dir(rootfolder)
-            imagepath1 =  os.path.join(entryimg_dir, entry_id + '_{:03d}.jpg'.format(1)).replace(os.sep,'/')
-            imagepath2 =  os.path.join(entryimg_dir, entry_id + '_{:03d}.jpg'.format(2)).replace(os.sep,'/')
-            jpgfile1 = os.path.join(trasaimg_dir, filename + '-{}.jpg'.format(1)).replace(os.sep,'/')
-            jpgfile2 = os.path.join(trasaimg_dir, filename + '-{}.jpg'.format(2)).replace(os.sep,'/')
+            imagepath1 =  os.path.join(entryimg_dir, entry_id + f'_{1:03d}.jpg').replace(os.sep,'/')
+            imagepath2 =  os.path.join(entryimg_dir, entry_id + f'_{2:03d}.jpg').replace(os.sep,'/')
+            jpgfile1 = os.path.join(trasaimg_dir, filename + f'-{1}.jpg').replace(os.sep,'/')
+            jpgfile2 = os.path.join(trasaimg_dir, filename + f'-{2}.jpg').replace(os.sep,'/')
             shutil.copy2(imagepath1, jpgfile1)
             shutil.copy2(imagepath2, jpgfile2)
             if not zip:
                 return filename
-            jsonfile1 = os.path.join(trasajson_dir, filename + '-{}.json'.format(1)).replace(os.sep,'/')
-            jsonfile2 = os.path.join(trasajson_dir, filename + '-{}.json'.format(2)).replace(os.sep,'/')
+            jsonfile1 = os.path.join(trasajson_dir, filename + f'-{1}.json').replace(os.sep,'/')
+            jsonfile2 = os.path.join(trasajson_dir, filename + f'-{2}.json').replace(os.sep,'/')
             zip_filename = (filename or 'download') + '.zip'
             response = HttpResponse(content_type='application/zip')
             response['Content-Disposition'] = "attachment;filename*=utf-8''{}".format(
@@ -190,10 +195,10 @@ def svt_export_zip(request, entry_id, zip=False):
             # 一時ファイルを作成する代わりに、ZipFileの最初のパラメーターとして使用できます
             with zipfile.ZipFile(response, 'w',
                                 compression=zipfile.ZIP_DEFLATED) as zf:
-                zf.write(jsonfile1, arcname=filename + '-{}.json'.format(1))
-                zf.write(jsonfile2, arcname=filename + '-{}.json'.format(2))
-                zf.write(jpgfile1, arcname=filename + '-{}.jpg'.format(1))
-                zf.write(jpgfile2, arcname=filename + '-{}.jpg'.format(2))
+                zf.write(jsonfile1, arcname=filename + f'-{1}.json')
+                zf.write(jsonfile2, arcname=filename + f'-{2}.json')
+                zf.write(jpgfile1, arcname=filename + f'-{1}.jpg')
+                zf.write(jpgfile2, arcname=filename + f'-{2}.jpg')
             sv_delete_file(jsonfile1)
             sv_delete_file(jsonfile2)
             sv_delete_file(jpgfile1)
@@ -218,7 +223,7 @@ def create_trasa_file(json_str, ocrimages, trasadir, filename):
             for i, imagepath in enumerate(ocrimages, start=1):
                 if not imagepath or not os.path.exists(imagepath):
                     continue
-                jpgfile = os.path.join(img_dir, filename + '-{}.jpg'.format(i)).replace(os.sep,'/')
+                jpgfile = os.path.join(img_dir, filename + f'-{i}.jpg').replace(os.sep,'/')
                 # JPGファイルを連携ファイルに
                 shutil.move(imagepath, jpgfile)
             return filename
@@ -248,7 +253,7 @@ def sv_save_trasa_file(path, user_id):
     # except Exception:
     #     logger.exception('user_id error : ' + (user_id or 'None'))
     #     return ''
-    
+
     # rootfolder = get_rootfolder(owner_id)   # 契約会社のルートフォルダを取得
     rootfolder = get_ocrform_rootfolder()   # ルートフォルダを取得
     if not rootfolder:
@@ -266,7 +271,7 @@ def sv_save_trasa_file(path, user_id):
     # ocrimage_dir = config.get('settings', 'ocrimgdir')
     # form_dir = config.get('settings', 'formdir')
     # formimage_dir = config.get('settings', 'formimgdir')
-    
+
     # config_data = {
     #     'trasadir': trasadir,
     #     'ocrimage_dir': ocrimage_dir,
@@ -395,7 +400,7 @@ def adjust_area(ocrimages, formimage_dir, ocrform_id, ocrform_area):
     # 画像上の四角形マーク座標からアフィン行列の推定
     matrixs = svt_get_matrix(ocrimages, formimage_dir, ocrform_id)
     # matrixs = svt_get_trapezoid_matrix(ocrimages, formimage_dir, ocrform_id)
-    
+
     rect_str = ocrform_area
     try:
         areadatas = sv_json2textdatas(ocrform_area) # [TextDatas,TextDatas...]

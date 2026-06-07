@@ -1,9 +1,19 @@
+import datetime as dt
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
 #from .models import SubmitAttendance
-from .models import M_emp,T_time_stamp,T_request,T_request_rest,M_kbn,T_daily_report,M_yukyu
-import datetime as dt
+from .models import (
+    M_emp,
+    M_kbn,
+    M_yukyu,
+    T_daily_report,
+    T_request,
+    T_request_rest,
+    T_time_stamp,
+)
+
 
 class EvcLoginForm(AuthenticationForm):
     """ログオンフォーム"""
@@ -14,15 +24,15 @@ class EvcLoginForm(AuthenticationForm):
     #     strip=False,
     #     widget=forms.PasswordInput,
     # )
-    username = forms.EmailField(label='メールアドレス', required=True)    
+    username = forms.EmailField(label='メールアドレス', required=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.attrs['placeholder'] = field.label 
+            field.widget.attrs['placeholder'] = field.label
 
 class EditEmpForm(forms.ModelForm):
-    class Meta():
+    class Meta:
         # モデルクラスを指定
         model = M_emp
         # 使用するモデルフィールドの指定(フォーム上で入力可能な項目として表示)
@@ -35,7 +45,7 @@ class EditEmpForm(forms.ModelForm):
 class ClockForm(forms.ModelForm):
     name_field = forms.CharField(label='氏名')
 
-    class Meta():
+    class Meta:
         model = T_time_stamp
         fields = ('id','LTD_CD','EMP_ID','name_field','TARGET_DATE')
     def __init__(self, *args, **kwargs):
@@ -55,7 +65,7 @@ class TimeStampEditForm(forms.ModelForm):
         to_field_name='KBN',
         empty_label=None)
     stat = forms.CharField(label='申請承認')
-    class Meta():
+    class Meta:
         model = T_time_stamp
         fields = ('id','LTD_CD','EMP_ID','TARGET_DATE','date_field','kbns_cd','KBN','CORRET_START_TIME','START_TIME','CORRET_END_TIME','END_TIME','stat')
     def __init__(self, *args, **kwargs):
@@ -89,7 +99,7 @@ class TimeStampEditForm(forms.ModelForm):
             m =  int(start_time.split(':')[1])
             start = dt.datetime(2000, 1, 1, h, m, 0)
             # td = dt.datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
-        except Exception as e:
+        except Exception:
             raise forms.ValidationError("正しい値を入力してください\n出社時刻不正")
         end_time = self.cleaned_data['CORRET_END_TIME']
         if end_time == None or end_time == '':
@@ -99,7 +109,7 @@ class TimeStampEditForm(forms.ModelForm):
             m =  int(end_time.split(':')[1])
             end = dt.datetime(2000, 1, 1, h, m, 0)
             # td = dt.datetime.strptime(end_time, '%Y/%m/%d %H:%M:%S')
-        except Exception as e:
+        except Exception:
             raise forms.ValidationError('正しい値を入力してください\n退社時刻不正')
         if start >= end:
             raise forms.ValidationError('正しい値を入力してください\n出社時刻は退社時刻より過去にする必要があります。')
@@ -132,7 +142,7 @@ class TimeStampEditForm(forms.ModelForm):
 """
 class TimeStampEdit2Form(forms.ModelForm):
 
-    class Meta():
+    class Meta:
         model = T_time_stamp
         fields = ('id','LTD_CD','EMP_ID','TARGET_DATE','I_DO','KE_ID')
     def __init__(self, *args, **kwargs):
@@ -146,7 +156,7 @@ class RequestEditForm(forms.ModelForm):
     # 追加のフィールド
     stat = forms.CharField(label='申請承認')
 
-    class Meta():
+    class Meta:
         model = T_request
         # fields = ('id','LTD_CD','EMP_ID','TARGET_DATE',
         #           'EXPENSES','MEMO','AGREE_COMMENT','stat')
@@ -170,7 +180,7 @@ class RequestRestForm(forms.ModelForm):
 
     # start_check = forms.BooleanField(label='翌日')
     # end_check = forms.BooleanField(label='翌日')
-    class Meta():
+    class Meta:
         model = T_request_rest
         fields = ('id','LTD_CD','EMP_ID','TARGET_DATE','REST_NO',
                   # 'start','start_check','end','end_check',
@@ -205,7 +215,7 @@ class DailyReportEditForm(forms.ModelForm):
     # 追加のフィールド
     date_field = forms.CharField(label='日付')
 
-    class Meta():
+    class Meta:
         model = T_daily_report
 
         fields = ('id','LTD_CD','EMP_ID','TARGET_DATE',
@@ -293,7 +303,7 @@ class PaidHolidayEditForm(forms.ModelForm):
     # 追加のフィールド
     date_field = forms.CharField(label='日付')
 
-    class Meta():
+    class Meta:
         model = M_yukyu
 
         fields = ('id','LTD_CD','EMP_ID','NENDO',

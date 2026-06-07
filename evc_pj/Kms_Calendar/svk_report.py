@@ -1,25 +1,29 @@
-import os
-import datetime
-import shutil
 import logging
+import os
+import shutil
+
 # import json
 # from decimal import Decimal
 from django.conf import settings
+
+from commons.utils import ut_get_localdate, ut_get_localtoday, ut_get_timezone_now
+
+# from Evc_App.sv_search import sv_search_text
+from Evc_App.sv_create_image import sv_create_ocr_image
+from Evc_App.sv_file import (
+    get_imgfolder_upload,
+    get_jsonfolder,
+    make_dir,
+    sv_delete_file,
+    sv_get_processed_ym_path,
+    sv_get_user_name,
+)
+
+# from Evc_App.sv_extract_text import sv_extract_text
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 # from sequences import get_next_value
-
 from Kms_Calendar.models import TtGaikinReport
-from commons.utils import ut_get_localdate,ut_get_timezone_now,ut_get_localtoday
-
-from Evc_App.sv_file import (sv_delete_file, make_dir, sv_get_user_name,
-                             get_imgfolder_upload, get_jsonfolder,
-                             sv_get_textlines, sv_get_processed_ym_path
-)
-# from Evc_App.sv_search import sv_search_text
-from Evc_App.sv_create_image import sv_create_ocr_image
-# from Evc_App.sv_extract_text import sv_extract_text
-from Evc_App.sv_json import sv_save_json, sv_save_detect_json
 
 OCR_DPI = 200     # 解像度でGoogle Cloud Vision APIのblockの区切りが違う
 # OCR_DPI = 300     # 解像度でGoogle Cloud Vision APIのblockの区切りが違う
@@ -42,7 +46,7 @@ def svk_make_report_dir(rootfolder):
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
         for i in range(1,13):
-            mm = '{:02d}'.format(i)
+            mm = f'{i:02d}'
             mm_dir = os.path.join(yy_dir, mm).replace(os.sep,'/')
             make_dir(mm_dir)
             img_dir = os.path.join(mm_dir, 'img').replace(os.sep,'/')
@@ -62,9 +66,9 @@ def svk_get_report_imagepath(report_obj):
             created_ym = create_date.strftime('%Y%m')
         else:
             created_ym = report_obj.processed_ym
-        dest_dir = sv_get_processed_ym_path(rootfolder, created_ym) 
+        dest_dir = sv_get_processed_ym_path(rootfolder, created_ym)
         for page_no in range(1, report_obj.page_count + 1):
-            page_id = report_obj.report_id + '_{:03d}'.format(page_no)
+            page_id = report_obj.report_id + f'_{page_no:03d}'
             filepath = os.path.join(dest_dir, 'img', page_id + '.jpg').replace(os.sep,'/')
             images.append(filepath)
     except Exception:
@@ -108,7 +112,7 @@ def svk_create_report(uploadfiles, user_id, owner_id):
             error_list.append(filename)
             sv_delete_file(new_path)    # アップロードファイル削除
             continue
-        
+
         textdatas = []
 
         logger.debug(f'extract text {filename=}')
@@ -173,7 +177,7 @@ def check_filename(file):
         filepath, ext = os.path.splitext(file)
         i = 1
         while i < 100000:
-            new_path = '{}({}){}'.format(filepath, i, ext)
+            new_path = f'{filepath}({i}){ext}'
             if not os.path.exists(new_path):
                 return new_path
             i += 1
@@ -198,7 +202,7 @@ def get_report_id():
                 else:
                     # num = int(pre_id[-5:])
                     num = int(pre_id[9:14])
-                    id = d + '_{:05d}'.format(num + 1)
+                    id = d + f'_{num + 1:05d}'
             except Exception:   # ValueError
                 id = d + '_00001'
         else:
@@ -367,7 +371,7 @@ def svk_physical_delete_report(report_id):
 def delete_report_file(report_obj):
     report_id = report_obj.report_id
     # dest_dir = sv_get_category_path(owner_id, report_obj.category_name)
-    # dest_file = sv_get_processed_ym_path(owner_id, report_obj.processed_ym, report_obj.pdf_name)  
+    # dest_file = sv_get_processed_ym_path(owner_id, report_obj.processed_ym, report_obj.pdf_name)
     dest_file = report_obj.file_path
 
     # 削除データも閲覧できるように画像ファイルは削除しない

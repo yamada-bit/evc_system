@@ -1,12 +1,11 @@
-import os
-import shutil
 import logging
-import datetime
+import os
 import platform
-
+import shutil
 from pathlib import Path
+
 from pdf2image import convert_from_path
-from PIL import Image # tiffile -> jpeg
+from PIL import Image  # tiffile -> jpeg
 
 from commons.utils import ut_get_localtime
 
@@ -55,7 +54,7 @@ def sv_create_image(pdffile, img_dir, dpi, page_no):
         logger.error(f'ext name error {pdffile}')
         return imagefiles
     if platform.system() == 'Windows':
-        # Windowsの場合			
+        # Windowsの場合
         # poppler/binフォルダにあるユーティリティをpdf2imageライブラリが利用するため、PATHを通しておく
         poppler_dir = POPPLER_DIR
         # poppler_dir =  settings.BASE_DIR + '/poppler-0.68.0/bin'
@@ -75,7 +74,7 @@ def sv_create_image(pdffile, img_dir, dpi, page_no):
         # image.save(image_path, 'PNG')
         if page_no == -1 or page_no == i + 1:
             try:
-                file_name =  basename_without_ext + '_{:02d}'.format(i + 1) + ('.jpg' if JPEG else '.png')
+                file_name =  basename_without_ext + f'_{i + 1:02d}' + ('.jpg' if JPEG else '.png')
                 image_path = os.path.join(img_dir, file_name).replace(os.sep,'/')
                 image.save(image_path, 'JPEG' if JPEG else 'PNG')
                 imagefiles.append(image_path)
@@ -89,7 +88,7 @@ def sv_create_image(pdffile, img_dir, dpi, page_no):
 def sv_tiff_to_jpeg(tiffile, img_dir):
     tiff = ['.tif','.tiff']
     basename_without_ext, ext_name = os.path.splitext(os.path.basename(tiffile))
-    if not ext_name or not ext_name.lower() in tiff:
+    if not ext_name or ext_name.lower() not in tiff:
         logger.error(f'ext name error {tiffile=}')
         return False
     try:

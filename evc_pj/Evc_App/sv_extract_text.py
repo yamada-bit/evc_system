@@ -1,16 +1,16 @@
-import os
-import io
 import logging
-import datetime
 import math
+import os
+
+from django.conf import settings
 from google.cloud import vision
 from google.oauth2 import service_account
 
-from django.conf import settings
 from commons.utils import ut_get_localtime
-
-from Evc_App.sv_file import TextData,TextDatas,DetectJson
-from Evc_App.sv_json import sv_save_responsetext,sv_save_detect_json,sv_load_detect_json
+from Evc_App.sv_file import DetectJson, TextData, TextDatas
+from Evc_App.sv_json import (
+    sv_load_detect_json,
+)
 
 # XTHRESHOLD=120   # 1cm : 100 / 254 * 300(DPI)
 # YTHRESHOLD=12    # 1mm : 10 / 254 * 300
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 def sv_extract_text(imagefiles, areas_dict, specif_page_list):
 # 身元証明書のjson読み込み
     path = os.path.join(settings.BASE_DIR, settings.GOOGLE_CLOUD_VISION_KEY).replace(os.sep,'/')
-    
+
     textdatas = []
     try:
         logger.debug(f'vision.ImageAnnotatorClient {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
@@ -53,7 +53,7 @@ def sv_extract_text(imagefiles, areas_dict, specif_page_list):
         try:
             if 1 < page_count and specif_page_list and page_no not in specif_page_list:
                 continue
-            with io.open(input_file, 'rb') as image_file:
+            with open(input_file, 'rb') as image_file:
                 content = image_file.read()
             if GOOGLEOCR:
                 logger.debug(f'vision.Image {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
@@ -99,7 +99,7 @@ def sv_extract_text(imagefiles, areas_dict, specif_page_list):
 def sv_get_detecttext_from_json(evidence_id, json_dir, page_no, areas):
     textdatas = []
     response = sv_load_detect_json(evidence_id, json_dir, page_no)
-    try: 
+    try:
         textdatas.extend(get_lines(page_no, response, areas))
     except Exception:
         logger.exception(f'sv_get_detecttext exception {evidence_id=}')
@@ -286,7 +286,7 @@ def get_bounding_degree(word):
 
 # 取得データの回転角度を取得
 def get_rotate_angle(page):
-    rotate_flgs = [0, 0, 0, 0] 
+    rotate_flgs = [0, 0, 0, 0]
     rotate_angles = [0, -90, 90, 180]
     for block in page.blocks:
         for paragraph in block.paragraphs:

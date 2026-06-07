@@ -1,10 +1,12 @@
-from django.db import models
 #from django_currentuser.db.models import CurrentUserField
 from datetime import datetime as dt
+
+from django.db import models
+
 """
 UPDATE_DATE,INS_DATEフィールドを更新する抽象基底クラス
 """
- 
+
 class TimeStampBaseModel(models.Model):
     UPDATE_DATE = models.DateTimeField('更新日時', null=False, blank=False, auto_now=True)
     UPDATE_ID = models.CharField('更新者ID', max_length=50, null=False, blank=False)
@@ -15,7 +17,7 @@ class TimeStampBaseModel(models.Model):
     # INS_DATE = models.CharField('登録日時', max_length=20, null=False, blank=False)
     # INS_ID = models.CharField('登録者ID', max_length=50, null=False, blank=False )
     DEL_FLG = models.IntegerField('削除フラグ', null=False, blank=False, default=0)
-    
+
     class Meta:
         abstract = True
 

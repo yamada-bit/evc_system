@@ -1,12 +1,14 @@
-import os
 import datetime
+import os
+
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm,UserCreationForm
-from users.models import EvcUser,SysOwner,MtPartner,MtFolder
 
 # from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+
+from users.models import EvcUser, MtFolder, MtPartner
+
 # from django.utils.translation import gettext as _
 VALID_CSV_EXTENSIONS = ['.csv']
 
@@ -225,7 +227,7 @@ class EvcUserForm(forms.ModelForm):
         ('削除','削除')]
     kubun = forms.ChoiceField(label='登録区分', widget=forms.RadioSelect, choices=CHOICE, initial='新規')
     # delete_flg = forms.IntegerField(widget=forms.HiddenInput,initial=0)
- 
+
     class Meta:
         model = EvcUser
         # fields = ('user_id')
@@ -306,7 +308,7 @@ class EvcUserListForm(forms.Form):
         # initial=10,
         required=False,
         widget=forms.widgets.Select
-    )    
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -317,7 +319,7 @@ class EvcUserListForm(forms.Form):
 # エビデンス変更履歴一覧表示画面
 class EvcEviHistoryListForm(forms.Form):
     kubun = forms.ChoiceField(
-        label='履歴区分', 
+        label='履歴区分',
         required=False,
         widget=forms.RadioSelect,
         choices=(
@@ -357,13 +359,13 @@ class EvcEviHistoryListForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
         })
-    )    
+    )
 
     category = forms.fields.ChoiceField(
         required=False,
         widget=forms.widgets.Select
     )
-    # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))        
+    # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))
     partner = forms.CharField(
         max_length=50,
         required=False,
@@ -416,7 +418,7 @@ class EvcEviHistoryListForm(forms.Form):
             'pattern': '^[0-9]+$',
             'type': 'search',
             'size': 12,
-        }))                                
+        }))
     amount2 = forms.CharField(
         required=False,
         disabled=False,
@@ -426,7 +428,7 @@ class EvcEviHistoryListForm(forms.Form):
             'pattern': '^[0-9]+$',
             'type': 'search',
             'size': 12,
-        }))                                
+        }))
     amount = forms.CharField(
         required=False,
         disabled=False,
@@ -436,7 +438,7 @@ class EvcEviHistoryListForm(forms.Form):
             'pattern': '^[0-9]+$',
             'type': 'search',
             'size': 12,
-        }))                                
+        }))
     # amount = forms.IntegerField(max_length=12)
     amount_choice = forms.fields.ChoiceField(
         choices=(
@@ -470,7 +472,7 @@ class EvcEviHistoryListForm(forms.Form):
         # initial=10,
         required=False,
         widget=forms.widgets.Select
-    )    
+    )
     # class Meta:
     #     model = TtEvidence
     #     fields = ['pdf_name', 'processed_date', 'category_name',
@@ -494,7 +496,7 @@ class EvcEviHistoryListForm(forms.Form):
                 # raise forms.ValidationError('処理年月は yyyy/mm で入力してください')
             if shori_date < '200001':
                 raise forms.ValidationError('処理年月は2000年1月以降を入力してください')
-            
+
         return shori_date
 # エビデンス詳細画面
 class EvcSConShowForm(forms.Form):
@@ -530,7 +532,7 @@ class EvcSConShowForm(forms.Form):
         widget=forms.TextInput(attrs={
             'type': 'search',
             'size': 25,
-            'readonly': 'readonly', 
+            'readonly': 'readonly',
         })
     )
     publisher_cd = forms.ChoiceField(
@@ -542,7 +544,7 @@ class EvcSConShowForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
             'size': 10,
-            'readonly': 'readonly', 
+            'readonly': 'readonly',
         })
     )
     payment_date = forms.DateField(
@@ -550,7 +552,7 @@ class EvcSConShowForm(forms.Form):
         widget=forms.DateInput(attrs={
             'type': 'date',
             'size': 10,
-            'readonly': 'readonly', 
+            'readonly': 'readonly',
         })
     )
 
@@ -594,7 +596,7 @@ class EvcSConShowForm(forms.Form):
             # 'placeholder': '摘要を入力*',
             'type': 'search',
             'size': 50,
-            'readonly': 'readonly', 
+            'readonly': 'readonly',
         })
     )
     slip_number = forms.CharField(
@@ -603,7 +605,7 @@ class EvcSConShowForm(forms.Form):
         widget=forms.TextInput(attrs={
             # 'placeholder': '伝票番号を入力*',
             'type': 'search',
-            'readonly': 'readonly', 
+            'readonly': 'readonly',
         })
     )
     duplicate_check = forms.BooleanField(
@@ -611,7 +613,7 @@ class EvcSConShowForm(forms.Form):
         required=False,
         widget=forms.CheckboxInput(attrs={
             'class': 'duplicate-checkbox',
-            'disabled': 'disabled', 
+            'disabled': 'disabled',
         }),
     )
     def __init__(self, categories=None, partners=None, publishers=None, accounts=None, *args, **kwargs):
@@ -635,7 +637,7 @@ class EvcSConShowForm(forms.Form):
 
 # 取引先一覧表示画面
 class PartnerListForm(forms.Form):
-    # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))        
+    # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))
     partner = forms.CharField(
         max_length=50,
         required=False,
@@ -659,7 +661,7 @@ class PartnerListForm(forms.Form):
         # initial=10,
         required=False,
         widget=forms.widgets.Select
-    )    
+    )
     # class Meta:
     #     model = TtEvidence
     #     fields = ['partner_name', 'partner_ryaku_name',
@@ -777,8 +779,8 @@ class EvcPartnerForm(forms.ModelForm):
         # fields = '__all__'
         widgets = {
             'notes': forms.Textarea(attrs={'placeholder':'100文字まで'}),
-        }    
-               
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     #     self.fields['fulltext'].widget.attrs['id'] = 'shiori_text'
@@ -803,7 +805,7 @@ class EvcPartnerSaveForm(forms.Form):
     def clean_partnercsv(self):
         file = self.cleaned_data['partnercsv']
         extension = os.path.splitext(file.name)[1] # 拡張子を取得
-        if not extension.lower() in VALID_CSV_EXTENSIONS:
+        if extension.lower() not in VALID_CSV_EXTENSIONS:
             raise forms.ValidationError('csvファイルを選択してください！')
 
 class EvcAccountSaveForm(forms.Form):
@@ -813,7 +815,7 @@ class EvcAccountSaveForm(forms.Form):
     def clean_accountcsv(self):
         file = self.cleaned_data['accountcsv']
         extension = os.path.splitext(file.name)[1] # 拡張子を取得
-        if not extension.lower() in VALID_CSV_EXTENSIONS:
+        if extension.lower() not in VALID_CSV_EXTENSIONS:
             raise forms.ValidationError('csvファイルを選択してください！')
 # Google利用履歴画面
 class EvcUseGoogleForm(forms.Form):
@@ -824,7 +826,7 @@ class EvcUseGoogleForm(forms.Form):
     )
 
     kubun = forms.ChoiceField(
-        label='集計区分', 
+        label='集計区分',
         required=False,
         widget=forms.RadioSelect,
         choices=(
@@ -856,7 +858,7 @@ class EvcUseGoogleForm(forms.Form):
     #         'type': 'text',
     #         'size': 7,
     #     })
-    # )    
+    # )
     # shori_date2 = forms.CharField(
     #     required=False,
     #     max_length=7,
@@ -866,7 +868,7 @@ class EvcUseGoogleForm(forms.Form):
     #         'type': 'text',
     #         'size': 7,
     #     })
-    # )    
+    # )
     page_size = forms.CharField(required=False, widget=forms.HiddenInput)
 
     page_size_choice = forms.fields.ChoiceField(
@@ -881,7 +883,7 @@ class EvcUseGoogleForm(forms.Form):
         # initial=10,
         required=False,
         widget=forms.widgets.Select
-    )    
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -912,7 +914,7 @@ class EvcUseGoogleForm(forms.Form):
 
 # カテゴリ一覧表示画面
 class EvcCategoryListForm(forms.Form):
-    # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))        
+    # partner_cd = forms.ModelChoiceField(queryset=MtPartner.objects.all().order_by('partner_id'))
     partner = forms.CharField(
         max_length=50,
         required=False,
@@ -936,7 +938,7 @@ class EvcCategoryListForm(forms.Form):
         # initial=10,
         required=False,
         widget=forms.widgets.Select
-    )    
+    )
     # class Meta:
     #     model = TtEvidence
     #     fields = ['partner_name', 'partner_ryaku_name',
@@ -988,8 +990,8 @@ class EvcCategoryForm(forms.ModelForm):
         # fields = '__all__'
         widgets = {
             'notes': forms.Textarea(attrs={'placeholder':'100文字まで'}),
-        }    
-               
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     #     self.fields['fulltext'].widget.attrs['id'] = 'shiori_text'
@@ -1000,7 +1002,7 @@ class EvcCategoryForm(forms.ModelForm):
                field.required = True
             else:
                field.required = False
-        
+
             #    field.widget.attrs['required'] = 'required'
         # self.fields['user_id'].widget.attrs['readonly'] = 'readonly'
         self.fields['notes'].widget.attrs['class'] = 'form-textarea'

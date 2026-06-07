@@ -1,40 +1,46 @@
-import os
-import datetime
-import logging
 import json
+import logging
+import os
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+# from django.http import HttpResponseRedirect
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
+from django.shortcuts import redirect
 
-from django.shortcuts import render,resolve_url,redirect
-from django.views.generic import FormView,ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
 # from django.conf import settings
-from django.urls import reverse,reverse_lazy
-# from django.http import HttpResponseRedirect
-from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
+from django.urls import reverse
+from django.views.generic import FormView, ListView
 
-from users.models import EvcUser
-from Fms_Ocrform.models import TtOcrform
+from commons.utils import ut_get_client_ip, ut_get_localtime
 
-from commons.utils import ut_get_client_ip,ut_get_localtime
-
-from Fms_Ocrform.forms import EvcSaveOcrformForm,EvcEditOcrformForm,EvcOcrformListForm
-
-from Evc_App.sv_get_image_shape import sv_get_image_angle,sv_get_pdfpages
 # from Evc_App.sv_create_image import sv_create_ocr_image
-
 # from Evc_App.sv_json import sv_json2textdatas
-from Evc_App.sv_file import (sv_handle_uploaded_file,sv_file2url,
-    make_upload_dir,make_json_dir,get_imgfolder_upload,sv_get_owner_ryaku_name
+from Evc_App.sv_file import (
+    get_imgfolder_upload,
+    make_json_dir,
+    make_upload_dir,
+    sv_file2url,
+    sv_handle_uploaded_file,
 )
-from Fms_Ocrform.svf_ocrform import (get_ocrform_rootfolder,make_ocrform_dir,
-                                     make_ocrform_image_dir,
-                                     get_ocrform_image_dir,
-                                     svt_create_ocrform,svt_update_ocrform,svt_delete_ocrform,
-                                     svf_get_area_jsonstr
+from Evc_App.sv_get_image_shape import sv_get_image_angle, sv_get_pdfpages
+from Fms_Ocrform.forms import EvcEditOcrformForm, EvcOcrformListForm, EvcSaveOcrformForm
+from Fms_Ocrform.models import TtOcrform
+from Fms_Ocrform.svf_ocrform import (
+    get_ocrform_image_dir,
+    get_ocrform_rootfolder,
+    make_ocrform_dir,
+    make_ocrform_image_dir,
+    svf_get_area_jsonstr,
+    svt_create_ocrform,
+    svt_delete_ocrform,
+    svt_update_ocrform,
 )
+from users.models import EvcUser
 
 VALID_EXTENSIONS = ['.pdf','.jpg','.jpeg','.png','.bmp','.gif','.tif','.tiff']
 IMAGE_EXTENTIONS = ['.jpg','.jpeg','.png']
@@ -164,7 +170,7 @@ class EvcSaveOcrformView(LoginRequiredMixin, FormView):
         err = form.errors.as_text()
         logger.error(f'{ut_get_client_ip(self.request)} '
                      f'EvcSaveOcrformView アップロードに失敗しました {err}')
-        return super().form_invalid(form) 
+        return super().form_invalid(form)
 # フォーム一覧
 class EvcOcrformListView(LoginRequiredMixin, ListView):
     template_name = 'Fms_Ocrform/FE_OcrformList.html'
@@ -176,7 +182,7 @@ class EvcOcrformListView(LoginRequiredMixin, ListView):
         queryset = super().get_queryset()
         data_type = self.kwargs.get('data_type') or 1
         form = EvcOcrformListForm(self.request.GET or None)
-        self.form = form 
+        self.form = form
 
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcOcrformListView')
@@ -185,7 +191,7 @@ class EvcOcrformListView(LoginRequiredMixin, ListView):
         else:
             form_id = 'ocrdata_'
         queryset = queryset.filter(ocrform_id__contains=form_id)
-        
+
         if form.is_valid():
             # 検索条件で絞り込み
             # フォーム名を入力
@@ -256,7 +262,7 @@ class EvcEditOcrformView(LoginRequiredMixin, FormView):
                                 'image_no': self.kwargs['image_no']
                         }
                       )
-   
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         data_type = self.kwargs.get('data_type') or 1
@@ -285,7 +291,7 @@ class EvcEditOcrformView(LoginRequiredMixin, FormView):
         if 'form' not in kwargs:
             default_data = {
                 'fulltext': '',
-            }            
+            }
             form = EvcEditOcrformForm(initial = default_data)
             context['form'] = form
 
@@ -390,7 +396,7 @@ class EvcEditOcrformView(LoginRequiredMixin, FormView):
             return redirect('Fms_Ocrform:ocrform_list', data_type=data_type)
         elif act == 'delete':   # 削除
             user_id = self.request.user.user_id
-            #  フォーム情報削除/ファイル削除 
+            #  フォーム情報削除/ファイル削除
             name = svt_delete_ocrform(ocrform_id, user_id, owner_id)
             if name:
                 basename = os.path.splitext(name)[0]
@@ -413,9 +419,9 @@ class EvcEditOcrformView(LoginRequiredMixin, FormView):
             postext = self.request.POST.get('postext')
             self.set_form_pages(json_str, postext, image_no)    # セッション変数に編集内容を保存
             if act == 'back_btn':
-                pageno = image_no - 1 
+                pageno = image_no - 1
             else:
-                pageno = image_no + 1 
+                pageno = image_no + 1
             if 0 < pageno:
                 return redirect('Fms_Ocrform:edit_ocrform',
                                  data_type=data_type, ocrform_id=ocrform_id, image_no=pageno)
@@ -444,12 +450,12 @@ class EvcEditOcrformView(LoginRequiredMixin, FormView):
             if cnt and 0 < cnt:
                 page_cnt = cnt
         for i in range(1, page_cnt + 1):
-            img =  os.path.join(img_dir, ocrform_id + '_{:03d}.jpg'.format(i)).replace(os.sep,'/')
+            img =  os.path.join(img_dir, ocrform_id + f'_{i:03d}.jpg').replace(os.sep,'/')
             # 輪郭枠座標をjson文字列に変換(javascriptで処理)
             area = svf_get_area_jsonstr(ocrform_obj.ocrform_area, i)
             # JSONデータをPythonオブジェクト(list型)へ変換
             text = get_jsontext_list(ocrform_obj.ocrform_text, i)
-            
+
             entry_pages.append({
                  'name':filename,
                  'path':path,
@@ -457,7 +463,7 @@ class EvcEditOcrformView(LoginRequiredMixin, FormView):
                  'area':area,
                  'text':text
                 })
-        self.request.session['form_pages'] = entry_pages 
+        self.request.session['form_pages'] = entry_pages
         return entry_pages
     # セッション変数に送信されてきた編集内容を保存
     def set_form_pages(self, json_str, postext, image_no):
@@ -481,8 +487,8 @@ class EvcEditOcrformView(LoginRequiredMixin, FormView):
         except PageNotAnInteger:
             page_obj = paginator.page(1)
         except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)   
-        return page_obj 
+            page_obj = paginator.page(paginator.num_pages)
+        return page_obj
 # フォームテキスト情報を取得し指定ページのデータをPythonオブジェクト(list型)へ変換
 def get_jsontext_list(ocrform_text, page_no):
     dicts = []
@@ -496,7 +502,7 @@ def get_jsontext_list(ocrform_text, page_no):
         }
         dicts.append(data)
         return dicts
-    # json.loads 関数 JSON 形式の文字列データから、Python オブジェクト(dict, list)を作成 
+    # json.loads 関数 JSON 形式の文字列データから、Python オブジェクト(dict, list)を作成
     object_list = json.loads(ocrform_text) # JSONデータをPythonオブジェクト(list型)へ変換
     if object_list:
         try:

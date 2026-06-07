@@ -1,45 +1,51 @@
-import os
 import datetime
-import shutil
-import logging
 import json
+import logging
+import os
+import shutil
 
 # from PIL import Image
-
 # from decimal import Decimal
 from django.conf import settings
+
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 # from django.http import HttpResponse
 from django.db.models import Q
 from sequences import get_next_value
 
-from Fms_Ocrform.models import TtOcrform,TtEntry,TtOcrData,TtTimesheet,TtJafyame,TtAccessLog
-
-from commons.utils import ut_get_localdate,ut_get_timezone_now,ut_get_localtoday
-
-from Evc_App.sv_file import sv_delete_file,get_imgfolder_upload,get_jsonfolder
-
+from commons.utils import ut_get_localdate, ut_get_localtoday, ut_get_timezone_now
 from Evc_App.sv_create_image import sv_create_ocr_image
-from Evc_App.sv_json import sv_save_json,sv_save_detect_json,sv_datas2json
+from Evc_App.sv_file import get_imgfolder_upload, get_jsonfolder, sv_delete_file
 from Evc_App.sv_get_image_shape import sv_get_pdfpages
-
-from Fms_Ocrform.svf_extract_text import svf_extract_text
-
-from Fms_Ocrform.svf_common import (svf_get_ocrdata_rootfolder,svf_get_ocrdata_imagepath,
-    svf_move_uploadfile_ymfolder,svf_move_uploadfile_jafyame,svf_get_jafyame_imagepath,
-    svf_get_areas_dict,svf_draw_area,
-    svf_adjust_image,svf_get_json_text_page
+from Evc_App.sv_json import sv_datas2json, sv_save_detect_json, sv_save_json
+from Fms_Ocrform.models import (
+    TtAccessLog,
+    TtEntry,
+    TtJafyame,
+    TtOcrData,
+    TtOcrform,
+    TtTimesheet,
 )
-
+from Fms_Ocrform.svf_common import (
+    svf_adjust_image,
+    svf_draw_area,
+    svf_get_areas_dict,
+    svf_get_jafyame_imagepath,
+    svf_get_json_text_page,
+    svf_get_ocrdata_imagepath,
+    svf_get_ocrdata_rootfolder,
+    svf_move_uploadfile_jafyame,
+    svf_move_uploadfile_ymfolder,
+)
+from Fms_Ocrform.svf_extract_image import pdf_to_image
+from Fms_Ocrform.svf_extract_text import svf_extract_text
 from Fms_Ocrform.svt_adjust_image import svt_adjust_image_trapezoid
 
-from Fms_Ocrform.svf_extract_image import extract_image_from_pdf,pdf_to_image
-
-MODEL_CLASSES = {	
+MODEL_CLASSES = {
     'entry': TtEntry,
-    'ocrdata': TtOcrData,	
-    'timesheet': TtTimesheet,	
+    'ocrdata': TtOcrData,
+    'timesheet': TtTimesheet,
     'jafyame': TtJafyame,	# JAふくおか八女
 }
 PAGE_MARK_IMAGE = '/data_root/evc_root/jafyame.jpg'   # OCRでテキストを抽出するページを判定する画像
@@ -124,7 +130,7 @@ def svf_create_ocrdata(model_name, uploadfiles, user_id, owner_id):
             ocrform_obj =  TtOcrform.objects.get(ocrform_id=ocrform_id)
             ocrform_area = ocrform_obj.ocrform_area
             # 輪郭枠座標をjson文字列に変換(javascriptで処理)
-            areas_dict = svf_get_areas_dict(ocrform_obj.ocrform_area)  
+            areas_dict = svf_get_areas_dict(ocrform_obj.ocrform_area)
             # フォームの入力項目情報を取得
             if ocrform_obj.ocrform_text:
                 ocrform_text_datas = json.loads(ocrform_obj.ocrform_text)
@@ -232,10 +238,10 @@ def svf_create_ocrdata_page(model_name, ocrdata_id, param_dict):
         pdf_name = basename_without_ext
         ocrdata_id = ocrdata_id + '_00000' # ページごとに分割しない
     else:
-        pdf_name = basename_without_ext + '_Page{}'.format(page_no)
+        pdf_name = basename_without_ext + f'_Page{page_no}'
         page = page_no if 0 < page_no else 1
         area = 1
-        ocrdata_id = ocrdata_id + '_{:03d}{:02d}'.format(page, area)
+        ocrdata_id = ocrdata_id + f'_{page:03d}{area:02d}'
     # pdf_name = basename_without_ext + '_Page{}'.format(page_no) + '({}/{})'.format(area_no, area_count)
     # entry_id ：yyyymmdd_連番(00001～)_ページ番号(001)+領域番号(01)
     # ocrdata_id = ocrdata_id + '_00000' # ページごとに分割しない
@@ -264,7 +270,7 @@ def get_search_text(json_str, page_no):
     search = {
     }
     if not json_str:
-        logger.error(f'json_str False')
+        logger.error('json_str False')
         return search
     try:
         object_list = json.loads(json_str) # JSONデータをPythonオブジェクト(list型)へ変換
@@ -281,7 +287,7 @@ def get_search_text(json_str, page_no):
                     table_id = item.get('table_id')
                     search[item_json] = item_text
     except Exception:
-        logger.exception(f'get_search_text exception')
+        logger.exception('get_search_text exception')
 
     return search
 # 画像データを保存フォルダに移動
@@ -321,7 +327,7 @@ def get_ocrdata_id(model_name):
     try:
         # シーケンス採番
         num = get_next_value(f'{model_name}_{d}')
-        id = d + '_{:05d}'.format(num)
+        id = d + f'_{num:05d}'
     except Exception:   # ValueError
         id = d + '_00001'
 
@@ -646,7 +652,7 @@ def svf_update_entry(entry_id, entry_pages, user_id):
     return entry_id
 # ブラウザでの編集内容をテキスト情報にマージ
 def get_jsontext(ocrform_text, ocrdata_pages):
-    # json.loads 関数 JSON 形式の文字列データから、Python オブジェクト(dict, list)を作成 
+    # json.loads 関数 JSON 形式の文字列データから、Python オブジェクト(dict, list)を作成
     object_list = json.loads(ocrform_text) # JSONデータをPythonオブジェクト(list型)へ変換
     if object_list:
         try:
@@ -682,7 +688,7 @@ def svf_update_shiori(model_name, ocrdata_id, fulltext, user_id):
         elif model_name == 'timesheet':
             q_objects = Q(timesheet_id=ocrdata_id)
         elif model_name == 'entry':
-            q_objects = Q(entry_id=ocrdata_id)            
+            q_objects = Q(entry_id=ocrdata_id)
         elif model_name == 'jafyame':   # JAふくおか八女
             q_objects = Q(jafyame_id=ocrdata_id)
         ocrdata_obj = model_class.objects.filter(q_objects).first()
@@ -822,9 +828,9 @@ def svf_filter_jafyame(request, queryset):
         logger.exception('svf_filter_jafyame exception')
     return queryset
 
-# アクセスログ記録	
+# アクセスログ記録
 def svf_create_access_log(owner_id, user_id, doc_id, action):
-    # TtAccessLog.objects.create(user_id=user_id, document_id=doc_id, action='download')	
+    # TtAccessLog.objects.create(user_id=user_id, document_id=doc_id, action='download')
     try:
         now = ut_get_timezone_now()
         obj = TtAccessLog(

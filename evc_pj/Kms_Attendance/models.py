@@ -1,9 +1,10 @@
+import uuid
+
 from django.db import models
 
 # Create your models here.
-
 from Kms_Attendance.commons.models import TimeStampBaseModel
-import uuid
+
 
 #社員マスタ
 class M_emp(TimeStampBaseModel):
@@ -555,10 +556,10 @@ class Employee(models.Model):
 '''
 # Create your models here.
 class SubmitAttendance(models.Model):
-    
+
     class Meta:
         db_table = 'attendance'
-    
+
     PLACES = (
         (1, 'Bar Foo'),
         (2, 'Bar Baz'),
@@ -584,9 +585,9 @@ class SubmitAttendance(models.Model):
 
     def __str__(self):
         return  str(User.objects.get(id=self.staff_id)) + ' : ' + str(self.place_dict[self.place]) + ' ' + str(self.in_out_dict[self.in_out])
-    
+
 class Fee(SubmitAttendance):
-    
+
     class Meta:
         db_table = 'fee'
 

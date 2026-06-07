@@ -1,22 +1,23 @@
-import os
-import datetime
-import shutil
 import logging
-import re
+import os
 import platform
+import re
+import shutil
 
 import cv2
 import numpy as np
-
 from django.conf import settings
 
-from commons.utils import ut_get_localtime,ut_get_localtoday
-from Evc_App.sv_file import make_dir,get_imgfolder_upload,sv_get_processed_ym_path
-
+from commons.utils import ut_get_localtime, ut_get_localtoday
+from Evc_App.sv_file import get_imgfolder_upload, make_dir, sv_get_processed_ym_path
 from Evc_App.sv_get_image_shape import sv_imwrite
 from Evc_App.sv_json import sv_json2textdatas
+from Fms_Ocrform.svf_ocrform import (
+    get_ocrform_image_dir,
+    get_ocrform_imagefile,
+    get_ocrform_rootfolder,
+)
 
-from Fms_Ocrform.svf_ocrform import get_ocrform_rootfolder,get_ocrform_imagefile,get_ocrform_image_dir
 # from Fms_Ocrform.svt_pytorch import svt_load_model,svt_get_image_number
 
 # 全角の文字列
@@ -28,12 +29,12 @@ H_DIGITS = '0123456789'
 H_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 H_ALPHANUMERIC = H_DIGITS + H_ALPHABET
 
-ROOT_FOLDER = {	
+ROOT_FOLDER = {
     'entry': 'Evc_Entry',
-    'ocrdata': 'Evc_OcrData',	
-    'timesheet': 'Evc_Timesheet',	
+    'ocrdata': 'Evc_OcrData',
+    'timesheet': 'Evc_Timesheet',
     'jafyame': 'Evc_Jafyame',   # JAふくおか八女
-}	
+}
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ def svf_get_ocrdata_rootfolder(model_name):
 def svf_get_ocrdata_imagepath(model_name, processed_ym, ocrdata_id, page_no):
     rootfolder = svf_get_ocrdata_rootfolder(model_name)   # ルートフォルダを取得
     dest_dir = sv_get_processed_ym_path(rootfolder, processed_ym)
-    filepath = os.path.join(dest_dir, 'img', ocrdata_id + '_{:03d}.jpg'.format(page_no)).replace(os.sep,'/')
+    filepath = os.path.join(dest_dir, 'img', ocrdata_id + f'_{page_no:03d}.jpg').replace(os.sep,'/')
     return filepath
 
 # 画像ファイルを保存するフォルダ作成
@@ -96,7 +97,7 @@ def svf_make_ocrdata_image_dir(rootfolder):
         yy_dir = os.path.join(rootfolder, yy).replace(os.sep,'/')
         make_dir(yy_dir)
         for i in range(1,13):
-            mm = '{:02d}'.format(i)
+            mm = f'{i:02d}'
             mm_dir = os.path.join(yy_dir, mm).replace(os.sep,'/')
             make_dir(mm_dir)
             img_dir = os.path.join(mm_dir, 'img').replace(os.sep,'/')
@@ -140,7 +141,7 @@ def check_filename(file):
         filepath, ext = os.path.splitext(file)
         i = 1
         while i < 100000:
-            new_path = '{}({}){}'.format(filepath, i, ext)
+            new_path = f'{filepath}({i}){ext}'
             if not os.path.exists(new_path):
                 return new_path
             i += 1
@@ -182,7 +183,7 @@ def svf_get_jafyame_imagepath(dept, sect, ocrdata_id, page_no):
         dest_dir = os.path.join(rootfolder, dept, sect).replace(os.sep,'/')
     else:
         dest_dir = ''
-    filepath = os.path.join(dest_dir, 'img', ocrdata_id + '_{:03d}.jpg'.format(page_no)).replace(os.sep,'/')
+    filepath = os.path.join(dest_dir, 'img', ocrdata_id + f'_{page_no:03d}.jpg').replace(os.sep,'/')
     return filepath
 
 # JAふくおか八女 画像ファイルを保存するフォルダ作成 # 部課imgフォルダ
@@ -353,7 +354,7 @@ def get_cropped_image(rootfolder, ocrimages, page_no):
             cv2.imwrite(cropped_image_file, dst)
             imagefile = cropped_image_file
             if settings.DEBUG:
-                if platform.system() == 'Windows':			
+                if platform.system() == 'Windows':
                     PYTORCH_NUM_FOLDER = '../data/num_file'
                 else:
                     PYTORCH_NUM_FOLDER = '/data_root/data/num_file'

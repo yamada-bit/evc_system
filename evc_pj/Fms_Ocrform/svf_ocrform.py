@@ -1,35 +1,47 @@
-import os
-import datetime
-import shutil
-import logging
 import json
+import logging
+import os
+import shutil
 import subprocess
 
 # import pypdf
 # import math
 # import threading
-
 # from pdfminer.converter import PDFPageAggregator
 # from pdfminer.layout import LAParams, LTContainer, LTTextBox
 # from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 # from pdfminer.pdfpage import PDFPage
-
 from django.conf import settings
+
 # from django.utils import timezone
 # from django.utils.timezone import make_aware
 from sequences import get_next_value
 
-from Fms_Ocrform.models import TtOcrform
-
-from commons.utils import ut_get_localdate,ut_get_timezone_now,ut_get_localtoday,ut_get_localtime
-
-from Evc_App.sv_file import (TextData,TextDatas,
-    make_dir,get_imgfolder_upload,get_jsonfolder,sv_delete_file
+from commons.utils import (
+    ut_get_localdate,
+    ut_get_localtime,
+    ut_get_localtoday,
+    ut_get_timezone_now,
 )
 from Evc_App.sv_create_image import sv_create_ocr_image
+from Evc_App.sv_file import (
+    TextData,
+    TextDatas,
+    get_imgfolder_upload,
+    get_jsonfolder,
+    make_dir,
+    sv_delete_file,
+)
+from Evc_App.sv_get_image_shape import sv_get_pdfpages
+
 # from Evc_App.sv_extract_text import sv_extract_text
-from Evc_App.sv_json import sv_save_json,sv_json2textdatas,sv_datas2json,sv_save_detect_json
-from Evc_App.sv_get_image_shape import sv_get_contour_rect,sv_get_pdfpages
+from Evc_App.sv_json import (
+    sv_datas2json,
+    sv_json2textdatas,
+    sv_save_detect_json,
+    sv_save_json,
+)
+from Fms_Ocrform.models import TtOcrform
 
 OCR_DPI = 200     # 解像度でGoogle Cloud Vision APIのblockの区切りが違う
 YTHRESHOLD = 8  # 1mm : 10 / 254 * 200
@@ -57,10 +69,10 @@ def make_ocrform_image_dir(rootfolder):
 
 # フォーム画像名：フォームID　+ _001(連番).jpg
 def get_ocrform_imagefile(img_dir, ocrform_id, page_no):
-    file_name =  os.path.join(img_dir, ocrform_id + '_{:03d}.jpg'.format(page_no)).replace(os.sep,'/')
+    file_name =  os.path.join(img_dir, ocrform_id + f'_{page_no:03d}.jpg').replace(os.sep,'/')
     if not os.path.exists(file_name):
         page_no = 1
-        file_name =  os.path.join(img_dir, ocrform_id + '_{:03d}.jpg'.format(page_no)).replace(os.sep,'/')
+        file_name =  os.path.join(img_dir, ocrform_id + f'_{page_no:03d}.jpg').replace(os.sep,'/')
     return file_name
 
 # フォームファイルを保存するフォルダ
@@ -133,7 +145,7 @@ def svt_create_ocrform(uploadfiles, user_id, owner_id, rootfolder, data_type, an
         # contour_json = ''
         # contour_images = []
         ocrimages = sv_create_ocr_image(new_path, img_upload_dir, -1)
-        
+
         if ocrimages:
             area_textdatas = []
             # if analyze_pdf:
@@ -315,7 +327,7 @@ def delete_files(files):
                         os.remove(file)
                 except Exception:
                     logger.exception(f'sv_delete_file exception {file=}')
-            
+
 # 画像ファイルをフォーム画像フォルダにファイル名を設定して移動
 def move_image(owner_id, ocrimages, ocrform_id):
     if not ocrimages or not ocrform_id:
@@ -328,7 +340,7 @@ def move_image(owner_id, ocrimages, ocrform_id):
             rootfolder = get_ocrform_rootfolder()   # ルートフォルダを取得
             img_dir = get_ocrform_image_dir(rootfolder)
             # フォーム画像名
-            file_name = os.path.join(img_dir, ocrform_id + '_{:03d}.jpg'.format(i)).replace(os.sep,'/')
+            file_name = os.path.join(img_dir, ocrform_id + f'_{i:03d}.jpg').replace(os.sep,'/')
 
         # logger.debug('dest_dir  : ' +  (dest_dir or 'False'))
         # new_path = shutil.move(file, dest_dir)
@@ -374,7 +386,7 @@ def check_filename(file):
         filepath, ext = os.path.splitext(file)
         i = 1
         while i < 100000:
-            new_path = '{}({}){}'.format(filepath, i, ext)
+            new_path = f'{filepath}({i}){ext}'
             if not os.path.exists(new_path):
                 return new_path
             i += 1
@@ -390,10 +402,10 @@ def get_ocrform_id(data_type):
         # num = get_next_value(d)
         if data_type == 1:
             num = get_next_value('ocrform_seq')
-            id = 'ofrm' + '_{:05d}'.format(num)
+            id = 'ofrm' + f'_{num:05d}'
         else:
             num = get_next_value('fmsform_seq')
-            id = 'fmsf' + '_{:05d}'.format(num)
+            id = 'fmsf' + f'_{num:05d}'
     except Exception:   # ValueError
         if data_type == 1:
             id = 'ofrm' + '_00001'
@@ -440,7 +452,7 @@ def svt_update_ocrform(ocrform_id, user_id, form_pages):
     except TtOcrform.DoesNotExist:
         logger.exception(f'TtOcrform DoesNotExist {ocrform_id=}')
         return False
-    
+
     json_area = get_jsonareas(ocrform_obj.ocrform_area, form_pages)
     json_text = get_jsontext(ocrform_obj.ocrform_text, form_pages)
 
@@ -492,7 +504,7 @@ def get_jsonareas(ocrform_area, form_pages):
                         'textdata_list':textdatas[0].textdata_list
                     }
                     lists.append(data)
-                
+
     # jsonデータでフォーム情報を、DBに保存する
     if areadatas:
         rect_str = sv_datas2json(areadatas)
@@ -504,7 +516,7 @@ def get_jsonareas(ocrform_area, form_pages):
     return rect_str
 # 編集内容をテキスト情報にマージ
 def get_jsontext(ocrform_text, form_pages):
-    # json.loads 関数 JSON 形式の文字列データから、Python オブジェクト(dict, list)を作成 
+    # json.loads 関数 JSON 形式の文字列データから、Python オブジェクト(dict, list)を作成
     if ocrform_text:
         object_list = json.loads(ocrform_text) # JSONデータをPythonオブジェクト(list型)へ変換
     else:
@@ -573,7 +585,7 @@ def svt_delete_ocrform(ocrform_id, user_id, owner_id):
         rootfolder = get_ocrform_rootfolder()   # ルートフォルダを取得
         img_dir = get_ocrform_image_dir(rootfolder)
         for i in range(1, page_cnt + 1):
-            file_name =  os.path.join(img_dir, ocrform_id + '_{:03d}.jpg'.format(i)).replace(os.sep,'/')
+            file_name =  os.path.join(img_dir, ocrform_id + f'_{i:03d}.jpg').replace(os.sep,'/')
             sv_delete_file(file_name)   # フォーム画像ファイルを削除
             # file_name =  os.path.join(img_dir, ocrform_id + '_{:02d}_contour.jpg'.format(i)).replace(os.sep,'/')
             # sv_delete_file(file_name)   # フォーム画像ファイルを削除
@@ -621,7 +633,7 @@ def svt_delete_ocrform(ocrform_id, user_id, owner_id):
 #             textdatas = sv_json2textdatas(ocrform_obj.ocrform_text)
 #     return textdatas
 
-# PDFファイルからテキストと情報を取得 
+# PDFファイルからテキストと情報を取得
 def get_pdf_text(pdf_file, json_dir, page_count):
     textdatas = []
     """
@@ -636,15 +648,17 @@ def get_pdf_text(pdf_file, json_dir, page_count):
     cmd = ['..\\venv\\scripts\\python', 'Fms_Ocrform/sample.py']
     cmd.append(pdf_file)
     cmd.append(jsonfile)
-
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+    )
     # print(f'returncode: {result.returncode},stdout: {result.stdout},stderr: {result.stderr}')
     # print('end'+ ut_get_localtime().strftime('%Y/%m/%d %H:%M:%S'))
     logger.debug(f'get pdf text end {ut_get_localtime().strftime("%Y/%m/%d %H:%M:%S")}')
     if result.returncode == 0:
         if os.path.exists(jsonfile):
             try:
-                with open(jsonfile, 'r', encoding='utf-8') as f:
+                with open(jsonfile, encoding='utf-8') as f:
                     json_str = f.read()
                     if json_str:
                         textdatas = sv_json2textdatas(json_str)
@@ -722,7 +736,7 @@ def get_pdf_text_thread(pdf_file, results):
     page_num = len(pdf_reader.pages)
     page_width = 0
     page_height = 0
- 
+
     for p in pdf_reader.pages:
         p_size = p.mediabox
         p_width = p_size.width
@@ -730,7 +744,7 @@ def get_pdf_text_thread(pdf_file, results):
         page_width = math.ceil(p_width / 72 * 200)
         page_height = math.ceil(p_height / 72 * 200)
         break
-    
+
     textdatas = []
     with open(pdf_file, "rb") as f:
         pdfPages = PDFPage.get_pages(f)
