@@ -26,7 +26,7 @@
           <label for="kbn" class="sr-only">勤務区分:</label>
               <select  id="kbn" name="kbn" required>
           {% for kbn in kbns %}
-              <option  {% if kbn.selected == 1 %} selected="selected" {% endif %} value="{{ kbn.KBN }}">{{  kbn.KBN_NAME }}</option>
+              <option  {% if kbn.selected == 1 %} selected="selected" {% endif %} value="{{ kbn.KBN }}">{{  kbn.kbn_name }}</option>
           {% endfor %}
               </select>
         </p>-->

@@ -36,7 +36,7 @@ def get_int2datestr(date):
 # 日報
 def get_daily_report(obj_emp, year, month):
     report_list = []
-    holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
+    holidays = M_holiday.objects.values_list('holiday_ymd', flat=True).order_by('holiday_ymd')
     cal = calendar.Calendar(firstweekday=6)  # 日曜始まり
     # その月の全ての日、月初や月末の週には前後の月の月末や月初が入ってくることがある
     month_days = cal.itermonthdates(year, month)
@@ -47,18 +47,18 @@ def get_daily_report(obj_emp, year, month):
     #     for day in week:
             target_date = year * 10000 + month * 100 + day.day
             obj_report = T_daily_report.objects. filter(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date).first()
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date).first()
 
             if obj_report != None:
                 # gyomu_yotei = obj_report.GYOMU_YOTEI_TIME
                 # gyomu_jisseki = obj_report.GYOMU_JISEKI_TIME
                 # diff_time = obj_report.GYOMU_YOTEI_TIME
-                report = obj_report.REPORT  # 日報
-                com_LTD_CD = obj_report.COM_LTD_CD  # コメント所属CD
-                com_EMP_ID = obj_report.COM_EMP_ID # コメント社員番号
-                comment = obj_report.COMMENT   # コメント
+                report = obj_report.report  # 日報
+                com_LTD_CD = obj_report.com_ltd_cd  # コメント所属CD
+                com_EMP_ID = obj_report.com_emp_id # コメント社員番号
+                comment = obj_report.comment   # コメント
             else:
                 report=''
                 # gyomu_yotei = ''
@@ -69,11 +69,11 @@ def get_daily_report(obj_emp, year, month):
                 comment = ''
 
             obj_timestamp = T_time_stamp.objects. filter(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date).first()
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date).first()
             if obj_timestamp != None:
-                times = get_times(obj_timestamp.CORRET_START_TIME, obj_timestamp.CORRET_END_TIME, obj_emp.WORK_PAT_CD)
+                times = get_times(obj_timestamp.corret_start_time, obj_timestamp.corret_end_time, obj_emp.work_pat_cd)
                 work_time = times['work_time']
             else:
                 work_time = ''
@@ -103,28 +103,28 @@ def get_today_stamp(number, department, lodgment, employment, manager):
     dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
 
-    q_objects = Q(TARGET_DATE = today)   # 「Q object」複雑な処理を実装できるクエリ
+    q_objects = Q(target_date = today)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
-        q_objects &= Q(EMP_ID=number)
+        q_objects &= Q(emp_id=number)
     if department is not None and department != '':
-        q_objects &= Q(LTD_CD=department)
+        q_objects &= Q(ltd_cd=department)
 
-    queryset = T_time_stamp.objects. filter(q_objects).order_by('LTD_CD', 'EMP_ID')
+    queryset = T_time_stamp.objects. filter(q_objects).order_by('ltd_cd', 'emp_id')
 
     for obj_timestamp in queryset:
-        start = get_date2time_str(obj_timestamp.START_TIME)
-        end = get_date2time_str(obj_timestamp.END_TIME)
-        corret_start = get_date2time_str(obj_timestamp.CORRET_START_TIME)
-        corret_end = get_date2time_str(obj_timestamp.CORRET_END_TIME)
-        kbn = obj_timestamp.KBN
-        work_stat = obj_timestamp.WORK_STAT
+        start = get_date2time_str(obj_timestamp.start_time)
+        end = get_date2time_str(obj_timestamp.end_time)
+        corret_start = get_date2time_str(obj_timestamp.corret_start_time)
+        corret_end = get_date2time_str(obj_timestamp.corret_end_time)
+        kbn = obj_timestamp.kbn
+        work_stat = obj_timestamp.work_stat
         stat = '申請中' if work_stat == 1 else '承認済み' if work_stat == 2 else '申請'
         kbn_name = get_kbn_name(kbn)
 
         try:
             obj_emp = M_emp.objects.get(
-                LTD_CD = obj_timestamp.LTD_CD,
-                EMP_ID = obj_timestamp.EMP_ID,)
+                ltd_cd = obj_timestamp.ltd_cd,
+                emp_id = obj_timestamp.emp_id,)
         except M_emp.DoesNotExist:
             continue
 
@@ -135,8 +135,8 @@ def get_today_stamp(number, department, lodgment, employment, manager):
             'end' : end,
             'corret_start' : corret_start,
             'corret_end' : corret_end,
-            'number' : obj_timestamp.EMP_ID,
-            'name' : obj_emp.EMP_NAME,
+            'number' : obj_timestamp.emp_id,
+            'name' : obj_emp.emp_name,
             'department' : '',
             'lodgment' : '',
             'employment' : '',
@@ -148,26 +148,26 @@ def get_shime_status(year, month, number, department, lodgment, employment, mana
     obj_list = []
     yearmonth = year * 100 + month
 
-    q_objects = Q(TARGET_MONTH = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
+    q_objects = Q(target_month = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
-        q_objects &= Q(EMP_ID=number)
+        q_objects &= Q(emp_id=number)
     if department is not None and department != '':
-        q_objects &= Q(LTD_CD=department)
+        q_objects &= Q(ltd_cd=department)
 
-    queryset = T_getuji_report.objects.filter(q_objects).order_by('LTD_CD', 'EMP_ID')
+    queryset = T_getuji_report.objects.filter(q_objects).order_by('ltd_cd', 'emp_id')
 
     for obj_getuji_report in queryset:
         try:
             obj_emp = M_emp.objects.get(
-                LTD_CD = obj_getuji_report.LTD_CD,
-                EMP_ID = obj_getuji_report.EMP_ID,)
+                ltd_cd = obj_getuji_report.ltd_cd,
+                emp_id = obj_getuji_report.emp_id,)
         except M_emp.DoesNotExist:
             continue
 
         report =({
             'user_id':obj_emp.user_id,
-            'number' : obj_emp.EMP_ID,
-            'name' : obj_emp.EMP_NAME,
+            'number' : obj_emp.emp_id,
+            'name' : obj_emp.emp_name,
             'misinsei' : '0',
             'mati' : '0',
             'sumi' : '0',
@@ -181,26 +181,26 @@ def get_getuji_report(year, month, number, department, lodgment, employment, man
     # dt_now = timezone.localtime()
     yearmonth = year * 100 + month
 
-    q_objects = Q(TARGET_MONTH = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
+    q_objects = Q(target_month = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
-        q_objects &= Q(EMP_ID=number)
+        q_objects &= Q(emp_id=number)
     if department is not None and department != '':
-        q_objects &= Q(LTD_CD=department)
+        q_objects &= Q(ltd_cd=department)
 
-    queryset = T_getuji_report.objects.filter(q_objects).order_by('LTD_CD', 'EMP_ID')
+    queryset = T_getuji_report.objects.filter(q_objects).order_by('ltd_cd', 'emp_id')
     obj_list = list(queryset.values())
     # for rec in obj_list:
     #     obj_emp =M_emp.objects. filter(
-    #             LTD_CD = rec['LTD_CD'],
-    #             EMP_ID = rec['EMP_ID']).first()
-    #    rec['name'] = obj_emp.EMP_NAME
+    #             ltd_cd = rec['ltd_cd'],
+    #             emp_id = rec['emp_id']).first()
+    #    rec['name'] = obj_emp.emp_name
 
     for rec in obj_list:
         try:
             user = M_emp.objects.get(
-                LTD_CD = rec['LTD_CD'],
-                EMP_ID = rec['EMP_ID'],)
-            rec['name'] = user.EMP_NAME
+                ltd_cd = rec['ltd_cd'],
+                emp_id = rec['emp_id'],)
+            rec['name'] = user.emp_name
             rec['user_id'] = user.user_id
         except M_emp.DoesNotExist:
             continue
@@ -213,7 +213,7 @@ def get_holiday_report(year, number, department, lodgment, employment, manager):
 
     report_list = []
 
-    queryset = M_emp.objects.exclude(DEL_FLG=1).order_by('LTD_CD', 'EMP_ID')
+    queryset = M_emp.objects.exclude(del_flg=1).order_by('ltd_cd', 'emp_id')
 
     for rec in queryset:
         month1_list = []
@@ -232,10 +232,10 @@ def get_holiday_report(year, number, department, lodgment, employment, manager):
             else:
                 month = j - 8
                 yearmonth = (year + 1) * 100 + month
-            q_object_getuji = Q(TARGET_MONTH = yearmonth)
-            q_object_getuji &= Q(EMP_ID=rec.EMP_ID)
-            q_object_getuji &= Q(LTD_CD=rec.LTD_CD)
-            obj = T_getuji_report.objects.filter(q_object_getuji).order_by('LTD_CD', 'EMP_ID').first()
+            q_object_getuji = Q(target_month = yearmonth)
+            q_object_getuji &= Q(emp_id=rec.emp_id)
+            q_object_getuji &= Q(ltd_cd=rec.ltd_cd)
+            obj = T_getuji_report.objects.filter(q_object_getuji).order_by('ltd_cd', 'emp_id').first()
             month1 =({
                     'day11' : 0,
                     'day12' : 0,
@@ -248,21 +248,21 @@ def get_holiday_report(year, number, department, lodgment, employment, manager):
             if obj != None:
                 month2 =({
                     'month': month,
-                    'day11' : obj.KEKKIN_COUNT,
-                    'day12' : obj.HOLIDAY_COUNT,
-                    'day13' : obj.YUKYU_COUNT,
-                    'day14' : obj.KAKIKYU_COUNT,
-                    'day15' : obj.FURIKYU_COUNT,
-                    'day16' : obj.DAIKYU_COUNT,
-                    'day17' : obj.TOKUKYU_COUNT,
+                    'day11' : obj.kekkin_count,
+                    'day12' : obj.holiday_count,
+                    'day13' : obj.yukyu_count,
+                    'day14' : obj.kakikyu_count,
+                    'day15' : obj.furikyu_count,
+                    'day16' : obj.daikyu_count,
+                    'day17' : obj.tokukyu_count,
                     })
-                sum11 += int(obj.KEKKIN_COUNT)
-                sum12 += int(obj.HOLIDAY_COUNT)
-                sum13 += int(obj.YUKYU_COUNT)
-                sum14 += int(obj.KAKIKYU_COUNT)
-                sum15 += int(obj.FURIKYU_COUNT)
-                sum16 += int(obj.DAIKYU_COUNT)
-                sum17 += int(obj.TOKUKYU_COUNT)
+                sum11 += int(obj.kekkin_count)
+                sum12 += int(obj.holiday_count)
+                sum13 += int(obj.yukyu_count)
+                sum14 += int(obj.kakikyu_count)
+                sum15 += int(obj.furikyu_count)
+                sum16 += int(obj.daikyu_count)
+                sum17 += int(obj.tokukyu_count)
             else:
                 month2 =({
                     'month': month,
@@ -301,7 +301,7 @@ def get_holiday_report(year, number, department, lodgment, employment, manager):
 
         report =({
             'user_id': rec.user_id,
-            'name' : rec.EMP_NAME,
+            'name' : rec.emp_name,
             'yotei' : month1_list,
             'jisseki' : month2_list,
          })
@@ -312,13 +312,13 @@ def get_holiday_report(year, number, department, lodgment, employment, manager):
 def get_output_month(year, month, number, department, lodgment, employment, manager):
     yearmonth = year * 100 + month
 
-    q_objects = Q(TARGET_MONTH = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
+    q_objects = Q(target_month = yearmonth)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
-        q_objects &= Q(EMP_ID=number)
+        q_objects &= Q(emp_id=number)
     if department is not None and department != '':
-        q_objects &= Q(LTD_CD=department)
+        q_objects &= Q(ltd_cd=department)
 
-    queryset = M_emp.objects.filter().order_by('LTD_CD', 'EMP_ID')
+    queryset = M_emp.objects.filter().order_by('ltd_cd', 'emp_id')
     return queryset
 
 
@@ -340,15 +340,15 @@ def get_csv_list(obj_emp, year, month, type):
     #     if month != dt_now.month:
     #         date = year * 10000 + month * 100 + calendar.monthrange(year, month)[1]
     #     obj_getuji = T_getuji_kintai.objects.get(
-    #         LTD_CD = obj_emp.LTD_CD,
-    #         EMP_ID = obj_emp.EMP_ID,
-    #         TARGET_DATE = date,)
+    #         ltd_cd = obj_emp.ltd_cd,
+    #         emp_id = obj_emp.emp_id,
+    #         target_date = date,)
     # except T_getuji_kintai.DoesNotExist:
     #     return csv_list
 
     dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
-    holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
+    holidays = M_holiday.objects.values_list('holiday_ymd', flat=True).order_by('holiday_ymd')
 
     for day in month_days:
         if day.month == month:  # 前後月の日付は除外
@@ -358,17 +358,17 @@ def get_csv_list(obj_emp, year, month, type):
             else:
                 holiday=False
             obj_timestamp = T_time_stamp.objects. filter(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date).first()
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date).first()
             if obj_timestamp != None:
-                start = get_date2time_str(obj_timestamp.START_TIME)
-                end = get_date2time_str(obj_timestamp.END_TIME)
-                corret_start = get_date2time_str(obj_timestamp.CORRET_START_TIME)
-                corret_end = get_date2time_str(obj_timestamp.CORRET_END_TIME)
-                kbn = obj_timestamp.KBN
-                work_stat = obj_timestamp.WORK_STAT
-                times = get_times(obj_timestamp.CORRET_START_TIME,obj_timestamp.CORRET_END_TIME,obj_emp.WORK_PAT_CD)
+                start = get_date2time_str(obj_timestamp.start_time)
+                end = get_date2time_str(obj_timestamp.end_time)
+                corret_start = get_date2time_str(obj_timestamp.corret_start_time)
+                corret_end = get_date2time_str(obj_timestamp.corret_end_time)
+                kbn = obj_timestamp.kbn
+                work_stat = obj_timestamp.work_stat
+                times = get_times(obj_timestamp.corret_start_time,obj_timestamp.corret_end_time,obj_emp.work_pat_cd)
             else:
                 start = ''
                 end = ''
@@ -384,9 +384,9 @@ def get_csv_list(obj_emp, year, month, type):
             kbn_name = get_kbn_name(kbn)
             try:
                 obj_request = T_request.objects.get(
-                    LTD_CD = obj_emp.LTD_CD,
-                    EMP_ID = obj_emp.EMP_ID,
-                    TARGET_DATE = target_date,)
+                    ltd_cd = obj_emp.ltd_cd,
+                    emp_id = obj_emp.emp_id,
+                    target_date = target_date,)
             except T_request.DoesNotExist:
                 obj_request = None
 
@@ -396,30 +396,30 @@ def get_csv_list(obj_emp, year, month, type):
                 comment = ''
                 work_stat = 0
             else:
-                expenses = obj_request.EXPENSES
-                memo = obj_request.MEMO
-                comment = obj_request.AGREE_COMMENT
-                work_stat = obj_request.WORK_STAT
+                expenses = obj_request.expenses
+                memo = obj_request.memo
+                comment = obj_request.agree_comment
+                work_stat = obj_request.work_stat
             # stat = '申請中' if work_stat == 1 else '承認済み' if work_stat == 2 else '申請',
 
             queryset=T_request_rest.objects.filter(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date).order_by('REST_NO')
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date).order_by('rest_no')
             rest_list = list(queryset.values())
             rest1_start = ''
             rest1_end = ''
             rest2_start = ''
             rest2_end = ''
             for i,rec in enumerate(rest_list):
-                rec['REST_START_TIME'] = get_date2time_str(rec['REST_START_TIME'])
-                rec['REST_END_TIME'] = get_date2time_str(rec['REST_END_TIME'])
+                rec['rest_start_time'] = get_date2time_str(rec['rest_start_time'])
+                rec['rest_end_time'] = get_date2time_str(rec['rest_end_time'])
                 if i == 0:
-                    rest1_start = rec['REST_START_TIME']
-                    rest1_end = rec['REST_END_TIME']
+                    rest1_start = rec['rest_start_time']
+                    rest1_end = rec['rest_end_time']
                 if i == 1:
-                    rest2_start = rec['REST_START_TIME']
-                    rest2_end = rec['REST_END_TIME']
+                    rest2_start = rec['rest_start_time']
+                    rest2_end = rec['rest_end_time']
             if type == 1:
                 td = str(year) + '/' + str(month) + '/' + str(day.day)    # CSV
             else:
@@ -427,9 +427,9 @@ def get_csv_list(obj_emp, year, month, type):
 
             data =({
                 'date' : td,
-                'userid' : obj_emp.EMP_ID,
-                'number': obj_emp.EMP_ID,
-                'name' : obj_emp.EMP_NAME,
+                'userid' : obj_emp.emp_id,
+                'number': obj_emp.emp_id,
+                'name' : obj_emp.emp_name,
                 'kbn' : kbn,
                 'kbn_name' : kbn_name,
                 'start' : start,
@@ -442,10 +442,10 @@ def get_csv_list(obj_emp, year, month, type):
                 'comment' : comment,
                 'work_stat' : work_stat,
                 'stat' : stat,
-                'rest1_start' : rest_list[0]['REST_START_TIME'] if 0 < len(rest_list) else '',
-                'rest1_end' : rest_list[0]['REST_END_TIME'] if 0 < len(rest_list) else '',
-                'rest2_start' : rest_list[1]['REST_START_TIME'] if 1 < len(rest_list) else '',
-                'rest2_end' : rest_list[1]['REST_START_TIME'] if 1 < len(rest_list) else '',
+                'rest1_start' : rest_list[0]['rest_start_time'] if 0 < len(rest_list) else '',
+                'rest1_end' : rest_list[0]['rest_end_time'] if 0 < len(rest_list) else '',
+                'rest2_start' : rest_list[1]['rest_start_time'] if 1 < len(rest_list) else '',
+                'rest2_end' : rest_list[1]['rest_start_time'] if 1 < len(rest_list) else '',
                 'rest_list' : rest_list,
                 })
             csv_list.append(data)
@@ -455,7 +455,7 @@ def get_pdf_list(obj_emp, year, month):
     pdf_list = []
     dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
-    holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
+    holidays = M_holiday.objects.values_list('holiday_ymd', flat=True).order_by('holiday_ymd')
 
     cal = calendar.Calendar(firstweekday=6)  # 日曜始まり
     # その月の全ての日、月初や月末の週には前後の月の月末や月初が入ってくることがある
@@ -469,17 +469,17 @@ def get_pdf_list(obj_emp, year, month):
             else:
                 holiday=False
             obj_timestamp = T_time_stamp.objects. filter(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date).first()
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date).first()
             if obj_timestamp != None:
-                start = get_date2time_str(obj_timestamp.START_TIME)
-                end = get_date2time_str(obj_timestamp.END_TIME)
-                corret_start = get_date2time_str(obj_timestamp.CORRET_START_TIME)
-                corret_end = get_date2time_str(obj_timestamp.CORRET_END_TIME)
-                kbn = obj_timestamp.KBN
-                work_stat = obj_timestamp.WORK_STAT
-                times = get_times(obj_timestamp.CORRET_START_TIME,obj_timestamp.CORRET_END_TIME,obj_emp.WORK_PAT_CD)
+                start = get_date2time_str(obj_timestamp.start_time)
+                end = get_date2time_str(obj_timestamp.end_time)
+                corret_start = get_date2time_str(obj_timestamp.corret_start_time)
+                corret_end = get_date2time_str(obj_timestamp.corret_end_time)
+                kbn = obj_timestamp.kbn
+                work_stat = obj_timestamp.work_stat
+                times = get_times(obj_timestamp.corret_start_time,obj_timestamp.corret_end_time,obj_emp.work_pat_cd)
             else:
                 start = ''
                 end = ''
@@ -495,9 +495,9 @@ def get_pdf_list(obj_emp, year, month):
             kbn_name = get_kbn_name(kbn)
             try:
                 obj_request = T_request.objects.get(
-                    LTD_CD = obj_emp.LTD_CD,
-                    EMP_ID = obj_emp.EMP_ID,
-                    TARGET_DATE = target_date,)
+                    ltd_cd = obj_emp.ltd_cd,
+                    emp_id = obj_emp.emp_id,
+                    target_date = target_date,)
             except T_request.DoesNotExist:
                 obj_request = None
 
@@ -507,37 +507,37 @@ def get_pdf_list(obj_emp, year, month):
                 comment = ''
                 work_stat = 0
             else:
-                expenses = obj_request.EXPENSES
-                memo = obj_request.MEMO
-                comment = obj_request.AGREE_COMMENT
-                work_stat = obj_request.WORK_STAT
+                expenses = obj_request.expenses
+                memo = obj_request.memo
+                comment = obj_request.agree_comment
+                work_stat = obj_request.work_stat
             # stat = '申請中' if work_stat == 1 else '承認済み' if work_stat == 2 else '申請',
 
             queryset=T_request_rest.objects.filter(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date).order_by('REST_NO')
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date).order_by('rest_no')
             rest_list = list(queryset.values())
             rest1_start = ''
             rest1_end = ''
             rest2_start = ''
             rest2_end = ''
             for i,rec in enumerate(rest_list):
-                rec['REST_START_TIME'] = get_date2time_str(rec['REST_START_TIME'])
-                rec['REST_END_TIME'] = get_date2time_str(rec['REST_END_TIME'])
+                rec['rest_start_time'] = get_date2time_str(rec['rest_start_time'])
+                rec['rest_end_time'] = get_date2time_str(rec['rest_end_time'])
                 if i == 0:
-                    rest1_start = rec['REST_START_TIME']
-                    rest1_end = rec['REST_END_TIME']
+                    rest1_start = rec['rest_start_time']
+                    rest1_end = rec['rest_end_time']
                 if i == 1:
-                    rest2_start = rec['REST_START_TIME']
-                    rest2_end = rec['REST_END_TIME']
+                    rest2_start = rec['rest_start_time']
+                    rest2_end = rec['rest_end_time']
             td = str(day.day).zfill(2) + '  ' + MonthCalendarMixin.week_names[day.weekday()]
 
             data =({
                 'date' : td,
-                'userid' : obj_emp.EMP_ID,
-                'number': obj_emp.EMP_ID,
-                'name' : obj_emp.EMP_NAME,
+                'userid' : obj_emp.emp_id,
+                'number': obj_emp.emp_id,
+                'name' : obj_emp.emp_name,
                 'kbn' : kbn,
                 'kbn_name' : kbn_name,
                 'start' : start,
@@ -550,10 +550,10 @@ def get_pdf_list(obj_emp, year, month):
                 'comment' : comment,
                 'work_stat' : work_stat,
                 'stat' : stat,
-                'rest1_start' : rest_list[0]['REST_START_TIME'] if 0 < len(rest_list) else '',
-                'rest1_end' : rest_list[0]['REST_END_TIME'] if 0 < len(rest_list) else '',
-                'rest2_start' : rest_list[1]['REST_START_TIME'] if 1 < len(rest_list) else '',
-                'rest2_end' : rest_list[1]['REST_START_TIME'] if 1 < len(rest_list) else '',
+                'rest1_start' : rest_list[0]['rest_start_time'] if 0 < len(rest_list) else '',
+                'rest1_end' : rest_list[0]['rest_end_time'] if 0 < len(rest_list) else '',
+                'rest2_start' : rest_list[1]['rest_start_time'] if 1 < len(rest_list) else '',
+                'rest2_end' : rest_list[1]['rest_start_time'] if 1 < len(rest_list) else '',
                 'rest_list' : rest_list,
                 })
             pdf_list.append(data)
@@ -564,26 +564,26 @@ def get_paid_holiday_list(obj_emp, year, kbn):
     lists = []
     if not obj_emp:
         return lists
-    q_objects = Q(LTD_CD=obj_emp.LTD_CD)   # 「Q object」複雑な処理を実装できるクエリ
-    q_objects &= Q(EMP_ID=obj_emp.EMP_ID)
-    q_objects &= Q(KBN=kbn)
+    q_objects = Q(ltd_cd=obj_emp.ltd_cd)   # 「Q object」複雑な処理を実装できるクエリ
+    q_objects &= Q(emp_id=obj_emp.emp_id)
+    q_objects &= Q(kbn=kbn)
     start_td = year * 10000 + 401
     end_td = (year + 1) * 10000 + 331
     q_objects &= Q(TARGET_DATE__range=(start_td, end_td))
 
-    timestamps = T_time_stamp.objects.filter(q_objects).order_by('EMP_ID', 'TARGET_DATE')
+    timestamps = T_time_stamp.objects.filter(q_objects).order_by('emp_id', 'target_date')
     try:
         obj_yukyu = M_yukyu.objects.get(
-            LTD_CD = obj_emp.LTD_CD,
-            EMP_ID = obj_emp.EMP_ID,
-            NENDO = year,)
+            ltd_cd = obj_emp.ltd_cd,
+            emp_id = obj_emp.emp_id,
+            nendo = year,)
     except M_yukyu.DoesNotExist:
         obj_yukyu = None
     if obj_yukyu:
-        new_count = obj_yukyu.NEW_COUNT or 0    # 当年度付与数
-        carry_over = obj_yukyu.CARRY_OVER or 0  # 前年繰越日数
-        all_count = obj_yukyu.ALL_COUNT or 0    # 当年度総数
-        used_count = obj_yukyu.USED_COUNT or 0  # 当年度取得数
+        new_count = obj_yukyu.new_count or 0    # 当年度付与数
+        carry_over = obj_yukyu.carry_over or 0  # 前年繰越日数
+        all_count = obj_yukyu.all_count or 0    # 当年度総数
+        used_count = obj_yukyu.used_count or 0  # 当年度取得数
     else:
         new_count = 0
         carry_over = 0
@@ -606,14 +606,14 @@ def get_paid_holiday_list(obj_emp, year, kbn):
     lists.append(data)
     count = 0
     for obj_timestamp in timestamps:
-        name = obj_emp.EMP_NAME
+        name = obj_emp.emp_name
         user_id = obj_emp.user_id
-        kbn = obj_timestamp.KBN
+        kbn = obj_timestamp.kbn
         kbn_name = get_kbn_name(kbn)
         all_count -= 1
         count += 1
         data = ({
-            'date' : obj_timestamp.TARGET_DATE,   # 日付
+            'date' : obj_timestamp.target_date,   # 日付
             'carry_over' : '',    # 繰越
             'new_count' : '',  # 付与
             'used_count' : 1,    # 取得
@@ -640,9 +640,9 @@ def get_yukyu(obj_emp, year, kbn):
         return None
     try:
         obj_yukyu = M_yukyu.objects.get(
-            LTD_CD = obj_emp.LTD_CD,
-            EMP_ID = obj_emp.EMP_ID,
-            NENDO = year,)
+            ltd_cd = obj_emp.ltd_cd,
+            emp_id = obj_emp.emp_id,
+            nendo = year,)
     except M_yukyu.DoesNotExist:
         obj_yukyu = None
     return obj_yukyu

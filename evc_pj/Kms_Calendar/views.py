@@ -334,7 +334,7 @@ def is_holiday(day):
     return is_holiday
     # # 休日マスタで休日チェック
     # date = day.year * 10000 + day.month * 100 + day.day
-    # if M_holiday.objects.filter(HOLIDAY_YMD=date).exists():
+    # if M_holiday.objects.filter(holiday_ymd=date).exists():
     #     return True
     # return False
 

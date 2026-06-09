@@ -132,9 +132,9 @@ def create_pdf(response, year, month, pdf_list, getuji, emp_id, emp_name):
                 ["法定外休日出勤日数",""],["法定休日出勤日数",""],
                 ["欠勤日数",""],["遅刻日数",""],["早退日数",""]]
     else:
-        data = [["所定日数",getuji['SHOTEI_COUNT']],["出勤日数",getuji['WORK_COUNT']],
-                ["法定外休日出勤日数",getuji['HOTEIGAI_WORK_COUNT']],["法定休日出勤日数",getuji['HOTEI_WORK_COUNT']],
-                ["欠勤日数",getuji['KEKKIN_COUNT']],["遅刻日数",getuji['LATE_COUNT']],["早退日数",getuji['EARLY_COUNT']]
+        data = [["所定日数",getuji['shotei_count']],["出勤日数",getuji['work_count']],
+                ["法定外休日出勤日数",getuji['hoteigai_work_count']],["法定休日出勤日数",getuji['hotei_work_count']],
+                ["欠勤日数",getuji['kekkin_count']],["遅刻日数",getuji['late_count']],["早退日数",getuji['early_count']]
                 ]
 
     table = Table(
@@ -164,14 +164,14 @@ def create_pdf(response, year, month, pdf_list, getuji, emp_id, emp_name):
                 ["所定不足時間",""],
                 ]
     else:
-        data = [["総労働時間",getuji['ALL_WORK_TIME']],["実労時間",getuji['JITU_WORK_TIME']],
-                ["所定時間",getuji['SHOTEI_TIME']],["所定内労働時間",getuji['SHOTEINAI_WORK_TIME']],
-                ["残業時間",getuji['OVERTIME_TIME']],["法定内時間外労働時間",getuji['SHOTEI_COUNT']],
-                ["法定時間外労働時間",getuji['HOTEINAI_OVER_TIME']],
-                ["法定外休日労働時間",getuji['HOTEIGAIKYU_TIME']],["法定休日労働時間",getuji['HOTEIKYU_TIME']],
-                ["深夜労働時間",getuji['MIDNIGHT_TIME']],
-                ["遅刻時間",getuji['LATE_TIME']],["早退時間",getuji['EARLY_TIME']],
-                ["所定不足時間",getuji['SHOTEI_LESS_TIME']],
+        data = [["総労働時間",getuji['all_work_time']],["実労時間",getuji['jitu_work_time']],
+                ["所定時間",getuji['shotei_time']],["所定内労働時間",getuji['shoteinai_work_time']],
+                ["残業時間",getuji['overtime_time']],["法定内時間外労働時間",getuji['shotei_count']],
+                ["法定時間外労働時間",getuji['hoteinai_over_time']],
+                ["法定外休日労働時間",getuji['hoteigaikyu_time']],["法定休日労働時間",getuji['hoteikyu_time']],
+                ["深夜労働時間",getuji['midnight_time']],
+                ["遅刻時間",getuji['late_time']],["早退時間",getuji['early_time']],
+                ["所定不足時間",getuji['shotei_less_time']],
                 ]
     table = Table(
         data,
@@ -198,11 +198,11 @@ def create_pdf(response, year, month, pdf_list, getuji, emp_id, emp_name):
                 ["代休日数",""],["本日までの代休残数",""],["特別休暇日数",""],
             ]
     else:
-        data = [["公休日数",getuji['HOLIDAY_COUNT']],["有給休暇日数",getuji['YUKYU_COUNT']],
-                ["本日までの有給休暇残数",getuji['YUKYU_ZAN_COUNT']],["夏季休暇日数",getuji['KAKIKYU_COUNT']],
-                ["本日までの夏季休暇残数",getuji['KAKIKYU_ZAN_COUNT']],["振替休日日数",getuji['FURIKYU_COUNT']],
-                ["本日までの振替休日残数",getuji['FURIKYU_ZAN_COUNT']],
-                ["代休日数",getuji['DAIKYU_COUNT']],["本日までの代休残数",getuji['DAIKYU_ZAN_COUNT']],["特別休暇日数",getuji['TOKUKYU_COUNT']],
+        data = [["公休日数",getuji['holiday_count']],["有給休暇日数",getuji['yukyu_count']],
+                ["本日までの有給休暇残数",getuji['yukyu_zan_count']],["夏季休暇日数",getuji['kakikyu_count']],
+                ["本日までの夏季休暇残数",getuji['kakikyu_zan_count']],["振替休日日数",getuji['furikyu_count']],
+                ["本日までの振替休日残数",getuji['furikyu_zan_count']],
+                ["代休日数",getuji['daikyu_count']],["本日までの代休残数",getuji['daikyu_zan_count']],["特別休暇日数",getuji['tokukyu_count']],
             ]
     table = Table(
         data,
@@ -223,7 +223,7 @@ def create_pdf(response, year, month, pdf_list, getuji, emp_id, emp_name):
     if getuji == None:
         data = [["有休",""],["夏休",""]]
     else:
-        data = [["有休",getuji['MONTH_YUKYU_COUNT']],["夏休",getuji['MONTH_KAKIKYU_COUNT']]]
+        data = [["有休",getuji['month_yukyu_count']],["夏休",getuji['month_kakikyu_count']]]
 
     table = Table(
         data,

@@ -48,13 +48,13 @@
                 </th>
                 <td>
                   <p>
-                    {{ form.CORRET_START_TIME }}
+                    {{ form.corret_start_time }}
                     {{ form.START_TIME }}
                     &nbsp;
                     ~
                     &nbsp;
-                    {{ form.CORRET_END_TIME }}
-                    {{ form.END_TIME }}
+                    {{ form.corret_end_time }}
+                    {{ form.end_time }}
                     &nbsp;
                     <input type="checkbox" name="next_day_end" id="next_day_end" value="1"  {% if end_next_flg == 1 %} checked {% endif %}/>
                     <label for="next_day_end">翌日</label>
@@ -67,15 +67,15 @@
                 <th>休憩{{ forloop.counter }}</th>
                 <td>
                   <span>
-                    <input maxlength="5" size="5" type="text" value="{{ rest.REST_START_TIME }}" name="rest_start" id="rest_{{ forloop.counter }}_start" />
+                    <input maxlength="5" size="5" type="text" value="{{ rest.rest_start_time }}" name="rest_start" id="rest_{{ forloop.counter }}_start" />
                     &nbsp;
-                    <input type="checkbox" name="rest_start_chk" id="next_day_rest_{{ forloop.counter }}_start" value="{{ forloop.counter }}" {% if rest.REST_START_NEXT_FLG == 1 %} checked {% endif %}/>
+                    <input type="checkbox" name="rest_start_chk" id="next_day_rest_{{ forloop.counter }}_start" value="{{ forloop.counter }}" {% if rest.rest_start_next_flg == 1 %} checked {% endif %}/>
                     <label for="next_day_rest_{{ forloop.counter }}_start">翌日</label>
                     ~
                     &nbsp;
-                    <input maxlength="5" size="5" type="text" value="{{ rest.REST_END_TIME }}" name="rest_end" id="rest_{{ forloop.counter }}_end" />
+                    <input maxlength="5" size="5" type="text" value="{{ rest.rest_end_time }}" name="rest_end" id="rest_{{ forloop.counter }}_end" />
                     &nbsp;
-                    <input type="checkbox" name="rest_end_chk" id="next_day_rest_{{ forloop.counter }}_end" value="{{ forloop.counter }}" {% if rest.REST_END_NEXT_FLG == 1 %} checked {% endif %}/>
+                    <input type="checkbox" name="rest_end_chk" id="next_day_rest_{{ forloop.counter }}_end" value="{{ forloop.counter }}" {% if rest.rest_end_next_flg == 1 %} checked {% endif %}/>
                     <label for="next_day_rest_{{ forloop.counter }}_end">翌日</label>
                     {%if forloop.last %}
                     <button id="add_extra_rest" type="button" class="btn-image add-extra-rest" >追加</button>
@@ -124,15 +124,15 @@
               </tr>
               <tr>
                 <th>経費</th>
-                <td>{{ form2.EXPENSES }}</td>
+                <td>{{ form2.expenses }}</td>
               </tr>
               <tr>
                 <th>備考</th>
-                <td>{{ form2.MEMO }}</td>
+                <td>{{ form2.memo }}</td>
               </tr>
               <tr>
                 <th>所属長コメント</th>
-                <td>{{ form2.AGREE_COMMENT }}</td>
+                <td>{{ form2.agree_comment }}</td>
               </tr>
               <tr>
                 <th>申請承認</th>

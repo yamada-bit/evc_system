@@ -45,7 +45,7 @@ from Kms_Attendance.commons.utils_report import (
 from Kms_Attendance.forms import DailyReportEditForm, PaidHolidayEditForm
 from Kms_Attendance.models import M_emp, M_yukyu, T_daily_report, T_getuji_report
 
-from .models import Company, Employee
+# from .models import Company, Employee
 
 logger = logging.getLogger(__name__)
 
@@ -67,15 +67,15 @@ class PaidHoliday(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         user_id = self.request.session.get('user_id', self.request.user.user_id)
 
         year = self.kwargs.get('year')
-        KBN = 2#self.request.POST.get('paid_holiday')
+        kbn = 2#self.request.POST.get('paid_holiday')
         if not year:
             dt_today = ut_get_localtoday()
             year = dt_today.year
         try:
             obj_emp = M_emp.objects.get(user_id=user_id)
-            username = obj_emp.EMP_NAME
-            emp_id = obj_emp.EMP_ID
-            joined_date = get_int2datestr(obj_emp.JOINED_DATE)
+            username = obj_emp.emp_name
+            emp_id = obj_emp.emp_id
+            joined_date = get_int2datestr(obj_emp.joined_date)
         except M_emp.DoesNotExist:
             obj_emp = None
             username = ''
@@ -84,9 +84,9 @@ class PaidHoliday(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         if obj_emp != None:
             try:
                 obj_yukyu = M_yukyu.objects.get(
-                    LTD_CD = obj_emp.LTD_CD,
-                    EMP_ID = obj_emp.EMP_ID,
-                    NENDO = year,)
+                    ltd_cd = obj_emp.ltd_cd,
+                    emp_id = obj_emp.emp_id,
+                    nendo = year,)
             except M_yukyu.DoesNotExist:
                 obj_yukyu = None
         else:
@@ -99,16 +99,16 @@ class PaidHoliday(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         employment = self.request.GET.get('employment', '')
         manager = self.request.GET.get('manager', '')
         if obj_yukyu:
-            new_count = obj_yukyu.NEW_COUNT
-            carry_over = obj_yukyu.CARRY_OVER
-            all_count = obj_yukyu.ALL_COUNT
-            used_count = obj_yukyu.USED_COUNT
+            new_count = obj_yukyu.new_count
+            carry_over = obj_yukyu.carry_over
+            all_count = obj_yukyu.all_count
+            used_count = obj_yukyu.used_count
         else:
             new_count = 0
             carry_over = 0
             all_count = 0
             used_count = 0
-        lists = get_paid_holiday_list(obj_emp, year, KBN)
+        lists = get_paid_holiday_list(obj_emp, year, kbn)
         years = [i for i in range(year, year + 3)]
         context.update({
             'target_year': year,
@@ -139,16 +139,16 @@ class PaidHolidayEdit(LoginRequiredMixin, TemplateView):
         year = self.kwargs.get('year')
         try:
             obj_emp = M_emp.objects.get(user_id=user_id)
-            username = obj_emp.EMP_NAME
+            username = obj_emp.emp_name
         except M_emp.DoesNotExist:
             obj_emp = None
             username = ''
         if obj_emp != None:
             try:
                 obj_yukyu = M_yukyu.objects.get(
-                    LTD_CD = obj_emp.LTD_CD,
-                    EMP_ID = obj_emp.EMP_ID,
-                    NENDO = year,)
+                    ltd_cd = obj_emp.ltd_cd,
+                    emp_id = obj_emp.emp_id,
+                    nendo = year,)
             except M_yukyu.DoesNotExist:
                 obj_yukyu = None
         else:
@@ -156,7 +156,7 @@ class PaidHolidayEdit(LoginRequiredMixin, TemplateView):
         # if obj_yukyu == None:
         #     report = ''
         # else:
-        #     report = obj_yukyu.REPORT
+        #     report = obj_yukyu.report
         # td = datetime.datetime(year, month, day)
         context.update({
             'year': year,
@@ -164,16 +164,16 @@ class PaidHolidayEdit(LoginRequiredMixin, TemplateView):
             # 'today': td.strftime('%Y/%m/%d'),
             'username': username
             })
-        KBN = 2
-        obj_yukyu = get_yukyu(obj_emp, year, KBN)
+        kbn = 2
+        obj_yukyu = get_yukyu(obj_emp, year, kbn)
 
         initial_dict = dict(
-            EMP_ID = obj_yukyu.EMP_ID,
-            NENDO = obj_yukyu.NENDO,
-            NEW_COUNT = obj_yukyu.NEW_COUNT,
-            CARRY_OVER = obj_yukyu.CARRY_OVER,
-            ALL_COUNT = obj_yukyu.ALL_COUNT,
-            USED_COUNT = obj_yukyu.USED_COUNT,
+            emp_id = obj_yukyu.emp_id,
+            nendo = obj_yukyu.nendo,
+            new_count = obj_yukyu.new_count,
+            carry_over = obj_yukyu.carry_over,
+            all_count = obj_yukyu.all_count,
+            used_count = obj_yukyu.used_count,
             )
         form = PaidHolidayEditForm(None, initial=initial_dict)
         context['form'] = form
@@ -192,31 +192,31 @@ class PaidHolidayEdit(LoginRequiredMixin, TemplateView):
             # return HttpResponseRedirect(referer)
             redirect_url = reverse('Kms_Attendance:paid_holiday', kwargs={'year':year,'mode':1})
             return redirect(redirect_url)
-        ltd_cd = request.POST.get('LTD_CD')
-        emp_id = request.POST.get('EMP_ID')
-        target_date = request.POST.get('NENDO')
+        ltd_cd = request.POST.get('ltd_cd')
+        emp_id = request.POST.get('emp_id')
+        target_date = request.POST.get('nendo')
         id = request.POST.get('id')
         if ltd_cd != None and ltd_cd != '' and emp_id != None and emp_id != '':
             obj_yukyu,created= M_yukyu.objects.get_or_create(
-                    LTD_CD = ltd_cd,
-                    EMP_ID = emp_id,
-                    NENDO = year,
+                    ltd_cd = ltd_cd,
+                    emp_id = emp_id,
+                    nendo = year,
                     defaults = dict(
                         id = id,
                     ),
             )
             if created:
-                obj_yukyu.INS_DATE = ut_get_timezone_now()
-                obj_yukyu.INS_ID = emp_id
-                obj_yukyu.DEL_FLG = 0
+                obj_yukyu.ins_date = ut_get_timezone_now()
+                obj_yukyu.ins_id = emp_id
+                obj_yukyu.del_flg = 0
             else:
-                ins_date = ut_get_localdate(obj_yukyu.INS_DATE)
-                obj_yukyu.INS_DATE = ins_date or ut_get_timezone_now()
-            obj_yukyu.UPDATE_DATE = ut_get_timezone_now()
-            obj_yukyu.UPDATE_ID = emp_id
+                ins_date = ut_get_localdate(obj_yukyu.ins_date)
+                obj_yukyu.ins_date = ins_date or ut_get_timezone_now()
+            obj_yukyu.update_date = ut_get_timezone_now()
+            obj_yukyu.update_id = emp_id
 
             # obj_yukyu.GYOMU = request.POST('GYOMU')
-            # obj_yukyu.REPORT = request.POST.get('REPORT')
+            # obj_yukyu.report = request.POST.get('report')
             # obj_yukyu.GYOMU_YOTEI_TIME = request.POST('GYOMU_YOTEI_TIME')
             # obj_yukyu.GYOMU_JISEKI_TIME = request.POST('GYOMU_JISEKI_TIME')
             comment = '登録しました！'
@@ -235,7 +235,7 @@ class Report(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         try:
             obj_emp = M_emp.objects.get(user_id = self.request.user.user_id)  # プライマリーキー検索
-            context['name'] = obj_emp.EMP_NAME
+            context['name'] = obj_emp.emp_name
         except M_emp.DoesNotExist:      # getはデータなしの例外が発生する
             pass
         context['process_title'] = 'レポート'
@@ -351,7 +351,7 @@ class ReportDaily(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
             obj_emp = M_emp.objects.get(user_id = self.request.user.user_id)
             # 日報
             lists = get_daily_report(obj_emp, year, month)
-            username = obj_emp.EMP_NAME
+            username = obj_emp.emp_name
         except M_emp.DoesNotExist:
             lists=[]
 
@@ -395,9 +395,9 @@ class ReportDailyList(LoginRequiredMixin, TemplateView):
         if obj_emp != None:
             try:
                 obj_report = T_daily_report.objects.get(
-                    LTD_CD = obj_emp.LTD_CD,
-                    EMP_ID = obj_emp.EMP_ID,
-                    TARGET_DATE = date,)
+                    ltd_cd = obj_emp.ltd_cd,
+                    emp_id = obj_emp.emp_id,
+                    target_date = date,)
             except T_daily_report.DoesNotExist:
                 obj_report = None
         else:
@@ -411,7 +411,7 @@ class ReportDailyList(LoginRequiredMixin, TemplateView):
             # gyomu = ''
             report=''
         else:
-            report = obj_report.REPORT
+            report = obj_report.report
             # gyomu_yotei = obj_report.GYOMU_YOTEI_TIME
             # gyomu_jisseki = obj_report.GYOMU_JISEKI_TIME
             # torihikisaki = obj_report.TORIHIKISAKI
@@ -442,16 +442,16 @@ class ReportDailyEdit(LoginRequiredMixin, TemplateView):
         date = year * 10000 + month * 100 + day
         try:
             obj_emp = M_emp.objects.get(user_id=user_id)
-            username = obj_emp.EMP_NAME
+            username = obj_emp.emp_name
         except M_emp.DoesNotExist:
             obj_emp = None
             username = ''
         if obj_emp != None:
             try:
                 obj_report = T_daily_report.objects.get(
-                    LTD_CD = obj_emp.LTD_CD,
-                    EMP_ID = obj_emp.EMP_ID,
-                    TARGET_DATE = date,)
+                    ltd_cd = obj_emp.ltd_cd,
+                    emp_id = obj_emp.emp_id,
+                    target_date = date,)
             except T_daily_report.DoesNotExist:
                 obj_report = None
         else:
@@ -472,10 +472,10 @@ class ReportDailyEdit(LoginRequiredMixin, TemplateView):
             # torihikisaki = obj_report.TORIHIKISAKI
             # project = obj_report.PROJECT
             # gyomu = obj_report.GYOMU
-            report = obj_report.REPORT
-            com_ltd_cd = obj_report.COM_LTD_CD
-            com_emp_id = obj_report.COM_EMP_ID
-            comment=obj_report.COMMENT
+            report = obj_report.report
+            com_ltd_cd = obj_report.com_ltd_cd
+            com_emp_id = obj_report.com_emp_id
+            comment=obj_report.comment
         td = datetime.datetime(year, month, day)
         context.update({
             'year': year,
@@ -487,19 +487,19 @@ class ReportDailyEdit(LoginRequiredMixin, TemplateView):
             })
 
         initial_dict = dict(
-            LTD_CD = obj_emp.LTD_CD  if obj_emp != None else '',
-            EMP_ID = obj_emp.EMP_ID  if obj_emp != None else '',
-            TARGET_DATE = date,
+            ltd_cd = obj_emp.ltd_cd  if obj_emp != None else '',
+            emp_id = obj_emp.emp_id  if obj_emp != None else '',
+            target_date = date,
             date_field =  td.strftime('%Y/%m/%d'),
             # TORIHIKISAKI=torihikisaki,
             # PROJECT = project,
             # GYOMU = gyomu,
-            REPORT = report,
+            report = report,
             # GYOMU_YOTEI_TIME=gyomu_yotei,
             # GYOMU_JISEKI_TIME=gyomu_jisseki,
-            COM_LTD_CD = com_ltd_cd,
-            COM_EMP_ID = com_emp_id,
-            COMMENT = comment,
+            com_ltd_cd = com_ltd_cd,
+            com_emp_id = com_emp_id,
+            comment = comment,
             )
         form = DailyReportEditForm(None, initial=initial_dict)
         context['form'] = form
@@ -517,36 +517,36 @@ class ReportDailyEdit(LoginRequiredMixin, TemplateView):
             redirect_url = reverse('Kms_Attendance:daily', kwargs={'year':year,'month':month,})
             return redirect(redirect_url)
 
-        ltd_cd = request.POST.get('LTD_CD')
-        emp_id = request.POST.get('EMP_ID')
-        target_date = request.POST.get('TARGET_DATE')
+        ltd_cd = request.POST.get('ltd_cd')
+        emp_id = request.POST.get('emp_id')
+        target_date = request.POST.get('target_date')
         id = request.POST.get('id')
         if ltd_cd != None and ltd_cd != '' and emp_id != None and emp_id != '':
             obj_report,created= T_daily_report.objects.get_or_create(
-                    LTD_CD = ltd_cd,
-                    EMP_ID = emp_id,
-                    TARGET_DATE = target_date,
+                    ltd_cd = ltd_cd,
+                    emp_id = emp_id,
+                    target_date = target_date,
                     defaults = dict(
                         id = id,
                     ),
             )
             if created:
-                obj_report.INS_DATE = ut_get_timezone_now()
-                obj_report.INS_ID = emp_id
-                obj_report.DEL_FLG = 0
+                obj_report.ins_date = ut_get_timezone_now()
+                obj_report.ins_id = emp_id
+                obj_report.del_flg = 0
             else:
-                ins_date = ut_get_localdate(obj_report.INS_DATE)
-                obj_report.INS_DATE = ins_date or ut_get_timezone_now()
-            obj_report.UPDATE_DATE = ut_get_timezone_now()
-            obj_report.UPDATE_ID = emp_id
+                ins_date = ut_get_localdate(obj_report.ins_date)
+                obj_report.ins_date = ins_date or ut_get_timezone_now()
+            obj_report.update_date = ut_get_timezone_now()
+            obj_report.update_id = emp_id
 
             # obj_report.GYOMU = request.POST('GYOMU')
-            obj_report.REPORT = request.POST.get('REPORT')
+            obj_report.report = request.POST.get('report')
             # obj_report.GYOMU_YOTEI_TIME = request.POST('GYOMU_YOTEI_TIME')
             # obj_report.GYOMU_JISEKI_TIME = request.POST('GYOMU_JISEKI_TIME')
-            obj_report.COM_LTD_CD = request.POST.get('COM_LTD_CD')
-            obj_report.COM_EMP_ID = request.POST.get('COM_EMP_ID')
-            obj_report.COMMENT = request.POST.get('COMMENT')
+            obj_report.com_ltd_cd = request.POST.get('com_ltd_cd')
+            obj_report.com_emp_id = request.POST.get('com_emp_id')
+            obj_report.comment = request.POST.get('comment')
             comment = '登録しました！'
             obj_report.save()
             messages.info(self.request, comment)
@@ -789,7 +789,7 @@ def CsvExport(request, year, month):
         # ログインユーザ以外のユーザを選択
         user_id = request.session.get('user_id', user_id)
         obj_emp = M_emp.objects.get(user_id=user_id)
-        emp_id = obj_emp.EMP_ID
+        emp_id = obj_emp.emp_id
     except M_emp.DoesNotExist:
         raise Http404("Data does not exist")
 
@@ -843,8 +843,8 @@ class PdfView(LoginRequiredMixin, View):
             # ログインユーザ以外のユーザを選択
             user_id = self.request.session.get('user_id', user_id)
             obj_emp = M_emp.objects.get(user_id=user_id)
-            emp_id = obj_emp.EMP_ID
-            emp_name = obj_emp.EMP_NAME
+            emp_id = obj_emp.emp_id
+            emp_name = obj_emp.emp_name
         except M_emp.DoesNotExist:
             raise Http404("Data does not exist")
 
@@ -877,6 +877,7 @@ def profile(request, id):
     else:
         raise Http404('No User matches the given query.')
 
+"""
 """
 # 一覧画面
 class CompanyList(ListView):
@@ -950,3 +951,4 @@ class CompanyDeleteView(DeleteView):
     template_name = 'Kms_Attendance/company_delete.html'
     # 削除後のリダイレクト先
     success_url = reverse_lazy('Kms_Attendance:list')
+"""

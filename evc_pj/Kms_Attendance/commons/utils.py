@@ -39,7 +39,7 @@ def is_holiday(day):
 #     except ValueError:
 #         return False
 #     date = year * 10000 + month * 100 + day
-#     if M_holiday.objects.filter(HOLIDAY_YMD=date).exists():
+#     if M_holiday.objects.filter(holiday_ymd=date).exists():
 #         return True
 #     return False
 # 日付と曜日を結合
@@ -58,9 +58,9 @@ def add_weekday_to_date(date_obj):
 
 def get_kbn_name(kbn):
     obj_kbn =M_kbn.objects. filter(
-        ZOKUSEI_CD = 2,
-        KBN = kbn).first()
-    kbn_name = obj_kbn.KBN_NAME if obj_kbn != None else ''
+        zokusei_cd = 2,
+        kbn = kbn).first()
+    kbn_name = obj_kbn.kbn_name if obj_kbn != None else ''
     return kbn_name
 
 # 月間日次勤怠リスト
@@ -72,7 +72,7 @@ def get_time_stamp(obj_emp, year, month):
     timestamp_list = []
     dt_now = timezone.localdate()
     today = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
-    holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
+    holidays = M_holiday.objects.values_list('holiday_ymd', flat=True).order_by('holiday_ymd')
     for day in month_days:
         if day.month == month:  # 前後月の日付は除外
     # for week in days2:
@@ -84,18 +84,18 @@ def get_time_stamp(obj_emp, year, month):
             else:
                 holiday=False
             obj_timestamp = T_time_stamp.objects. filter(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date).first()
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date).first()
 
             if obj_timestamp != None:
-                start = get_date2time_str(obj_timestamp.START_TIME)
-                end = get_date2time_str(obj_timestamp.END_TIME)
-                corret_start = get_date2time_str(obj_timestamp.CORRET_START_TIME)
-                corret_end = get_date2time_str(obj_timestamp.CORRET_END_TIME)
-                kbn = obj_timestamp.KBN
-                work_stat = obj_timestamp.WORK_STAT
-                times = get_times(obj_timestamp.CORRET_START_TIME, obj_timestamp.CORRET_END_TIME, obj_emp.WORK_PAT_CD)
+                start = get_date2time_str(obj_timestamp.start_time)
+                end = get_date2time_str(obj_timestamp.end_time)
+                corret_start = get_date2time_str(obj_timestamp.corret_start_time)
+                corret_end = get_date2time_str(obj_timestamp.corret_end_time)
+                kbn = obj_timestamp.kbn
+                work_stat = obj_timestamp.work_stat
+                times = get_times(obj_timestamp.corret_start_time, obj_timestamp.corret_end_time, obj_emp.work_pat_cd)
             else:
                 start = ''
                 end = ''
@@ -140,11 +140,11 @@ def bulk_request_time_stamp(obj_emp, year, month):
             target_date = year * 10000 + month * 100 + day.day
             try:
                 obj_timestamp = T_time_stamp.objects.get(
-                    LTD_CD = obj_emp.LTD_CD,
-                    EMP_ID = obj_emp.EMP_ID,
-                    TARGET_DATE = target_date)
-                if obj_timestamp.WORK_STAT == 0:
-                    obj_timestamp.WORK_STAT = 1 # 0:申請／1:申請中／2:承認済
+                    ltd_cd = obj_emp.ltd_cd,
+                    emp_id = obj_emp.emp_id,
+                    target_date = target_date)
+                if obj_timestamp.work_stat == 0:
+                    obj_timestamp.work_stat = 1 # 0:申請／1:申請中／2:承認済
                     obj_timestamp.save()
             except T_time_stamp.DoesNotExist:
                 continue
@@ -152,11 +152,11 @@ def bulk_request_time_stamp(obj_emp, year, month):
 def sv_get_name_choices():
     choices = []
     try:
-        objs = M_emp.objects.exclude(DEL_FLG=1).order_by('EMP_ID')
+        objs = M_emp.objects.exclude(del_flg=1).order_by('emp_id')
         choices.append(('', '氏名'))
         if objs:
             for obj in objs:
-                choices.append((obj.EMP_ID, obj.EMP_NAME))
+                choices.append((obj.emp_id, obj.emp_name))
     except Exception:
         logger.exception('M_emp exception : ')
     return choices
@@ -164,11 +164,11 @@ def sv_get_name_choices():
 def sv_get_kbn_choices():
     choices = []
     try:
-        kbns = M_kbn.objects.filter(ZOKUSEI_CD=2).order_by('KBN_ORDER')
+        kbns = M_kbn.objects.filter(zokusei_cd=2).order_by('kbn_order')
         choices.append(('', '出退勤区分'))
         if kbns:
             for obj in kbns:
-                choices.append((obj.KBN, obj.KBN_NAME))
+                choices.append((obj.kbn, obj.kbn_name))
     except Exception:
         logger.exception('M_kbn exception : ')
     return choices
@@ -176,20 +176,20 @@ def sv_get_kbn_choices():
 def get_approvals(year, month, day, works_status, number, kbn):
     timestamp_list = []
     target_date = year * 10000 + month * 100 + day
-    holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
+    holidays = M_holiday.objects.values_list('holiday_ymd', flat=True).order_by('holiday_ymd')
 
-    q_objects = Q(TARGET_DATE=target_date)   # 「Q object」複雑な処理を実装できるクエリ
+    q_objects = Q(target_date=target_date)   # 「Q object」複雑な処理を実装できるクエリ
     if number is not None and number !='' and number != 0:
-        q_objects &= Q(EMP_ID=number)
+        q_objects &= Q(emp_id=number)
     if works_status is not None and works_status != '':
         if works_status == '0':
-            q_objects &= Q(WORK_STAT=0) | Q(WORK_STAT=None)
+            q_objects &= Q(work_stat=0) | Q(work_stat=None)
         else:
-            q_objects &= Q(WORK_STAT=int(works_status))
+            q_objects &= Q(work_stat=int(works_status))
     if kbn is not None and kbn != 0:
-        q_objects &= Q(KBN=kbn)
+        q_objects &= Q(kbn=kbn)
 
-    timestamps = T_time_stamp.objects.filter(q_objects).order_by('TARGET_DATE','EMP_ID')
+    timestamps = T_time_stamp.objects.filter(q_objects).order_by('target_date','emp_id')
 
     td = dt.datetime(year, month, day)
     w = MonthCalendarMixin.week_names[td.weekday()]
@@ -201,18 +201,18 @@ def get_approvals(year, month, day, works_status, number, kbn):
 
     for obj_timestamp in timestamps:
         try:
-            obj_emp = M_emp.objects.get(LTD_CD=obj_timestamp.LTD_CD, EMP_ID=obj_timestamp.EMP_ID)
-            name = obj_emp.EMP_NAME
+            obj_emp = M_emp.objects.get(ltd_cd=obj_timestamp.ltd_cd, emp_id=obj_timestamp.emp_id)
+            name = obj_emp.emp_name
             user_id = obj_emp.user_id
-            times = get_times(obj_timestamp.CORRET_START_TIME, obj_timestamp.CORRET_END_TIME, obj_emp.WORK_PAT_CD)
+            times = get_times(obj_timestamp.corret_start_time, obj_timestamp.corret_end_time, obj_emp.work_pat_cd)
         except M_emp.DoesNotExist:
             continue
-        start = get_date2time_str(obj_timestamp.START_TIME)
-        end = get_date2time_str(obj_timestamp.END_TIME)
-        corret_start = get_date2time_str(obj_timestamp.CORRET_START_TIME)
-        corret_end = get_date2time_str(obj_timestamp.CORRET_END_TIME)
-        kbn = obj_timestamp.KBN
-        work_stat = obj_timestamp.WORK_STAT
+        start = get_date2time_str(obj_timestamp.start_time)
+        end = get_date2time_str(obj_timestamp.end_time)
+        corret_start = get_date2time_str(obj_timestamp.corret_start_time)
+        corret_end = get_date2time_str(obj_timestamp.corret_end_time)
+        kbn = obj_timestamp.kbn
+        work_stat = obj_timestamp.work_stat
         stat = '申請中' if work_stat == 1 else '承認済み' if work_stat == 2 else '申請待ち'
         kbn_name = get_kbn_name(kbn)
         timestamp =({
@@ -251,7 +251,7 @@ def get_times(start, end, work_pat_cd):
 
     if work_pat_cd != None:
         try:
-            obj_work_pat = M_work_pat.objects.get(WORK_PAT_CD = work_pat_cd,)
+            obj_work_pat = M_work_pat.objects.get(work_pat_cd = work_pat_cd,)
         except M_work_pat.DoesNotExist:
              obj_work_pat = None
     else:
@@ -265,12 +265,12 @@ def get_times(start, end, work_pat_cd):
             td = td2 - td1
             sec = td.total_seconds()
 
-            rd1 = get_time2date(obj_work_pat.REST1_START_TIME, td1.year, td1.month, td1.day)
-            rd2 = get_time2date(obj_work_pat.REST1_END_TIME, td1.year, td1.month, td1.day)
+            rd1 = get_time2date(obj_work_pat.rest1_start_time, td1.year, td1.month, td1.day)
+            rd2 = get_time2date(obj_work_pat.rest1_end_time, td1.year, td1.month, td1.day)
 
             if td1 < rd1 and rd2 < td2:
-                sec = sec - float(obj_work_pat.REST1_TIME) * 60 * 60
-                rest1= get_hour2HMstr(obj_work_pat.REST1_TIME)
+                sec = sec - float(obj_work_pat.rest1_time) * 60 * 60
+                rest1= get_hour2HMstr(obj_work_pat.rest1_time)
             work1 = get_sec2HMstr(sec)
         except Exception:
             pass
@@ -291,7 +291,7 @@ def get_times(start, end, work_pat_cd):
 # 総労働時間
 def get_work1(start, end, work_pat_cd):
     try:
-        obj_work_pat = M_work_pat.objects.get(WORK_PAT_CD = work_pat_cd,)
+        obj_work_pat = M_work_pat.objects.get(work_pat_cd = work_pat_cd,)
     except M_work_pat.DoesNotExist:
         obj_work_pat = None
 
@@ -303,17 +303,17 @@ def get_work1(start, end, work_pat_cd):
         td = td2 - td1
         sec = td.total_seconds()
 
-        rd1 = get_time2date(obj_work_pat.REST1_START_TIME, td1.year, td1.month, td1.day)
-        rd2 = get_time2date(obj_work_pat.REST1_END_TIME, td1.year, td1.month, td1.day)
+        rd1 = get_time2date(obj_work_pat.rest1_start_time, td1.year, td1.month, td1.day)
+        rd2 = get_time2date(obj_work_pat.rest1_end_time, td1.year, td1.month, td1.day)
 
         if td1 < rd1 and rd2 < td2:
-            sec = sec - float(obj_work_pat.REST1_TIME) * 60 * 60
+            sec = sec - float(obj_work_pat.rest1_time) * 60 * 60
         return get_sec2HMstr(sec)
     except Exception:
         return '0:00'
 def get_rest1(start, end, work_pat_cd):
     try:
-        obj_work_pat = M_work_pat.objects.get(WORK_PAT_CD = work_pat_cd,)
+        obj_work_pat = M_work_pat.objects.get(work_pat_cd = work_pat_cd,)
     except M_work_pat.DoesNotExist:
         obj_work_pat = None
 
@@ -322,11 +322,11 @@ def get_rest1(start, end, work_pat_cd):
     try:
         td1 = dt.datetime.strptime(start, '%Y/%m/%d %H:%M:%S')
         td2 = dt.datetime.strptime(end, '%Y/%m/%d %H:%M:%S')
-        rd1 = get_time2date(obj_work_pat.REST1_START_TIME, td1.year, td1.month, td1.day)
-        rd2 = get_time2date(obj_work_pat.REST1_END_TIME, td1.year, td1.month, td1.day)
+        rd1 = get_time2date(obj_work_pat.rest1_start_time, td1.year, td1.month, td1.day)
+        rd2 = get_time2date(obj_work_pat.rest1_end_time, td1.year, td1.month, td1.day)
 
         if td1 < rd1 and rd2 < td2:
-            return get_hour2HMstr(obj_work_pat.REST1_TIME)
+            return get_hour2HMstr(obj_work_pat.rest1_time)
         else:
             return '0:00'
     except Exception:

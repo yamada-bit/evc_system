@@ -126,30 +126,30 @@ class IndexView(LoginRequiredMixin, View):
         # 打刻レコード取得（ボタンの無効設定のため)
         try:
             obj_timestamp = T_time_stamp.objects.get(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = today)
-            if obj_timestamp.START_TIME == None:
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = today)
+            if obj_timestamp.start_time == None:
                 in_out = 0  # 打刻なし
             else:
-                in_out = 1 if obj_timestamp.END_TIME == None else 2 # 1:出勤打刻済　2:退勤打刻済
-            initial_dict = dict(name_field=obj_emp.EMP_NAME)
+                in_out = 1 if obj_timestamp.end_time == None else 2 # 1:出勤打刻済　2:退勤打刻済
+            initial_dict = dict(name_field=obj_emp.emp_name)
             form = ClockForm(initial=initial_dict, instance=obj_timestamp)
         except T_time_stamp.DoesNotExist:  # getはデータなしの例外が発生する
             in_out = 0
             # uuid4 ランダムな UUID を生成する。(128ビットの乱数を生成)
             # id = uuid.uuid4()
             initial_dict = dict(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                name_field = obj_emp.EMP_NAME,
-                TARGET_DATE = today)
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                name_field = obj_emp.emp_name,
+                target_date = today)
             form = ClockForm(initial=initial_dict)
 
         # テンプレートコンテキスト作成
         context = {
             'form': form,
-            'name' : obj_emp.EMP_NAME,
+            'name' : obj_emp.emp_name,
             'in_out': in_out,
         }
         return render(request, 'Kms_Attendance/index.html', context)
@@ -168,10 +168,10 @@ class ResultView(LoginRequiredMixin, View):
             # cleaned_dataには適切なデータとして確認されたデータ
             # POSTで送信されるデータは、self.request.POSTで受け取ることができる
             id = self.request.POST.get('id') # form.cleaned_data['id']
-            ltd_cd = self.request.POST.get('LTD_CD')
-            emp_id = self.request.POST.get('EMP_ID')
+            ltd_cd = self.request.POST.get('ltd_cd')
+            emp_id = self.request.POST.get('emp_id')
             emp_name = self.request.POST.get('name_field')
-            target_date = self.request.POST.get('TARGET_DATE')
+            target_date = self.request.POST.get('target_date')
             str_time = self.request.POST.get('showTime2')
             now2 = get_str2datetime(str_time) or ut_get_localtime()
             month = now2.month
@@ -180,34 +180,34 @@ class ResultView(LoginRequiredMixin, View):
             minute = now2.minute
             try:
                 obj_timestamp,created = T_time_stamp.objects.get_or_create(
-                    LTD_CD = ltd_cd,
-                    EMP_ID = emp_id,
-                    TARGET_DATE = target_date,
+                    ltd_cd = ltd_cd,
+                    emp_id = emp_id,
+                    target_date = target_date,
                     defaults = dict(
                         id = id,
-                        KBN = 1,    # 出勤
+                        kbn = 1,    # 出勤
                     ),
                 )
                 if created:
-                    obj_timestamp.INS_DATE = ut_get_timezone_now()
-                    obj_timestamp.INS_ID = self.request.user.user_id  # ログイン中のユーザ
-                    obj_timestamp.DEL_FLG = 0
-                    obj_timestamp.WORK_STAT = 0
+                    obj_timestamp.ins_date = ut_get_timezone_now()
+                    obj_timestamp.ins_id = self.request.user.user_id  # ログイン中のユーザ
+                    obj_timestamp.del_flg = 0
+                    obj_timestamp.work_stat = 0
                 else:
-                    ins_date = ut_get_localdate(obj_timestamp.INS_DATE)
-                    obj_timestamp.INS_DATE = ins_date or ut_get_timezone_now()
+                    ins_date = ut_get_localdate(obj_timestamp.ins_date)
+                    obj_timestamp.ins_date = ins_date or ut_get_timezone_now()
 
-                obj_timestamp.UPDATE_DATE = ut_get_timezone_now()
-                obj_timestamp.UPDATE_ID = self.request.user.user_id
-                # obj_timestamp.KBN = 1
+                obj_timestamp.update_date = ut_get_timezone_now()
+                obj_timestamp.update_id = self.request.user.user_id
+                # obj_timestamp.kbn = 1
                 if 'start' in self.request.POST:
                     comment = f'{month}月{day}日{hour}時{minute}分 出勤確認しました。'
-                    obj_timestamp.START_TIME = str_time
-                    obj_timestamp.CORRET_START_TIME = str_time
+                    obj_timestamp.start_time = str_time
+                    obj_timestamp.corret_start_time = str_time
                 else:
                     comment = f'{month}月{day}日{hour}時{minute}分 退勤確認しました。'
-                    obj_timestamp.END_TIME = str_time
-                    obj_timestamp.CORRET_END_TIME = str_time
+                    obj_timestamp.end_time = str_time
+                    obj_timestamp.corret_end_time = str_time
                 obj_timestamp.save()
             except Exception:
                 comment = '登録できませんでした！'
@@ -326,7 +326,7 @@ class MonthCalendar(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
             obj_emp = M_emp.objects.get(user_id = user_id)
             # 月間日次勤怠リスト
             timestamp_list = get_time_stamp(obj_emp, year, month)
-            name = obj_emp.EMP_NAME
+            name = obj_emp.emp_name
         except M_emp.DoesNotExist:
             obj_emp = None
             timestamp_list = []
@@ -337,9 +337,9 @@ class MonthCalendar(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
                 target_month = year * 100 + month
                 # 月次レポートテーブル
                 obj_getuji = T_getuji_report.objects.get(
-                    LTD_CD = obj_emp.LTD_CD,
-                    EMP_ID = obj_emp.EMP_ID,
-                    TARGET_MONTH = target_month)
+                    ltd_cd = obj_emp.ltd_cd,
+                    emp_id = obj_emp.emp_id,
+                    target_month = target_month)
                 calendar_context.update({'obj_getuji':obj_getuji})
             except T_getuji_report.DoesNotExist:
                 pass
@@ -350,9 +350,9 @@ class MonthCalendar(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
         #     date = td.year * 10000 + td.month * 100 + td.day
         # try:
         #     obj_getuji = T_getuji_kintai.objects.get(
-        #         LTD_CD = obj_emp.LTD_CD,
-        #         EMP_ID = obj_emp.EMP_ID,
-        #         TARGET_DATE = date)
+        #         ltd_cd = obj_emp.ltd_cd,
+        #         emp_id = obj_emp.emp_id,
+        #         target_date = date)
         # except T_getuji_kintai.DoesNotExist:
         #     obj_getuji = None
         context.update(calendar_context)
@@ -424,14 +424,14 @@ class TimeStampStat(LoginRequiredMixin, View):
             target_date = year * 10000 + month * 100 + day
             obj_emp = M_emp.objects.get(user_id=user_id)
             obj_timestamp = T_time_stamp.objects.filter(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date).first()
-            if obj_timestamp != None and obj_timestamp.WORK_STAT == 1:
-                obj_timestamp.WORK_STAT = 0 # 0:申請／1:申請中／2:承認済
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date).first()
+            if obj_timestamp != None and obj_timestamp.work_stat == 1:
+                obj_timestamp.work_stat = 0 # 0:申請／1:申請中／2:承認済
                 obj_timestamp.save()
-            elif obj_timestamp != None and obj_timestamp.WORK_STAT == 0:
-                obj_timestamp.WORK_STAT = 1 # 0:申請／1:申請中／2:承認済
+            elif obj_timestamp != None and obj_timestamp.work_stat == 0:
+                obj_timestamp.work_stat = 1 # 0:申請／1:申請中／2:承認済
                 obj_timestamp.save()
             else:
                 messages.error(self.request, '設定できませんでした！' )
@@ -455,7 +455,7 @@ class TimeStampStat(LoginRequiredMixin, View):
 class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
     template_name = 'Kms_Attendance/approval.html'
     model = T_time_stamp
-    ordering = ['LTD_CD','EMP_ID','TARGET_DATE']
+    ordering = ['ltd_cd','emp_id','target_date']
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -532,8 +532,8 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
                     try:
                         id = item.get('uuid')
                         obj_timestamp = T_time_stamp.objects.get(pk = uuid.UUID(id))
-                        if obj_timestamp.WORK_STAT != 2:
-                            obj_timestamp.WORK_STAT = 2 # 0:申請／1:申請中／2:承認済
+                        if obj_timestamp.work_stat != 2:
+                            obj_timestamp.work_stat = 2 # 0:申請／1:申請中／2:承認済
                             obj_timestamp.save()
                             cnt += 1
                     except Exception:
@@ -544,8 +544,8 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
             # for id in object_list:
             #     try:
             #         obj = T_time_stamp.objects.get(pk=id)
-            #         name = obj.EMP_ID
-            #         date = obj.TARGET_DATE
+            #         name = obj.emp_id
+            #         date = obj.target_date
             #     except T_time_stamp.DoesNotExist:
             #         continue
         else:
@@ -562,22 +562,22 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
         month = td.month
         day = td.day
         target_date = year * 10000 + month * 100 + day
-        # holidays = M_holiday.objects.values_list('HOLIDAY_YMD', flat=True).order_by('HOLIDAY_YMD')
+        # holidays = M_holiday.objects.values_list('holiday_ymd', flat=True).order_by('holiday_ymd')
 
-        q_objects = Q(TARGET_DATE=target_date)   # 「Q object」複雑な処理を実装できるクエリ
+        q_objects = Q(target_date=target_date)   # 「Q object」複雑な処理を実装できるクエリ
         if number is not None and number !='' and number != 0:
-            q_objects &= Q(EMP_ID=number)
+            q_objects &= Q(emp_id=number)
         if full_name is not None and full_name !='':
-            q_objects &= Q(EMP_ID=full_name)
+            q_objects &= Q(emp_id=full_name)
         if works_status is not None and works_status != '':
             if works_status == '0':
-                q_objects &= Q(WORK_STAT=0) | Q(WORK_STAT=None)
+                q_objects &= Q(work_stat=0) | Q(work_stat=None)
             else:
-                q_objects &= Q(WORK_STAT=int(works_status))
+                q_objects &= Q(work_stat=int(works_status))
         if kbn is not None and kbn != 0:
-            q_objects &= Q(KBN=kbn)
+            q_objects &= Q(kbn=kbn)
 
-        timestamps = queryset.filter(q_objects).order_by('TARGET_DATE','EMP_ID')
+        timestamps = queryset.filter(q_objects).order_by('target_date','emp_id')
 
         w = MonthCalendarMixin.week_names[td.weekday()]
 
@@ -588,19 +588,19 @@ class Approval(LoginRequiredMixin, MonthCalendarMixin, ListView):
 
         for obj_timestamp in timestamps:
             try:
-                obj_emp = M_emp.objects.get(LTD_CD=obj_timestamp.LTD_CD, EMP_ID=obj_timestamp.EMP_ID)
-                name = obj_emp.EMP_NAME
+                obj_emp = M_emp.objects.get(ltd_cd=obj_timestamp.ltd_cd, emp_id=obj_timestamp.emp_id)
+                name = obj_emp.emp_name
                 user_id = obj_emp.user_id
                 # 時間計算
-                times = get_times(obj_timestamp.CORRET_START_TIME, obj_timestamp.CORRET_END_TIME, obj_emp.WORK_PAT_CD)
+                times = get_times(obj_timestamp.corret_start_time, obj_timestamp.corret_end_time, obj_emp.work_pat_cd)
             except M_emp.DoesNotExist:
                 continue
-            start = get_date2time_str(obj_timestamp.START_TIME)
-            end = get_date2time_str(obj_timestamp.END_TIME)
-            corret_start = get_date2time_str(obj_timestamp.CORRET_START_TIME)
-            corret_end = get_date2time_str(obj_timestamp.CORRET_END_TIME)
-            kbn = obj_timestamp.KBN
-            work_stat = obj_timestamp.WORK_STAT
+            start = get_date2time_str(obj_timestamp.start_time)
+            end = get_date2time_str(obj_timestamp.end_time)
+            corret_start = get_date2time_str(obj_timestamp.corret_start_time)
+            corret_end = get_date2time_str(obj_timestamp.corret_end_time)
+            kbn = obj_timestamp.kbn
+            work_stat = obj_timestamp.work_stat
             stat = '申請中' if work_stat == 1 else '承認済み' if work_stat == 2 else '申請待ち'
             kbn_name = get_kbn_name(kbn)
             timestamp =({
@@ -696,10 +696,10 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             form = TimeStampEditForm(self.request.POST)      # 新規作成/create
 
         if form.is_valid():
-            KBN = self.request.POST.get('kbns_cd')
-            start_time = self.request.POST.get('CORRET_START_TIME')
-            end_time = self.request.POST.get('CORRET_END_TIME')
-            if KBN != '2' and KBN != '3' and KBN != '5' and KBN != '7':
+            kbn = self.request.POST.get('kbns_cd')
+            start_time = self.request.POST.get('corret_start_time')
+            end_time = self.request.POST.get('corret_end_time')
+            if kbn != '2' and kbn != '3' and kbn != '5' and kbn != '7':
                 if (check_time(start_time, end_time) != ''):
                     messages.error(self.request, '時刻の指定が正しくありません！' )
                     # messages.error(self.request, form.errors)
@@ -711,7 +711,7 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
 
                 self.save_request()  # 申請テーブル
                 self.save_request_rest(year, month, day)   # 申請休憩テーブル
-                if KBN == '2' or KBN == '3' or KBN == '5' or KBN == '7':
+                if kbn == '2' or kbn == '3' or kbn == '5' or kbn == '7':
                     self.save_request_holiday(year, month, day)   # 申請休憩テーブル
 
                 if mode == 3:   # 勤怠承認画面->日次勤怠申請画面->勤怠承認画面
@@ -736,10 +736,10 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             if get_time2date_str(start, year, month, day) == '':
                 continue
             list = {
-                'REST_START_TIME': start,
-                'REST_START_NEXT_FLG': 1 if str(i+1) in list_start_chk else 0,
-                'REST_END_TIME' : list_end[i],
-                'REST_END_NEXT_FLG': 1 if str(i+1) in list_end_chk else 0
+                'rest_start_time': start,
+                'rest_start_next_flg': 1 if str(i+1) in list_start_chk else 0,
+                'rest_end_time' : list_end[i],
+                'rest_end_next_flg': 1 if str(i+1) in list_end_chk else 0
             }
             rest_list.append(list)
 
@@ -757,9 +757,9 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
         target_date = year * 10000 + month * 100 + day
         try:
             obj_timestamp = T_time_stamp.objects.get(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date)
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date)
         except T_time_stamp.DoesNotExist:
             obj_timestamp = None
 
@@ -772,12 +772,12 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             corret_end = ''
             work_stat = 0
         else:
-            kbn = obj_timestamp.KBN
-            start = get_date2time_str(obj_timestamp.START_TIME) # '%Y/%m/%d %H:%M:%S' --> '%H:%M'
-            end = get_date2time_str(obj_timestamp.END_TIME)
-            corret_start = get_date2time_str(obj_timestamp.CORRET_START_TIME)
-            corret_end = get_date2time_str(obj_timestamp.CORRET_END_TIME)
-            work_stat = obj_timestamp.WORK_STAT
+            kbn = obj_timestamp.kbn
+            start = get_date2time_str(obj_timestamp.start_time) # '%Y/%m/%d %H:%M:%S' --> '%H:%M'
+            end = get_date2time_str(obj_timestamp.end_time)
+            corret_start = get_date2time_str(obj_timestamp.corret_start_time)
+            corret_end = get_date2time_str(obj_timestamp.corret_end_time)
+            work_stat = obj_timestamp.work_stat
 
         td = datetime.datetime(year, month, day)
         w = MonthCalendarMixin.week_names[td.weekday()]
@@ -785,16 +785,16 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
         mode = self.kwargs.get('mode')
 
         initial_dict = dict(
-            LTD_CD = obj_emp.LTD_CD,
-            EMP_ID = obj_emp.EMP_ID,
-            TARGET_DATE = target_date,
+            ltd_cd = obj_emp.ltd_cd,
+            emp_id = obj_emp.emp_id,
+            target_date = target_date,
             date_field =  f'{td.strftime("%Y/%m/%d")}({w})',
             kbns_cd = kbn,
-            KBN = kbn,
-            CORRET_START_TIME = corret_start,
-            START_TIME = start,
-            CORRET_END_TIME = corret_end,
-            END_TIME = end,
+            kbn = kbn,
+            corret_start_time = corret_start,
+            start_time = start,
+            corret_end_time = corret_end,
+            end_time = end,
             stat = '申請中' if work_stat == 1 else '承認済み' if work_stat == 2 else '申請',
             )
         if obj_timestamp:
@@ -814,7 +814,7 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
         if obj_timestamp == None:
             end_next_flg = False
         else:
-            end_next_flg = is_nextday(obj_timestamp.CORRET_START_TIME,obj_timestamp.CORRET_END_TIME)
+            end_next_flg = is_nextday(obj_timestamp.corret_start_time,obj_timestamp.corret_end_time)
 
         context.update({
             'user_id': obj_emp.user_id,
@@ -823,8 +823,8 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             'day': day,
             'date': f'{td.strftime("%Y/%m/%d")}({w})',
             'mode': mode,
-            'username': obj_emp.EMP_NAME,
-            'number': obj_emp.EMP_ID,
+            'username': obj_emp.emp_name,
+            'number': obj_emp.emp_id,
             'form': form,
             'end_next_flg': end_next_flg
             })
@@ -836,9 +836,9 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
         target_date = year * 10000 + month * 100 + day
         try:
             obj_request = T_request.objects.get(
-                LTD_CD = obj_emp.LTD_CD,
-                EMP_ID = obj_emp.EMP_ID,
-                TARGET_DATE = target_date)
+                ltd_cd = obj_emp.ltd_cd,
+                emp_id = obj_emp.emp_id,
+                target_date = target_date)
         except T_request.DoesNotExist:
             obj_request = None
 
@@ -848,18 +848,18 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
             comment = ''
             work_stat = 0
         else:
-            expenses = obj_request.EXPENSES
-            memo = obj_request.MEMO
-            comment = obj_request.AGREE_COMMENT
-            work_stat = obj_request.WORK_STAT
+            expenses = obj_request.expenses
+            memo = obj_request.memo
+            comment = obj_request.agree_comment
+            work_stat = obj_request.work_stat
 
         initial_dict2 = dict(
-            LTD_CD = obj_emp.LTD_CD,
-            EMP_ID = obj_emp.EMP_ID,
-            TARGET_DATE = target_date,
-            EXPENSES = expenses,
-            MEMO = memo,
-            AGREE_COMMENT = comment,
+            ltd_cd = obj_emp.ltd_cd,
+            emp_id = obj_emp.emp_id,
+            target_date = target_date,
+            expenses = expenses,
+            memo = memo,
+            agree_comment = comment,
             stat = '申請中' if work_stat == 1 else '承認済み' if work_stat == 2 else '申請',
         )
         if obj_request:
@@ -868,58 +868,58 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
         context.update({'form2': form2})
         # 申請休憩テーブル
         queryset = T_request_rest.objects.filter(
-            LTD_CD = obj_emp.LTD_CD,
-            EMP_ID = obj_emp.EMP_ID,
-            TARGET_DATE = target_date).order_by('REST_NO')
+            ltd_cd = obj_emp.ltd_cd,
+            emp_id = obj_emp.emp_id,
+            target_date = target_date).order_by('rest_no')
         rest_list = list(queryset.values())
         for rec in rest_list:
-            rec['REST_START_TIME'] = get_date2time_str(rec['REST_START_TIME'])  # '%Y/%m/%d %H:%M:%S' --> '%H:%M'
-            rec['REST_END_TIME'] = get_date2time_str(rec['REST_END_TIME'])
+            rec['rest_start_time'] = get_date2time_str(rec['rest_start_time'])  # '%Y/%m/%d %H:%M:%S' --> '%H:%M'
+            rec['rest_end_time'] = get_date2time_str(rec['rest_end_time'])
         context.update({'restlist': rest_list})
 
         return context
     # 打刻テーブル登録
     def save_time_stamp(self, year, month, day, start_time, end_time):
         id = self.request.POST.get('id')
-        ltd_cd = self.request.POST.get('LTD_CD')
-        emp_id = self.request.POST.get('EMP_ID')
-        target_date = self.request.POST.get('TARGET_DATE')
+        ltd_cd = self.request.POST.get('ltd_cd')
+        emp_id = self.request.POST.get('emp_id')
+        target_date = self.request.POST.get('target_date')
         end_next_flg = True if 'next_day_end' in self.request.POST else False
         comment = ''
         try:
             obj_timestamp,created = T_time_stamp.objects.get_or_create(
-                LTD_CD = ltd_cd,
-                EMP_ID = emp_id,
-                TARGET_DATE = target_date,
+                ltd_cd = ltd_cd,
+                emp_id = emp_id,
+                target_date = target_date,
                 defaults = dict(
                     id = id,
-                    KBN = 1,
+                    kbn = 1,
                 ),
             )
             if created:
-                obj_timestamp.INS_DATE = ut_get_timezone_now()
-                obj_timestamp.INS_ID = self.request.user.user_id # emp_id
-                obj_timestamp.DEL_FLG = 0
+                obj_timestamp.ins_date = ut_get_timezone_now()
+                obj_timestamp.ins_id = self.request.user.user_id # emp_id
+                obj_timestamp.del_flg = 0
             else:
-                ins_date = ut_get_localdate(obj_timestamp.INS_DATE)
-                obj_timestamp.INS_DATE = ins_date or ut_get_timezone_now()
+                ins_date = ut_get_localdate(obj_timestamp.ins_date)
+                obj_timestamp.ins_date = ins_date or ut_get_timezone_now()
 
-            obj_timestamp.UPDATE_DATE = ut_get_timezone_now()
-            obj_timestamp.UPDATE_ID = self.request.user.user_id  # emp_id
+            obj_timestamp.update_date = ut_get_timezone_now()
+            obj_timestamp.update_id = self.request.user.user_id  # emp_id
             if start_time:
-                obj_timestamp.CORRET_START_TIME = get_time2date_str(start_time, year, month, day)
+                obj_timestamp.corret_start_time = get_time2date_str(start_time, year, month, day)
             if end_time:
-                obj_timestamp.CORRET_END_TIME = get_time2date_str(end_time, year, month, day, end_next_flg)
-            obj_timestamp.KBN = self.request.POST.get('kbns_cd')
+                obj_timestamp.corret_end_time = get_time2date_str(end_time, year, month, day, end_next_flg)
+            obj_timestamp.kbn = self.request.POST.get('kbns_cd')
             if 'commit' in self.request.POST:
                 comment = '登録しました！'
-                obj_timestamp.WORK_STAT = 1 # 0:申請／1:申請中／2:承認済
+                obj_timestamp.work_stat = 1 # 0:申請／1:申請中／2:承認済
             elif 'approval' in self.request.POST:
                 comment = '承認しました！'
-                obj_timestamp.WORK_STAT = 2
+                obj_timestamp.work_stat = 2
             elif 'add' in self.request.POST:
                 comment = '申請しました！'
-                obj_timestamp.WORK_STAT = 1
+                obj_timestamp.work_stat = 1
             obj_timestamp.save()
         except Exception:
             logger.exception('exception ')
@@ -927,39 +927,39 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
     # 申請テーブル
     def save_request(self):
         try:
-            ltd_cd = self.request.POST.get('LTD_CD')
-            emp_id = self.request.POST.get('EMP_ID')
-            target_date = self.request.POST.get('TARGET_DATE')
-            expenses = self.request.POST.get('EXPENSES')
+            ltd_cd = self.request.POST.get('ltd_cd')
+            emp_id = self.request.POST.get('emp_id')
+            target_date = self.request.POST.get('target_date')
+            expenses = self.request.POST.get('expenses')
             if expenses == None or expenses=='':
                 expenses = 0
-            memo = self.request.POST.get('MEMO')
-            agree_comment = self.request.POST.get('AGREE_COMMENT')
+            memo = self.request.POST.get('memo')
+            agree_comment = self.request.POST.get('agree_comment')
             obj_request,created = T_request.objects.get_or_create(
-                LTD_CD = ltd_cd,
-                EMP_ID = emp_id,
-                TARGET_DATE = target_date,
+                ltd_cd = ltd_cd,
+                emp_id = emp_id,
+                target_date = target_date,
                 defaults = dict(
                     # id = uuid.uuid4(),
-                    KBN = 1,
-                    END_NEXT_FLG = 0,
-                    REQUEST_DATE = get_date2int(ut_get_localtime())
+                    kbn = 1,
+                    end_next_flg = 0,
+                    request_date = get_date2int(ut_get_localtime())
                 ),
             )
             if created:
-                obj_request.INS_DATE = ut_get_timezone_now()
-                obj_request.INS_ID = self.request.user.user_id   # emp_id
-                obj_request.DEL_FLG = 0
-                obj_request.WORK_STAT = 0
+                obj_request.ins_date = ut_get_timezone_now()
+                obj_request.ins_id = self.request.user.user_id   # emp_id
+                obj_request.del_flg = 0
+                obj_request.work_stat = 0
             else:
-                ins_date = ut_get_localdate(obj_request.INS_DATE)
-                obj_request.INS_DATE = ins_date or ut_get_timezone_now()
+                ins_date = ut_get_localdate(obj_request.ins_date)
+                obj_request.ins_date = ins_date or ut_get_timezone_now()
 
-            obj_request.UPDATE_DATE = ut_get_timezone_now()
-            obj_request.UPDATE_ID = self.request.user.user_id    # emp_id
-            obj_request.EXPENSES = expenses
-            obj_request.MEMO = memo
-            obj_request.AGREE_COMMENT = agree_comment
+            obj_request.update_date = ut_get_timezone_now()
+            obj_request.update_id = self.request.user.user_id    # emp_id
+            obj_request.expenses = expenses
+            obj_request.memo = memo
+            obj_request.agree_comment = agree_comment
             obj_request.save()
         except Exception:
             logger.exception('exception ')
@@ -968,9 +968,9 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
     # 申請休憩テーブル
     def save_request_rest(self, year, month, day):
         try:
-            ltd_cd = self.request.POST.get('LTD_CD')
-            emp_id = self.request.POST.get('EMP_ID')
-            target_date = self.request.POST.get('TARGET_DATE')
+            ltd_cd = self.request.POST.get('ltd_cd')
+            emp_id = self.request.POST.get('emp_id')
+            target_date = self.request.POST.get('target_date')
 
             list_start = self.request.POST.getlist("rest_start")
             list_start_chk = self.request.POST.getlist("rest_start_chk")
@@ -982,31 +982,31 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
                 if start_str == '':
                     continue
                 obj_request_rest,created = T_request_rest.objects.get_or_create(
-                        LTD_CD = ltd_cd,
-                        EMP_ID = emp_id,
-                        TARGET_DATE = target_date,
-                        REST_NO = i + 1,
+                        ltd_cd = ltd_cd,
+                        emp_id = emp_id,
+                        target_date = target_date,
+                        rest_no = i + 1,
                         defaults = dict(
                             # id = uuid.uuid4(),
-                            REST_START_NEXT_FLG = 0,
-                            REST_END_NEXT_FLG = 0,
+                            rest_start_next_flg = 0,
+                            rest_end_next_flg = 0,
                         ),
                     )
                 if created:
-                    obj_request_rest.INS_DATE = ut_get_timezone_now()
-                    obj_request_rest.INS_ID = self.request.user.user_id  # emp_id
-                    obj_request_rest.DEL_FLG = 0
+                    obj_request_rest.ins_date = ut_get_timezone_now()
+                    obj_request_rest.ins_id = self.request.user.user_id  # emp_id
+                    obj_request_rest.del_flg = 0
                 else:
-                    ins_date = ut_get_localdate(obj_request_rest.INS_DATE)
-                    obj_request_rest.INS_DATE = ins_date or ut_get_timezone_now()
+                    ins_date = ut_get_localdate(obj_request_rest.ins_date)
+                    obj_request_rest.ins_date = ins_date or ut_get_timezone_now()
 
-                obj_request_rest.UPDATE_DATE = ut_get_timezone_now()
-                obj_request_rest.UPDATE_ID = self.request.user.user_id   # emp_id
+                obj_request_rest.update_date = ut_get_timezone_now()
+                obj_request_rest.update_id = self.request.user.user_id   # emp_id
 
-                obj_request_rest.REST_START_TIME = start_str
-                obj_request_rest.REST_START_NEXT_FLG = 1 if str(i+1) in list_start_chk else 0
-                obj_request_rest.REST_END_TIME = get_time2date_str(list_end[i], year, month, day)
-                obj_request_rest.REST_END_NEXT_FLG = 1 if str(i+1) in list_end_chk else 0
+                obj_request_rest.rest_start_time = start_str
+                obj_request_rest.rest_start_next_flg = 1 if str(i+1) in list_start_chk else 0
+                obj_request_rest.rest_end_time = get_time2date_str(list_end[i], year, month, day)
+                obj_request_rest.rest_end_next_flg = 1 if str(i+1) in list_end_chk else 0
                 obj_request_rest.save()
         except Exception:
             logger.exception('exception ')
@@ -1015,41 +1015,41 @@ class RequestEdit(LoginRequiredMixin, TemplateView):
     # 休暇申請テーブル
     def save_request_holiday(self, year, month, day):
         try:
-            ltd_cd = self.request.POST.get('LTD_CD')
-            emp_id = self.request.POST.get('EMP_ID')
+            ltd_cd = self.request.POST.get('ltd_cd')
+            emp_id = self.request.POST.get('emp_id')
             target_date = year * 10000 + month * 100 + day
 
-            KBN = int(self.request.POST.get('kbns_cd', '0'))
+            kbn = int(self.request.POST.get('kbns_cd', '0'))
             obj,created = T_request_holiday.objects.get_or_create(
-                    LTD_CD = ltd_cd,
-                    EMP_ID = emp_id,
-                    TARGET_DATE = target_date,
+                    ltd_cd = ltd_cd,
+                    emp_id = emp_id,
+                    target_date = target_date,
                     defaults = dict(
                         # id = uuid.uuid4(),
-                        # REST_START_NEXT_FLG = 0,
-                        # REST_END_NEXT_FLG = 0,
-                        KBN = KBN,
-                        REQUEST_DATE = get_date2int(ut_get_localtime())
+                        # rest_start_next_flg = 0,
+                        # rest_end_next_flg = 0,
+                        kbn = kbn,
+                        request_date = get_date2int(ut_get_localtime())
                     ),
                 )
             if created:
-                obj.INS_DATE = ut_get_timezone_now()
-                obj.INS_ID = self.request.user.user_id  # emp_id
-                obj.DEL_FLG = 0
+                obj.ins_date = ut_get_timezone_now()
+                obj.ins_id = self.request.user.user_id  # emp_id
+                obj.del_flg = 0
             else:
-                ins_date = ut_get_localdate(obj.INS_DATE)
-                obj.INS_DATE = ins_date or ut_get_timezone_now()
+                ins_date = ut_get_localdate(obj.ins_date)
+                obj.ins_date = ins_date or ut_get_timezone_now()
 
-            obj.UPDATE_DATE = ut_get_timezone_now()
-            obj.UPDATE_ID = self.request.user.user_id   # emp_id
+            obj.update_date = ut_get_timezone_now()
+            obj.update_id = self.request.user.user_id   # emp_id
 
-            obj.KBN = KBN
-            obj.TRANSFER_DATE = target_date
-            obj.REQUEST_DATE = get_date2int(ut_get_localtime())
-            # obj.AGREE_DATE =
-            # obj.AGREE_LTD_CD =
-            # obj.AGREE_EMP_ID = ''
-            obj.MEMO = ''
+            obj.kbn = kbn
+            obj.transfer_date = target_date
+            obj.request_date = get_date2int(ut_get_localtime())
+            # obj.agree_date =
+            # obj.agree_ltd_cd =
+            # obj.agree_emp_id = ''
+            obj.memo = ''
             obj.save()
         except Exception:
             logger.exception('exception ')
