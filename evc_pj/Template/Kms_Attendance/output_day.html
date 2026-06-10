@@ -130,11 +130,11 @@
           <tbody id="staff_lists">
             {% for report in reports %}
             <tr>
-              <td>{{ report.EMP_ID }}</td>
+              <td>{{ report.emp_id }}</td>
               <td  class="href-link">
-                <a href="{% url 'Kms_Attendance:monthly' year month 10 forloop.counter %}">{{ report.EMP_NAME }}</a>
+                <a href="{% url 'Kms_Attendance:monthly' year month 10 forloop.counter %}">{{ report.emp_name }}</a>
                 {% comment "下記の部分はコメントアウト" %}
-                <a href="{% url 'Kms_Attendance:approval_emp' year month %}">{{ report.EMP_NAME }}</a>
+                <a href="{% url 'Kms_Attendance:approval_emp' year month %}">{{ report.emp_name }}</a>
                 {% endcomment%}
               </td>
               {% comment "下記の部分はコメントアウト" %}

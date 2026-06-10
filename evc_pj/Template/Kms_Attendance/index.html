@@ -19,8 +19,10 @@
         {% csrf_token %}
           <h1>{{  name  }} さん</h1>
           <p><input class="showTime" id="showTime2" readonly name="showTime2"></p>
-          <!-- <h2 id="showTime"></h2>-->
-          <!-- <p>出勤場所：<input type="hidden" name="place">{{ form.place }}</p>-->
+          {% comment "下記の部分はコメントアウト" %}
+          <h2 id="showTime"></h2>
+          <p>出勤場所：<input type="hidden" name="place">{{ form.place }}</p>
+          {% endcomment%}
           {{ form.as_p }}
           <p><input type="submit"  class="btn-image" name="start" value="出勤" {% if in_out != 0 %} disabled{% endif %}>
           <input type="submit" name="finish" value="退勤" {% if in_out != 1 %} disabled{% endif %}></p>

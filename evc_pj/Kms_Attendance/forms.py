@@ -115,7 +115,7 @@ class TimeStampEditForm(forms.ModelForm):
             raise forms.ValidationError('正しい値を入力してください\n出社時刻は退社時刻より過去にする必要があります。')
         return self.cleaned_data
 """
-    def clean_CORRET_START_TIME(self):
+    def clean_corret_start_time(self):
         start_time = self.cleaned_data['corret_start_time']
         try:
             h = int(start_time.split(':')[0])
@@ -127,7 +127,7 @@ class TimeStampEditForm(forms.ModelForm):
         except Exception as e:
             raise forms.ValidationError('Tags are not allowed.')
         return start_time
-    def clean_CORRET_END_TIME(self):
+    def clean_corret_end_time(self):
         end_time = self.cleaned_data['corret_end_time']
         try:
             h = int(end_time.split(':')[0])

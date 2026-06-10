@@ -151,6 +151,7 @@ class IndexView(LoginRequiredMixin, View):
             'form': form,
             'name' : obj_emp.emp_name,
             'in_out': in_out,
+            'process_title': '打刻'
         }
         return render(request, 'Kms_Attendance/index.html', context)
 
@@ -219,6 +220,8 @@ class ResultView(LoginRequiredMixin, View):
         context = {
             'name' : emp_name,
             'comment': comment,
+            'form': form,
+            'process_title': '打刻結果'
         }
         return render(request, 'Kms_Attendance/result.html', context)
 
@@ -342,7 +345,7 @@ class MonthCalendar(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
                     target_month = target_month)
                 calendar_context.update({'obj_getuji':obj_getuji})
             except T_getuji_report.DoesNotExist:
-                pass
+                calendar_context.update({'obj_getuji':None})
         # dt_now = ut_get_localtoday()
         # date = dt_now.year * 10000 + dt_now.month * 100 + dt_now.day
         # if month_current.month != dt_now.month:

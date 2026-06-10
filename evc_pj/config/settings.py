@@ -367,6 +367,12 @@ LOGGING = {
             'level': LOG_LEVEL,
             'propagate': False,
         },
+        # ファイルの自動監視ログをログレベルINFOに
+        'django.utils.autoreload': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'django.request': {
             'handlers': ['console'],
             'level': 'ERROR',

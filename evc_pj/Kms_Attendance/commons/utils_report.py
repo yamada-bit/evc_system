@@ -56,16 +56,16 @@ def get_daily_report(obj_emp, year, month):
                 # gyomu_jisseki = obj_report.GYOMU_JISEKI_TIME
                 # diff_time = obj_report.GYOMU_YOTEI_TIME
                 report = obj_report.report  # 日報
-                com_LTD_CD = obj_report.com_ltd_cd  # コメント所属CD
-                com_EMP_ID = obj_report.com_emp_id # コメント社員番号
+                com_ltd_cd = obj_report.com_ltd_cd  # コメント所属CD
+                com_emp_id = obj_report.com_emp_id # コメント社員番号
                 comment = obj_report.comment   # コメント
             else:
                 report=''
                 # gyomu_yotei = ''
                 # gyomu_jisseki = ''
                 # diff_time = ''
-                com_LTD_CD = ''
-                com_EMP_ID = ''
+                com_ltd_cd = ''
+                com_emp_id = ''
                 comment = ''
 
             obj_timestamp = T_time_stamp.objects. filter(
@@ -91,8 +91,8 @@ def get_daily_report(obj_emp, year, month):
                 # 'gyomu_jisseki' : gyomu_jisseki,
                 # 'work_time' : work_time,
                 # 'diff_time' : diff_time,
-                'com_LTD_CD' : com_LTD_CD,
-                'com_EMP_ID' : com_EMP_ID,
+                'com_ltd_cd' : com_ltd_cd,
+                'com_emp_id' : com_emp_id,
                 'comment' : comment
                 })
             report_list.append(report)
@@ -569,7 +569,7 @@ def get_paid_holiday_list(obj_emp, year, kbn):
     q_objects &= Q(kbn=kbn)
     start_td = year * 10000 + 401
     end_td = (year + 1) * 10000 + 331
-    q_objects &= Q(TARGET_DATE__range=(start_td, end_td))
+    q_objects &= Q(target_date__range=(start_td, end_td))
 
     timestamps = T_time_stamp.objects.filter(q_objects).order_by('emp_id', 'target_date')
     try:

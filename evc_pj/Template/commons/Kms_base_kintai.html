@@ -59,7 +59,9 @@
       <div class="header-area">
         <div class="logo-area">
           <img src='{% static "images/Companylogo.png" %}' class="Companylogo" >
+          {% comment "下記の部分はコメントアウト" %}
           <h4>{{ owner_ryaku_name }}</h4>
+          {% endcomment%}
           <h4>{{ user.user_name }}</h4>
         </div>
         {% if user.is_authenticated %}
@@ -94,59 +96,55 @@
     </header>
 
     <!-- メッセージフレームワーク -->
-    {% if form.errors or messages %}
-      <dialog id="message_dialog">
-        <span class="material-symbols-outlined">
-          {% if form.errors %}
-          error
-          {% else %}
-          report
-          {% endif %}
-        </span>
+    {% if form and form.errors %}
+      <dialog id="form_error_dialog">
+        <span class="material-symbols-outlined">error</span>
         <div>
-        {% if form.errors %}
-          {{ form.non_field_errors }}
-        {% endif %}
-        {% for errors in form.errors.values %}
-          {% for error in errors %}
-            {{ error }}<br>
+          {% for errors in form.errors.values %}
+            {% for error in errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
           {% endfor %}
-        {% endfor %}
-       
-        {% comment "下記の部分はコメントアウト" %}
-        {% if messages %}
-        <ul class="messages">
-          {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
-              {{ message }}
-            </li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-        {% endcomment%}
-        {% if messages %}
+        </div>
+        <div class="btn-dialog">
+          <button id="form_error_close">閉じる</button>
+        </div>
+      </dialog>
+    {% endif %}
+    {% if messages %}
+      <dialog id="message_dialog">
+        <span class="material-symbols-outlined">report</span>
+        <div>
           {% for message in messages %}
             <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>
               {{ message }}
             </p>
           {% endfor %}
-        {% endif %}
         </div>
         <div class="btn-dialog">
           <button id="message_close">閉じる</button>
         </div>
       </dialog>
-      <script>
-        $(function() {
-          let messagebox = document.getElementById('message_dialog');
-          let btn_close = document.getElementById('message_close');
-          btn_close.addEventListener('click', function() {
-            messagebox.close();
-          });
-          messagebox.showModal();
-        });
-      </script>  
     {% endif %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const formErrorDialog = document.getElementById('form_error_dialog');
+        if (formErrorDialog) {
+          document.getElementById('form_error_close').addEventListener('click', function() {
+            formErrorDialog.close();
+          });
+          formErrorDialog.showModal();
+        }
+
+        const messageDialog = document.getElementById('message_dialog');
+        if (messageDialog) {
+          document.getElementById('message_close').addEventListener('click', function() {
+            messageDialog.close();
+          });
+          messageDialog.showModal();
+        }
+      });
+    </script>
   <!-- alertメッセージフレームワーク -->
     <dialog id="alert_dialog">
       <span class="material-symbols-outlined">
