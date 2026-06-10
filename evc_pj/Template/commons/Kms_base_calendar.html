@@ -74,11 +74,11 @@
             <li>
               <a href="{% url 'Kms_Calendar:report_list' %}"><span class="material-symbols-outlined">list</span>報告書一覧</a>
             </li>
+            {% comment "下記の部分はコメントアウト" %}
+            {% if user.user_authority == "スーパーバイザ" %}
             <li {% if process_title == "出退勤" %}class="active"{% endif %}>
               <a href="{% url 'Kms_Attendance:index' %}" class="op"><span class="material-symbols-outlined">login</span>出退勤</a>
             </li>
-            {% comment "下記の部分はコメントアウト" %}
-            {% if user.user_authority == "スーパーバイザ" %}
             {% endif %}
             {% endcomment%}
             <li>
