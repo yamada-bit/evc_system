@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'Evc_Owner.apps.EvcOwnerConfig',
     'Fms_Ocrform.apps.EvcOcrformConfig',
     'Fms_fileshare.apps.FmsFileshareConfig',
+    'attendance.apps.AttendanceConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -83,10 +84,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'config.Evc_logging_middleware.EvcLoggingMiddleware',
 ]
-X_FRAME_OPTIONS = 'ALLOW'   #<iframe>を利用してPDF等を表示
-# クリックジャッキング（透明 iframe による不正操作）の危険があります。
-# X_FRAME_OPTIONS = 'DENY'
-# 設定なしのデフォルト：SAMEORIGIN 同一オリジンのみ許可（デフォルト）
+X_FRAME_OPTIONS = 'SAMEORIGIN'  # 同一オリジンからのiframeのみ許可（クリックジャッキング対策）
+# X_FRAME_OPTIONS = 'DENY'  # iframeを一切禁止する場合はこちら
 
 # DEPLOY = False
 DEPLOY = os.getenv('DEPLOY') == 'True'
@@ -178,7 +177,7 @@ DATABASES = {
 
 # 利用するRouter, manage.pyから見ての相対パス
 DATABASE_ROUTERS = [
-    'Kms_Attendance.db_router.KmsDatabaseRouter',
+    'config.db_router.KmsDatabaseRouter',
 ]
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -237,8 +236,8 @@ LOGOUT_REDIRECT_URL = '/'
 
 # パスワードリセット機能は、ユーザーにリセット用のリンクをメールで送信する必要があります。
 # メール設定を追加します。
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'    # デバッグでコンソール表示
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'    # デバッグでコンソール表示
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
@@ -284,7 +283,6 @@ USE_GOOGLE_CALENDAR = True
 if USE_GOOGLE_CALENDAR:
     INSTALLED_APPS += (
         'Kms_Calendar.apps.KmsCalendarConfig',
-        'Kms_Attendance.apps.KmsAttendanceConfig',
     )
 
     # ウェブ
@@ -364,7 +362,8 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': LOG_LEVEL,
+            # 'level': LOG_LEVEL,
+            'level': 'WARNING',
             'propagate': False,
         },
         # ファイルの自動監視ログをログレベルINFOに

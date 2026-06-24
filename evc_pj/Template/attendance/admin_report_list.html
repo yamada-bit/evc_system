@@ -1,0 +1,155 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}勤怠管理 - 管理者用日報確認{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-3">
+        <div>
+            <h2 class="text-dark mb-1 fw-bold">📊 全社日報確認（管理者用）</h2>
+            <p class="text-muted mb-0">メンバーの日報提出状況の確認・管理ができます。</p>
+        </div>
+        
+        <form method="GET" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <input type="month" name="month" value="{{ target_month }}" class="form-control fw-bold" onchange="this.form.submit();">
+            </div>
+            <div class="col-auto">
+                <select name="user_id" class="form-select fw-bold" onchange="this.form.submit();">
+                    <option value="">👥 すべての社員</option>
+                    {% for u in staff_list %}
+                        <option value="{{ u.user_id }}" {% if u.user_id == selected_user_id %}selected{% endif %}>{{ u.user_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'attendance:admin_report_csv' %}?month={{ target_month }}&user_id={{ selected_user_id|default:'' }}" class="btn btn-success fw-bold shadow-sm">
+                    📥 CSV出力
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle text-center mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="min-width: 110px;">対象日</th>
+                            <th style="min-width: 120px;">氏名</th>
+                            <th style="min-width: 130px;">勤務場所</th>
+                            <th style="text-align: left; min-width: 250px;">業務内容・進捗</th>
+                            <th style="min-width: 100px;">提出状態</th>
+                            <th style="min-width: 120px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td class="fw-bold text-dark">
+                                {% if report.report_date %}{{ report.report_date|date:"Y/m/d" }}{% else %}{{ report.work_date|date:"Y/m/d" }}{% endif %}
+                            </td>
+                            
+                            <td class="fw-bold">{{ report.assigned_user.user_name|default:report.user_id }}</td>
+                            
+                            <td>
+                                {% if report.work_location == 'OFFICE' %}
+                                    <span class="badge bg-primary px-2.5 py-1.5">🏢 出社</span>
+                                {% elif report.work_location == 'REMOTE' %}
+                                    <span class="badge bg-house-custom text-house-custom px-2.5 py-1.5">🏠 在宅</span>
+                                {% elif report.work_location == 'OUTSIDE' %}
+                                    <span class="badge bg-secondary px-2.5 py-1.5">🚗 直行直帰</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted border">-</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-start text-truncate small" style="max-width: 300px;">
+                                {{ report.task_summary|default:"（未入力）" }}
+                            </td>
+                            
+                            <td>
+                                {% if report.task_summary %}
+                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">提出済</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted border px-2 py-1">未入力</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary fw-bold px-3 transition-hover" 
+                                        data-bs-toggle="modal" data-bs-target="#reportModal{{ report.id }}">
+                                    🔍 詳細表示
+                                </button>
+
+                                <div class="modal fade" id="reportModal{{ report.id }}" tabindex="-1" aria-labelledby="reportModalLabel{{ report.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content border-0 shadow-lg">
+                                            <div class="modal-header bg-dark text-white py-3">
+                                                <h5 class="modal-title fw-bold" id="reportModalLabel{{ report.id }}">📄 業務日報詳細</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-start text-dark p-4">
+                                                <div class="row g-3 mb-3 bg-light p-3 rounded-3 border mx-0 shadow-xs">
+                                                    <div class="col-sm-4"><strong>👤 提出者:</strong> <span class="ms-1 text-dark fw-bold">{{ report.assigned_user.user_name|default:report.user_id }}</span></div>
+                                                    <div class="col-sm-4"><strong>📅 対象日:</strong> <span class="ms-1 text-dark font-monospace">{% if report.report_date %}{{ report.report_date|date:"Y年m月d日" }}{% else %}{{ report.work_date|date:"Y年m月d日" }}{% endif %}</span></div>
+                                                    <div class="col-sm-4"><strong>📍 勤務場所:</strong> <span class="ms-1 text-dark">{{ report.get_work_location_display }}</span></div>
+                                                </div>
+                                                
+                                                <div class="mb-4">
+                                                    <h6 class="fw-bold text-primary border-start border-primary border-4 ps-2 mb-2">■ 業務内容・進捗</h6>
+                                                    <div class="p-3 bg-white border rounded-3 font-monospace shadow-xs text-secondary-depth" style="white-space: pre-wrap; line-height: 1.6;">{{ report.task_summary|default:"（業務内容未入力）" }}</div>
+                                                </div>
+                                                
+                                                <div class="mb-0">
+                                                    <h6 class="fw-bold text-success border-start border-success border-4 ps-2 mb-2">■ 所感・連絡事項</h6>
+                                                    <div class="p-3 bg-white border rounded-3 font-monospace shadow-xs text-secondary-depth" style="white-space: pre-wrap; line-height: 1.6;">{{ report.comment|default:"（特記事項なし）" }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer bg-light py-2">
+                                                <button type="button" class="btn btn-secondary fw-bold shadow-sm" data-bs-dismiss="modal">閉じる</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5 fw-bold fs-6">
+                                📭 指定された条件の日報データは見つかりません。
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .shadow-xs {
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.02) !important;
+    }
+    .bg-house-custom {
+        background-color: #e8f5e9 !important;
+    }
+    .text-house-custom {
+        color: #1b5e20 !important;
+    }
+    .text-secondary-depth {
+        color: #212529 !important;
+        font-size: 0.95rem;
+    }
+    .transition-hover:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+        transition: all 0.15s ease-in-out;
+    }
+    /* バッジの余白微調整 */
+    .px-2\.5 { padding-left: 0.65rem !important; padding-right: 0.65rem !important; }
+    .py-1\.5 { padding-top: 0.35rem !important; padding-bottom: 0.35rem !important; }
+</style>
+{% endblock %}

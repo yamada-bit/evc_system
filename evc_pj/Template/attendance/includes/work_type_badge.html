@@ -1,0 +1,17 @@
+{% if type == 'OVERTIME' or type == '残業' %}
+    <span class="badge bg-danger">残業</span>
+{% elif type == 'PAID_LEAVE' or type == '有休' %}
+    <span class="badge bg-success">有休</span>
+{% elif type == 'AM_LEAVE' or type == '午前半休' %}
+    <span class="badge bg-warning text-dark">午前半休</span>
+{% elif type == 'PM_LEAVE' or type == '午後半休' %}
+    <span class="badge bg-warning text-dark">午後半休</span>
+{% elif type == 'COMP_LEAVE' or type == '代休' %}
+    <span class="badge bg-secondary">代休</span>
+{% elif type == 'CORRECTION' or type == '打刻修正' %}
+    <span class="badge bg-info text-dark">打刻修正</span>
+{% elif type == 'NORMAL' or type == '出勤' or type == '通常勤務' %}
+    <span class="badge bg-transparent text-primary border border-primary-subtle fw-bold">出勤</span>
+{% else %}
+    <span class="badge bg-light text-muted border border-secondary-subtle font-monospace">-</span>
+{% endif %}

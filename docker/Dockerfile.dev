@@ -4,12 +4,18 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # ---- OS依存パッケージ ----
-# Dockerイメージにpopplerを含める pdf2image
 RUN apt-get update && apt-get install -y \
     git \
     build-essential \
     libpq-dev \
     poppler-utils \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- Node.js + Claude Code ----
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g @anthropic-ai/claude-code \
     && rm -rf /var/lib/apt/lists/*
 
 # ---- ユーザー作成 ----
@@ -17,20 +23,12 @@ RUN useradd -ms /bin/bash django
 
 WORKDIR /app
 
-# ---- 依存ファイルだけ先にコピー（キャッシュ最適化） ----
 COPY evc_pj/requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 COPY evc_pj/ .
-# 所有者を django に指定
 RUN chown -R django:django /app
-# ---- 実行ユーザー変更 ----
 USER django
 
-# コンテナは起動するだけ 何も自動実行しない
 CMD ["sleep", "infinity"]
-# コンテナ起動＝Django起動
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-# 本番用
-# CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"

@@ -77,7 +77,7 @@
             {% comment "下記の部分はコメントアウト" %}
             {% if user.user_authority == "スーパーバイザ" %}
             <li {% if process_title == "出退勤" %}class="active"{% endif %}>
-              <a href="{% url 'Kms_Attendance:index' %}" class="op"><span class="material-symbols-outlined">login</span>出退勤</a>
+              <a href="{% url 'attendance:dashboard' %}" class="op"><span class="material-symbols-outlined">login</span>出退勤</a>
             </li>
             {% endif %}
             {% endcomment%}

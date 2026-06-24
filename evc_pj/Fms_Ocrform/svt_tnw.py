@@ -24,7 +24,7 @@ from django.http import HttpResponse
 # from django.utils.timezone import make_aware
 from sequences import get_next_value
 
-from commons.utils import ut_get_localtime
+from commons.utils import ut_get_localtime, ut_get_hash
 from Evc_App.sv_create_image import sv_create_ocr_image
 from Evc_App.sv_file import (
     get_imgfolder_upload,
@@ -304,7 +304,7 @@ def sv_save_trasa_file(path, user_id):
         filename = get_tnw_filename('00000')
         filename = create_trasa_file(json_str, ocrimages, folder_path, filename)
         if filename:
-            logger.info(f'バッチ処理 ファイル出力に成功しました。{user_id=}')
+            logger.info(f'バッチ処理 ファイル出力に成功しました。user_id={ut_get_hash(user_id)}')
         else:
             logger.error(f'create_trasa_file False {basename}')
     else:

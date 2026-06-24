@@ -207,7 +207,7 @@ def str2date(str):
 def date2monthstr(date):
     str = ''
     try:
-        str = date.strftime('%Y/%#m') # 先頭の0や空白を削除するために#を指定
+        str = f"{date.year}/{date.month}"
     except Exception as e:
         print_e(e)
     return str
@@ -295,10 +295,7 @@ def round_tco2_1_str(tco2):
 # ログインした年月から換算して11月前から1年
 def get_period():
     today = ut_get_localtoday()
-    if today.month == 12:
-        lastyear =  datetime.datetime(today.year, 1, 1)
-    else:
-        lastyear =  datetime.datetime(today.year - 1, today.month + 1, 1)
+    lastyear = datetime.datetime(today.year - 1, today.month + 1, 1) if today.month != 12 else datetime.datetime(today.year - 1, 1, 1)
     return lastyear,today
 
 

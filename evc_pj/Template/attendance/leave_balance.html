@@ -1,0 +1,129 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}勤怠管理 - 有給残日数管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    {# ===== ヘッダー ===== #}
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h4 class="fw-bold mb-0">有給残日数管理</h4>
+        <div class="d-flex gap-2 align-items-center">
+            <a href="?fiscal_year={{ prev_year }}" class="btn btn-outline-secondary btn-sm">&laquo; {{ prev_year }}年度</a>
+            <span class="fw-bold px-2">{{ fiscal_year }}年度</span>
+            <a href="?fiscal_year={{ next_year }}" class="btn btn-outline-secondary btn-sm">{{ next_year }}年度 &raquo;</a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        {# ===== 左: 登録・更新フォーム ===== #}
+        <div class="col-lg-4">
+            <div class="card shadow-sm position-sticky" style="top: 20px;">
+                <div class="card-header bg-dark text-white py-3">
+                    <h6 class="mb-0 fw-bold">付与日数の登録・更新</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'attendance:leave_balance_manage' %}?fiscal_year={{ fiscal_year }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="fiscal_year" value="{{ fiscal_year }}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">対象社員</label>
+                            <select class="form-select" name="user_id" required>
+                                <option value="" disabled selected>-- 選択してください --</option>
+                                {% for item in user_balance_list %}
+                                    <option value="{{ item.user.user_id }}">
+                                        {{ item.user.user_name }}（{{ item.user.user_id }}）
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">付与日数</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="granted_days"
+                                       min="0" max="999" step="0.5" placeholder="例: 10.0" required>
+                                <span class="input-group-text">日</span>
+                            </div>
+                            <div class="form-text">0.5日刻みで入力してください。</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">取得済み日数
+                                <span class="text-muted fw-normal small">（手動補正時のみ）</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="used_days"
+                                       min="0" max="999" step="0.5" value="0">
+                                <span class="input-group-text">日</span>
+                            </div>
+                            <div class="form-text text-muted">通常は承認時に自動更新されます。</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">
+                            登録・更新する
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# ===== 右: 社員一覧 ===== #}
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-secondary text-white py-3">
+                    <h6 class="mb-0 fw-bold">{{ fiscal_year }}年度 社員別有給残日数一覧</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle text-center mb-0" style="font-size: 0.9rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-start ps-3" style="width: 35%;">社員名</th>
+                                    <th style="width: 20%;">付与日数</th>
+                                    <th style="width: 20%;">取得済み</th>
+                                    <th style="width: 25%;">残日数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in user_balance_list %}
+                                <tr>
+                                    <td class="text-start ps-3">
+                                        <div class="fw-bold">{{ item.user.user_name }}</div>
+                                        <small class="text-muted">{{ item.user.user_id }}</small>
+                                    </td>
+                                    {% if item.balance %}
+                                        <td>{{ item.balance.granted_days }} 日</td>
+                                        <td>{{ item.balance.used_days }} 日</td>
+                                        <td>
+                                            {% with remaining=item.balance.remaining_days %}
+                                                {% if remaining <= 0 %}
+                                                    <span class="badge bg-danger px-3 py-2 fs-6">{{ remaining }} 日</span>
+                                                {% elif remaining <= 3 %}
+                                                    <span class="badge bg-warning text-dark px-3 py-2 fs-6">{{ remaining }} 日</span>
+                                                {% else %}
+                                                    <span class="badge bg-success px-3 py-2 fs-6">{{ remaining }} 日</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                    {% else %}
+                                        <td colspan="3" class="text-muted fst-italic">未登録</td>
+                                    {% endif %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">社員データがありません。</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

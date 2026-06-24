@@ -1,0 +1,116 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}勤怠管理 - 日報登録{% endblock %}
+
+{% block content %}
+<div class="mx-auto" style="max-width: 600px;">
+    {% if is_locked %}
+    <div class="alert alert-warning d-flex align-items-center gap-2 shadow-sm border-start border-warning border-4 mb-3" role="alert">
+        <span>🔒</span>
+        <div><strong>閲覧モード:</strong> この月報はすでに提出または確定されているため、日報の編集・削除はできません。</div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold">📝 {{ target_date_str }} の業務日報</h5>
+        </div>
+        
+        <div class="card-body p-4 bg-white">
+            <form id="reportForm" action="{% url 'attendance:daily_report_submit' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="target_date" value="{{ target_date_str }}">        
+
+                <div class="mb-3">
+                    <label for="work_location" class="form-label fw-bold text-secondary">勤務場所 <span class="badge bg-danger">必須</span></label>
+                    <select class="form-select" id="work_location" name="work_location" required {% if is_locked %}disabled{% endif %}>
+                        <option value="" disabled {% if not report %}selected{% endif %}>選択してください</option>
+                        <option value="OFFICE" {% if report.work_location == "OFFICE" %}selected{% endif %}>出社（オフィス）</option>
+                        <option value="REMOTE" {% if report.work_location == "REMOTE" %}selected{% endif %}>リモート（在宅勤務）</option>
+                        <option value="OUTSIDE" {% if report.work_location == "OUTSIDE" %}selected{% endif %}>直行・直帰（客先など）</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="task_summary" class="form-label fw-bold text-secondary">業務内容・進捗 <span class="badge bg-danger">必須</span></label>
+                    <textarea class="form-control font-monospace" id="task_summary" name="task_summary" rows="8" 
+                              placeholder="本日の業務内容、進捗、課題などを入力してください。" 
+                              required {% if is_locked %}disabled{% endif %}>{{ report.task_summary|default:"" }}</textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label for="comment" class="form-label fw-bold text-secondary">所感・連絡事項</label>
+                    <textarea class="form-control font-monospace" id="comment" name="comment" rows="4" 
+                              placeholder="本日の気づきや連絡事項があれば入力してください。" 
+                              {% if is_locked %}disabled{% endif %}>{{ report.comment|default:"" }}</textarea>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top">
+                    <div>
+                        <a href="{% url 'attendance:attendance_punch' %}" class="btn btn-outline-secondary fw-bold">
+                            🔙 戻る
+                        </a>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        {% if report and not is_locked %}
+                            <button type="button" class="btn btn-outline-danger fw-bold" onclick="confirmDelete();">
+                                🗑️ 削除
+                            </button>
+                        {% endif %}
+
+                        {% if not is_locked %}
+                            <button type="submit" id="submitBtn" class="btn btn-primary px-4 fw-bold shadow-sm">
+                                {% if report %}✨ 日報を更新{% else %}🚀 日報を登録{% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+
+            {% if report and not is_locked %}
+            <form id="deleteForm" action="{% url 'attendance:daily_report_delete' %}" method="POST" style="display: none;">
+                {% csrf_token %}
+                <input type="hidden" name="report_id" value="{{ report.id }}">
+            </form>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const isLocked = {{ is_locked|yesno:"true,false" }};
+
+    document.addEventListener("DOMContentLoaded", function() {
+        if (isLocked) return; // ロック時はイベントを設定しない
+
+        const reportForm = document.getElementById('reportForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // 二重送信防止
+        reportForm.addEventListener('submit', function() {
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> 送信中...`;
+            }
+        });
+    });
+
+    // 削除確認
+    function confirmDelete() {
+        if (isLocked) return;
+        if (confirm('本当にこの日報を削除しますか？\n消去されたデータは元に戻せません。')) {
+            document.getElementById('deleteForm').submit();
+        }
+    }
+</script>
+
+<style>
+    textarea.form-control {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        resize: vertical;
+    }
+</style>
+{% endblock %}

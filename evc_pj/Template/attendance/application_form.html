@@ -1,0 +1,192 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}勤怠管理 - 各種申請フォーム{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm position-sticky" style="top: 20px;">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0 fw-bold">📨 新規申請 提出</h5>
+                </div>
+                {# 有給残日数バナー #}
+                <div class="card-body border-bottom pb-3 mb-1">
+                    <div class="small fw-bold text-muted mb-1">{{ fiscal_year }}年度 有給残日数</div>
+                    {% if leave_balance %}
+                        {% with remaining=leave_balance.remaining_days %}
+                            <div class="d-flex align-items-baseline gap-2">
+                                <span class="fs-4 fw-bold {% if remaining <= 0 %}text-danger{% elif remaining <= 3 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ remaining }} 日
+                                </span>
+                                <span class="text-muted small">
+                                    （付与: {{ leave_balance.granted_days }}日 / 取得済: {{ leave_balance.used_days }}日）
+                                </span>
+                            </div>
+                            {% if pending_leave_days > 0 %}
+                                <div class="text-muted small mt-1">承認待ち: {{ pending_leave_days }}日 → 申請可能: {{ remaining|floatformat:1 }}日 - {{ pending_leave_days }}日</div>
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        <span class="text-danger small">未登録（管理者にご連絡ください）</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'attendance:work_application' %}" method="POST" id="applicationForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="apply_type" class="form-label fw-bold">申請種別</label>
+                            <select class="form-select" id="apply_type" name="apply_type" required>
+                                <option value="" disabled selected>-- 選択してください --</option>
+                                {% for value, label in apply_type_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="target_date" class="form-label fw-bold">対象日</label>
+                            <input type="date" class="form-control" id="target_date" name="target_date" value="{{ default_date }}" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="reason" class="form-label fw-bold">申請理由・備考</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="4" placeholder="例: 体調不良のため有給を取得します。&#10;例: ○○対応のため1時間残業しました。" required></textarea>
+                        </div>
+
+                        <div id="overtime_fields" class="d-none bg-light p-3 rounded mb-4 border shadow-sm">
+                            <h6 class="text-danger fw-bold mb-3 border-bottom pb-2">⏱️ 残業時間の入力</h6>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="small fw-bold text-muted mb-1">申請残業時間（HH:MM）</label>
+                                    <input type="time" name="requested_overtime_hours" id="requested_overtime_hours" class="form-control form-control-sm">
+                                    <div class="form-text text-muted" style="font-size: 0.75rem;">※承認後、この時間で残業実績が確定されます。</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="correction_time_fields" class="d-none bg-light p-3 rounded mb-4 border shadow-sm">
+                            <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">⚙️ 修正内容の入力</h6>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="small fw-bold text-muted mb-1">出勤時刻</label>
+                                    <input type="time" name="corrected_clock_in" id="corrected_clock_in" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small fw-bold text-muted mb-1">退勤時刻</label>
+                                    <input type="time" name="corrected_clock_out" id="corrected_clock_out" class="form-control form-control-sm">
+                                </div>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="small fw-bold text-muted mb-1">休憩時間（合計）</label>
+                                    <input type="time" name="corrected_break_hours" id="corrected_break_hours" class="form-control form-control-sm" value="01:00">
+                                    <div class="form-text text-muted" style="font-size: 0.75rem;">※標準的な休憩は 01:00 (1時間) です。</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                            🚀 申請を送信する
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-secondary text-white py-3">
+                    <h5 class="mb-0 fw-bold">📋 あなたの申請履歴・ステータス</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle text-center mb-0" style="font-size: 0.9rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 15%;">対象日</th>
+                                    <th style="width: 15%;">申請種別</th>
+                                    <th style="width: 30%;">理由</th>
+                                    <th style="width: 15%;">ステータス</th>
+                                    <th style="width: 25%;">上長コメント</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for app in my_applications %}
+                                <tr>
+                                    <td><strong class="text-dark">{{ app.target_date|date:"Y/m/d" }}</strong></td>
+                                    <td>
+                                        {% include "attendance/includes/work_type_badge.html" with type=app.apply_type %}
+                                    </td>
+                                    <td class="text-start" style="white-space: pre-wrap;">{{ app.reason }}</td>
+                                    <td>
+                                        {% if app.status == 'PENDING' %}
+                                            <span class="badge bg-warning text-dark fw-bold px-2 py-1">未承認</span>
+                                        {% elif app.status == 'APPROVED' %}
+                                            <span class="badge bg-success fw-bold px-2 py-1">承認済み</span>
+                                        {% elif app.status == 'REJECTED' %}
+                                            <span class="badge bg-danger fw-bold px-2 py-1">却下</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-start text-muted small">
+                                        {% if app.approval_comment %}
+                                            <div class="text-dark fw-bold mb-1">{{ app.approval_comment }}</div>
+                                        {% else %}
+                                            <span class="text-black-50">-</span>
+                                        {% endif %}
+                                        {% if app.approval_date %}
+                                            <small class="text-black-50 d-block">({{ app.approval_date|date:"m/d H:i" }})</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">過去の申請データはありません。</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('apply_type').addEventListener('change', function () {
+        const applyType = this.value;
+
+        const overtimeBlock    = document.getElementById('overtime_fields');
+        const correctionBlock  = document.getElementById('correction_time_fields');
+        const overtimeInput    = document.getElementById('requested_overtime_hours');
+        const correctionInputs = [
+            document.getElementById('corrected_clock_in'),
+            document.getElementById('corrected_clock_out'),
+            document.getElementById('corrected_break_hours'),
+        ];
+
+        // すべて非表示・非必須・値クリアにリセット
+        overtimeBlock.classList.add('d-none');
+        correctionBlock.classList.add('d-none');
+        if (overtimeInput) { overtimeInput.required = false; overtimeInput.value = ''; }
+        correctionInputs.forEach(input => {
+            if (input) {
+                input.required = false;
+                if (input.id !== 'corrected_break_hours') input.value = '';
+            }
+        });
+
+        if (applyType === 'OVERTIME') {
+            overtimeBlock.classList.remove('d-none');
+            if (overtimeInput) overtimeInput.required = true;
+        } else if (applyType === 'CORRECTION') {
+            correctionBlock.classList.remove('d-none');
+            correctionInputs.forEach(input => { if (input) input.required = true; });
+        }
+    });
+</script>
+{% endblock %}

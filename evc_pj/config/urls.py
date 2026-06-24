@@ -21,6 +21,7 @@ from django.urls import include, path
 from accounts.views import EvcLoginView
 from Evc_App.views import health
 
+# handler403 はデフォルト（Template/403.html）を使用
 # admin.site.site_title = 'タイトルタグ'
 # admin.site.site_header = 'サンプルアプリケーション'
 # admin.site.index_title = 'メニュー'
@@ -37,6 +38,7 @@ urlpatterns = [
     path('Evc_Owner/', include('Evc_Owner.urls')),
     path('Fms_Ocrform/', include('Fms_Ocrform.urls')),
     path('Fms_fileshare/', include('Fms_fileshare.urls')),
+    path('attendance/', include('attendance.urls')),
     path("health/", health),
 
     # path('detail/<pk>/', UserDetailView.as_view(), name='user_detail'),
@@ -56,4 +58,3 @@ if settings.DEBUG:
 
 if settings.USE_GOOGLE_CALENDAR:
     urlpatterns += [path('calendar/', include('Kms_Calendar.urls'))]
-    urlpatterns += [path('kintai/', include('Kms_Attendance.urls'))]

@@ -225,7 +225,7 @@ def get_evidence_image_dir(rootfolder):
 
 # webで画像を表示するために /media/ 配下
 def get_media_image_dir():
-    img_dir = getattr(settings, 'MEDIA_ROOT') / 'img'
+    img_dir = os.path.join(getattr(settings, 'MEDIA_ROOT'), 'img')
     # img_dir = getattr(settings, 'MEDIA_ROOT').parent.parent / 'media/img'
     return img_dir
 # jsonファイル保存（デバッグ用途）
@@ -303,7 +303,6 @@ def sv_get_textlines_lf(textdatas, page_no, area_no):
                     pre_y1 = y1
                     pre_y2 = y2
                 else:
-                    pre_y1 = -1
                     pre_y1 = y1
                     pre_y2 = y2
                     textlines.append(text)

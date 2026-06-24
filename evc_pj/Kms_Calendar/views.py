@@ -32,8 +32,6 @@ from Kms_Calendar.google_calendar import (
     get_calendar_service,
 )
 
-# from Kms_Attendance.models import M_holiday
-
 FORMAT_DATE = '%Y/%m/%d %H:%M:%S'
 FORMAT_MD = '%#m/%#d'
 FORMAT_HM = '%#H:%M'

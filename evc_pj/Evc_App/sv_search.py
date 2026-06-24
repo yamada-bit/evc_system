@@ -487,10 +487,11 @@ def search_price(key, text):
         # pattern_dict['price2'] = r'(\d{1,3}(?:,\d{3})+|\d+)円'
         # pattern_dict['price1'] = r'¥\s*(\d{1,3}(?:(?:.|,)\d{3})+|\d+)' # .を,とみなす NG
         # pattern_dict['price2'] = r'(\d{1,3}(?:(?:.|,)\d{3})+|\d+)\s*円'
-        pattern_dict['price1'] = r'¥\s*(\d{1,3}(?:,\d{3})+|\d+)'
+        pattern_dict['price1'] = r'[¥￥]\s*(\d{1,3}(?:,\d{3})+|\d+)'  # 半角¥・全角￥
         pattern_dict['price2'] = r'(\d{1,3}(?:,\d{3})+|\d+)\s*円'
         pattern_dict['price3'] = r'\\\s*(\d{1,3}(?:,\d{3})+|\d+)'   # ¥が\に置き換わる場合に対処
         pattern_dict['price4'] = r'(\d{1,3}(?:,\d{3})+|\d+)\s*JPY'
+        pattern_dict['price5'] = r'[$＄]\s*(\d{1,3}(?:,\d{3})+|\d+)'  # 半角$・全角＄
         text = rep_period(text)
     else:
         pattern_dict['price0'] = r'¥?(\d{1,3}(?:,\d{3})+|\d+)円?'

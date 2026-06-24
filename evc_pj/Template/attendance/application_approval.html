@@ -1,0 +1,144 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}勤怠管理 - 管理者承認ページ{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4 border-bottom pb-2">
+        <h2 class="text-dark mb-0">🛡️ 管理者承認ポータル</h2>
+        <p class="text-muted mb-0">社員から提出された各種申請および月報締め処理の確認を行います。</p>
+    </div>
+
+    <div class="card mb-4 bg-light border shadow-sm">
+        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h5 class="mb-1 fw-bold text-dark">💾 勤務実績CSV一括ダウンロード</h5>
+                <p class="text-muted small mb-0">全社員の指定月分の打刻データを一括してCSVファイルとして書き出します。給与計算ソフトへの連携等にご利用ください。</p>
+            </div>
+            <form method="GET" action="{% url 'attendance:export_attendance_csv' %}" class="d-flex align-items-center gap-2">
+                <input type="month" name="month" value="{% now 'Y-m' %}" class="form-control form-control-sm" style="max-width: 160px;" required>
+                <button type="submit" class="btn btn-primary btn-sm fw-bold text-nowrap shadow-sm">
+                    📥 CSVをダウンロード
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="approvalTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold text-dark" id="apps-tab" data-bs-toggle="tab" data-bs-target="#apps-content" type="button" role="tab" aria-controls="apps-content" aria-selected="true">
+                📨 各種申請の承認待ち <span class="badge bg-danger">{{ pending_applications|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-dark" id="months-tab" data-bs-toggle="tab" data-bs-target="#months-content" type="button" role="tab" aria-controls="months-content" aria-selected="false">
+                📅 月報締めの承認待ち <span class="badge bg-warning text-dark">{{ pending_months|length }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="approvalTabsContent">
+        
+        <div class="tab-pane fade show active" id="apps-content" role="tabpanel" aria-labelledby="apps-tab">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-center">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>申請者</th>
+                                    <th>対象日</th>
+                                    <th>種別</th>
+                                    <th>内容 / 修正時間</th>
+                                    <th>申請理由</th>
+                                    <th>管理者の判断 / コメント欄</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for app in pending_applications %}
+                                <tr>
+                                    <td class="fw-bold">{{ app.assigned_user.user_name|default:app.user_id }}</td>
+                                    <td>{{ app.target_date|date:"Y/m/d" }}</td>
+                                    <td>
+                                        {% include "attendance/includes/work_type_badge.html" with type=app.apply_type %}
+                                    </td>
+                                    <td>
+                                        {% if app.apply_type == 'CORRECTION' %}
+                                            <span class="fw-bold text-nowrap">🕒 {{ app.corrected_clock_in|time:"H:i" }} 〜 {{ app.corrected_clock_out|time:"H:i" }}</span>
+                                            {% if app.corrected_break_hours %}
+                                                <br><small class="text-muted">(休憩: {{ app.corrected_break_hours }})</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-start small" style="max-width: 250px; white-space: pre-wrap;">{{ app.reason }}</td>
+                                    <td>
+                                        <form method="POST" action="" class="d-flex gap-1 justify-content-center px-2">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="application_id" value="{{ app.id }}">
+                                            <input type="text" name="comment" class="form-control form-control-sm" style="max-width: 200px;" placeholder="却下時などは理由を記入">
+                                            <button type="submit" name="action_type" value="approve" class="btn btn-primary btn-sm fw-bold text-nowrap">👍 承認</button>
+                                            <button type="submit" name="action_type" value="reject" class="btn btn-outline-danger btn-sm fw-bold text-nowrap">❌ 却下</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">現在、未承認の申請はありません。</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="months-content" role="tabpanel" aria-labelledby="months-tab">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-center">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>申請者</th>
+                                    <th>対象年月</th>
+                                    <th>出勤日数</th>
+                                    <th>総実労働時間</th>
+                                    <th>総残業時間</th>
+                                    <th>管理者の判断 / コメント欄</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in pending_months %}
+                                <tr>
+                                    <td class="fw-bold">{{ report.assigned_user.user_name|default:report.user_id }}</td>
+                                    <td class="fs-5 fw-bold text-primary">{{ report.target_month }}</td>
+                                    <td><span class="badge bg-secondary fs-6">{{ report.total_work_days }} 日</span></td>
+                                    <td class="fw-bold">{{ report.total_work_hours }}</td>
+                                    <td class="text-danger fw-bold">{{ report.total_overtime_hours }}</td>
+                                    <td>
+                                        <form method="POST" action="" class="d-flex gap-2 justify-content-center px-2">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="report_id" value="{{ report.id }}">
+                                            <input type="text" name="comment" class="form-control form-control-sm" style="max-width: 250px;" placeholder="差し戻し時などは理由を記入">
+                                            <button type="submit" name="action_type" value="approve_month" class="btn btn-success btn-sm fw-bold text-nowrap">🔒 承認(確定)</button>
+                                            <button type="submit" name="action_type" value="reject_month" class="btn btn-danger btn-sm fw-bold text-nowrap">↩️ 差し戻し</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">現在、承認待ちの月報締めはありません。</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> </div>
+{% endblock %}

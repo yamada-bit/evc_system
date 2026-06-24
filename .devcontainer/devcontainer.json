@@ -14,12 +14,11 @@
       "extensions": [
         "ms-python.python",
         "ms-azuretools.vscode-docker",
-        "batisteo.vscode-django"
+        "batisteo.vscode-django",
+        "anthropic.claude-code"
       ]
     }
   },
-
-  // "postCreateCommand": "pip install -r requirements.txt && python manage.py migrate",
 
   "postCreateCommand": [
     "bash .devcontainer/restore-timestamps.sh",

@@ -200,7 +200,7 @@ class EvcUserView(LoginRequiredMixin, OwnerTestMixin, FormView):
                     logger.info(f'{ut_get_client_ip(self.request)} '
                                 f'EvcUserView データを登録しました。 {user_id_hash=}')
             except Exception:
-                messages.success(self.request, 'データ登録に失敗しました。')
+                messages.error(self.request, 'データ登録に失敗しました。')
                 logger.exception(f'{ut_get_client_ip(self.request)} '
                                 f'EvcUserView exception {user_id_hash=}')
 
@@ -311,7 +311,7 @@ class EvcUserGuestView(EvcUserView):
             logger.info(f'{ut_get_client_ip(self.request)} '
                         f'EvcUserView データを登録しました。 {user_id_hash=}')
         except Exception:
-            messages.success(self.request, 'データ登録に失敗しました。')
+            messages.error(self.request, 'データ登録に失敗しました。')
             logger.exception(f'{ut_get_client_ip(self.request)} '
                             f'EvcUserView exception {user_id_hash=}')
 
@@ -333,7 +333,8 @@ class EvcUserListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         self.form = form
         logger.info(f'{ut_get_client_ip(self.request)} '
                     'EvcUserListView 検索条件で絞り込み')
-        return EvcUser.objects.exclude(user_authority= 'スーパーバイザ').exclude(user_authority= 'グループ管理者').exclude(is_superuser=True).order_by('user_id')
+        owner_id = self.request.session.get('owner_id')
+        return EvcUser.objects.filter(owner_id=owner_id).exclude(user_authority='スーパーバイザ').exclude(user_authority='グループ管理者').exclude(is_superuser=True).order_by('user_id')
         # return EvcUser.objects.exclude(delete_flg=1).exclude(user_authority= 'スーパーバイザ').exclude(user_authority= 'グループ管理者').exclude(is_superuser=True).order_by('user_id')
 
     def get_context_data(self, **kwargs):

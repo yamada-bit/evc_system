@@ -1,0 +1,143 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}勤怠管理システム{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    
+    <style>
+        @media (min-width: 768px) {
+            .sidebar {
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+            }
+        }
+        /* トースト・アラートのフェードイン微調整 */
+        .alert {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow d-md-none">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-info fw-bold" href="#">勤怠システム</a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed m-2 end-0" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="ナビゲーションを切り替え">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse text-white p-3">
+                <div class="mb-4 border-bottom pb-3 pt-2 d-none d-md-block">
+                    <h5 class="text-info mb-1 fw-bold">🏢 勤怠システム</h5>
+                    <div class="text-muted small">
+                        ユーザー: <span class="text-white fw-bold">{{ user.user_name|default:user.get_username }}</span>                        
+                    </div>
+                </div>
+                
+                <div class="d-md-none mb-3 border-bottom pb-2">
+                    <span class="text-white-50 small">ログイン中:</span>
+                    <strong class="text-white">{{ user.user_name|default:user.get_username }}</strong>
+                </div>
+                
+                <ul class="nav flex-column nav-pills">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white {% if request.resolver_match.url_name == 'dashboard' %}active bg-primary fw-bold{% endif %}" 
+                           href="{% url 'attendance:dashboard' %}">
+                            🏠 ダッシュボード
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white {% if request.resolver_match.url_name == 'attendance_punch' %}active bg-primary fw-bold{% endif %}" 
+                           href="{% url 'attendance:attendance_punch' %}">
+                            🕒 勤務打刻
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white {% if request.resolver_match.url_name == 'daily_report_submit' %}active bg-primary fw-bold{% endif %}" 
+                           href="{% url 'attendance:daily_report_submit' %}">
+                            📝 日報入力
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white {% if request.resolver_match.url_name == 'monthly_report' %}active bg-primary fw-bold{% endif %}" 
+                           href="{% url 'attendance:monthly_report' %}">
+                            📊 月報確認
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white {% if request.resolver_match.url_name == 'work_application' %}active bg-primary fw-bold{% endif %}" 
+                           href="{% url 'attendance:work_application' %}">
+                            📨 申請・履歴
+                        </a>
+                    </li>
+                    
+                    {% if user.is_staff %}
+                        <li class="nav-item mt-4 mb-2">
+                            <span class="text-white-50 small px-3 fw-bold text-uppercase" style="letter-spacing: 0.05rem;">
+                                🛡️ 管理者メニュー
+                            </span>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link text-warning {% if request.resolver_match.url_name == 'application_approval' %}active bg-warning text-dark fw-bold{% endif %}" 
+                               href="{% url 'attendance:application_approval' %}">
+                                📥 申請承認・管理
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link text-warning {% if request.resolver_match.url_name == 'admin_report_list' %}active bg-warning text-dark fw-bold{% endif %}"
+                               href="{% url 'attendance:admin_report_list' %}">
+                                📊 全社日報確認
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link text-warning {% if request.resolver_match.url_name == 'leave_balance_manage' %}active bg-warning text-dark fw-bold{% endif %}"
+                               href="{% url 'attendance:leave_balance_manage' %}">
+                                🏖️ 有給残日数管理
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                
+                <div class="mt-4 pt-3 border-top border-secondary d-flex flex-column gap-2">
+                    <a href="/" class="btn btn-outline-light btn-sm w-100">トップページへ戻る</a>
+                    <form method="post" action="{% url 'attendance:attendance_logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">ログアウト</button>
+                    </form>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                
+                {% if messages %}
+                    <div class="messages-container mb-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
+                                {% if message.tags == 'success' %}✅ 
+                                {% elif message.tags == 'error' or message.tags == 'danger' %}⚠️ 
+                                {% else %}ℹ️ {% endif %}
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

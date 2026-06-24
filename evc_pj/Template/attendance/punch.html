@@ -1,0 +1,171 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}勤怠管理 - 打刻ダッシュボード{% endblock %}
+
+{% block content %}
+<div class="mx-auto" style="max-width: 500px;">
+    <div class="card shadow border-0 rounded-3 overflow-hidden">
+        <div class="card-header bg-dark text-white text-center py-3">
+            <h5 class="mb-0 fw-bold" style="letter-spacing: 1px;">⏱ 勤怠打刻システム</h5>
+        </div>
+        
+        <div class="card-body p-4 text-center bg-light-subtle">
+            <p class="fs-6 text-secondary mb-3">
+                社員: <strong class="text-dark">{{ user.user_name }}</strong> 
+                <span class="text-muted font-monospace">（ID: {{ user.user_id }}）</span>
+            </p>
+
+            <div class="card shadow-sm mb-4 border-0 text-center bg-dark text-white rounded-3">
+                <div class="card-body py-4">
+                    <div id="digitalDate" class="fs-6 fw-bold text-white-50 mb-1" style="letter-spacing: 2px;">
+                        ----年--月--日 (ー)
+                    </div>
+                    <div id="digitalClock" class="display-4 fw-bold font-monospace text-warning" style="letter-spacing: 3px;">
+                        00:00:00
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-3 rounded-3 border text-start mb-4 shadow-xs">
+                <h6 class="text-secondary fw-bold border-bottom pb-2 mb-2" style="font-size: 0.85rem;">📌 本日の打刻ログ</h6>
+                <div class="row g-2 font-monospace" style="font-size: 0.9rem;">
+                    <div class="col-6 text-truncate">
+                        出勤: <span class="badge {% if attendance.clock_in %}bg-success{% else %}bg-light text-muted{% endif %} fs-6 ms-1">
+                            {% if attendance.clock_in %}{{ attendance.clock_in|date:"H:i:s" }}{% else %}--:--:--{% endif %}
+                        </span>
+                    </div>
+                    <div class="col-6 text-truncate">
+                        退勤: <span class="badge {% if attendance.clock_out %}bg-danger{% else %}bg-light text-muted{% endif %} fs-6 ms-1">
+                            {% if attendance.clock_out %}{{ attendance.clock_out|date:"H:i:s" }}{% else %}--:--:--{% endif %}
+                        </span>
+                    </div>
+                    <div class="col-6 text-truncate">
+                        休憩始: <span class="badge {% if attendance.break_start %}bg-warning text-dark{% else %}bg-light text-muted{% endif %} fs-6 ms-1">
+                            {% if attendance.break_start %}{{ attendance.break_start|date:"H:i:s" }}{% else %}--:--:--{% endif %}
+                        </span>
+                    </div>
+                    <div class="col-6 text-truncate">
+                        休憩終: <span class="badge {% if attendance.break_end %}bg-info text-dark{% else %}bg-light text-muted{% endif %} fs-6 ms-1">
+                            {% if attendance.break_end %}{{ attendance.break_end|date:"H:i:s" }}{% else %}--:--:--{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="punchForm" action="{% url 'attendance:attendance_punch' %}" method="POST">
+                {% csrf_token %}
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <button type="submit" name="punch_type" value="clock_in" 
+                                class="btn btn-success btn-lg w-100 py-3 fw-bold shadow-sm punch-btn"
+                                {% if attendance.clock_in %}disabled{% endif %}>
+                            🌅 出勤
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="submit" name="punch_type" value="clock_out" 
+                                class="btn btn-danger btn-lg w-100 py-3 fw-bold shadow-sm punch-btn"
+                                {% if not attendance.clock_in or attendance.clock_out or attendance.break_start and not attendance.break_end %}disabled{% endif %}>
+                            🏠 退勤
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6">
+                        <button type="submit" name="punch_type" value="break_start" 
+                                class="btn btn-outline-warning text-dark btn-lg w-100 py-2_5 fw-bold shadow-xs punch-btn"
+                                {% if not attendance.clock_in or attendance.clock_out or attendance.break_start %}disabled{% endif %}>
+                            ☕ 休憩開始
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="submit" name="punch_type" value="break_end" 
+                                class="btn btn-outline-info text-dark btn-lg w-100 py-2_5 fw-bold shadow-xs punch-btn"
+                                {% if not attendance.break_start or attendance.break_end %}disabled{% endif %}>
+                            🔄 休憩終了
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="mt-4 border-top pt-3">
+                <a href="{% url 'attendance:daily_report_submit' %}" class="btn btn-link text-decoration-none text-secondary btn-sm fw-bold">
+                    📝 本日の日報を作成・編集する ➔
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const dateDisplay = document.getElementById('digitalDate');
+        const clockDisplay = document.getElementById('digitalClock');
+        const punchForm = document.getElementById('punchForm');
+        const punchButtons = document.querySelectorAll('.punch-btn');
+        
+        const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+
+        // 1. リアルタイム時計表示ロジック
+        function updateClock() {
+            const now = new Date();
+
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const dayName = weekdays[now.getDay()];
+            
+            dateDisplay.textContent = `${year}年${month}月${date}日 (${dayName})`;
+
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            clockDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // 2. 💡 ネットワーク遅延時の連打・多重送信防御（送信中アニメーション）
+        punchForm.addEventListener('submit', function(e) {
+            // クリックされたボタンを特定
+            const clickedButton = document.activeElement;
+            
+            if (clickedButton && clickedButton.classList.contains('punch-btn')) {
+                // 1. 先にPOST用の値を担保するため、一時的にhiddenインプットを生成してフォームに追加
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'punch_type';
+                hiddenInput.value = clickedButton.value;
+                punchForm.appendChild(hiddenInput);
+
+                // 2. 押されたボタンの中にスピナーを注入して、処理中であることを明示
+                clickedButton.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> 打刻中...`;
+                
+                // 3. 💡超重要: setTimeoutを使って、データの送信処理がブラウザに走った「直後」に非活性化する
+                setTimeout(() => {
+                    punchButtons.forEach(btn => btn.disabled = true);
+                }, 1);
+            }
+        });
+    });
+</script>
+
+<style>
+    .py-2_5 {
+        padding-top: 0.6rem !important;
+        padding-bottom: 0.6rem !important;
+    }
+    .shadow-xs {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.04) !important;
+    }
+    /* ボタンホバー時に少しだけ浮き上がらせる高級感の演出 */
+    .punch-btn:not([disabled]):hover {
+        transform: translateY(-1px);
+        transition: all 0.2s ease-in-out;
+    }
+</style>
+{% endblock %}

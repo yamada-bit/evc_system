@@ -1,0 +1,184 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <title>勤慢管理 - ログイン</title>
+
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #f4f6f9;
+    }
+    .login-container {
+      max-width: 440px;
+      margin-top: 8vh;
+      margin-bottom: 5vh;
+    }
+    .input-group-text .material-symbols-outlined {
+      font-size: 1.25rem;
+    }
+    .btn-password-toggle {
+      border-left: none;
+      background-color: #fff;
+    }
+    .btn-password-toggle:hover {
+      background-color: #f8f9fa;
+    }
+    /* ボタンホバーエフェクト */
+    .btn-login {
+      transition: all 0.2s ease-in-out;
+    }
+    .btn-login:not([disabled]):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15) !important;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container login-container">
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'warning' in message.tags %}alert-warning{% else %}alert-info{% endif %} shadow-sm mb-3 d-flex align-items-center gap-2" role="alert">
+          <span class="material-symbols-outlined">
+            {% if 'success' in message.tags %}check_circle{% elif 'warning' in message.tags %}warning{% else %}info{% endif %}
+          </span>
+          <span class="small fw-bold">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if form.errors or next %}
+      <div class="alert alert-danger shadow-sm mb-4" role="alert">
+        <div class="d-flex align-items-center gap-2 mb-2 fw-bold">
+          <span class="material-symbols-outlined">error</span>
+          <span>ログインエラー</span>
+        </div>
+        
+        {% if form.errors %}
+          <p class="mb-1 small">メールアドレスまたはパスワードが違っています。</p>
+        {% endif %}
+        
+        {% if next %}
+          {% if user.is_authenticated %}
+            <p class="mb-0 small">アクセスしようとしたページを表示する権限がありません。別のアカウントでログインしてください。</p>
+          {% else %}
+            <p class="mb-0 small">このページを見るためにはログインしてください。</p>
+          {% endif %}
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <div class="card shadow border-0 rounded-3 overflow-hidden">
+      <div class="card-header bg-primary text-white text-center py-4">
+        <h4 class="mb-0 fw-bold" style="letter-spacing: 1px;">📅 勤怠管理システム</h4>
+      </div>
+      
+      <div class="card-body p-4 bg-white">
+        <h5 class="text-dark fw-bold text-center mb-4" style="letter-spacing: 2px;">LOGIN</h5>
+        
+        <form id="loginForm" method="post" action="{% url 'attendance:alogin' %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}">
+
+          <div class="mb-3">
+            <label for="id_username" class="form-label fw-bold small text-secondary">メールアドレス</label>
+            <div class="input-group shadow-sm-inset">
+              <span class="input-group-text bg-light text-secondary border-end-0">
+                <span class="material-symbols-outlined">account_circle</span>
+              </span>
+              <input type="email" name="username" maxlength="50" class="form-control border-start-0" 
+                     placeholder="example@company.com" required id="id_username" autocomplete="username">
+            </div>
+            {% if form.username.errors %}
+              <div class="text-danger small mt-1 fw-bold">{{ form.username.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_password" class="form-label fw-bold small text-secondary">パスワード</label>
+            <div class="input-group shadow-sm-inset">
+              <span class="input-group-text bg-light text-secondary border-end-0">
+                <span class="material-symbols-outlined">lock</span>
+              </span>
+              <input type="password" name="password" class="form-control border-start-0 border-end-0" 
+                     placeholder="••••••••" required id="id_password" autocomplete="current-password">
+              <button class="btn btn-outline-secondary btn-password-toggle px-3 text-secondary border d-flex align-items-center" 
+                      type="button" id="passwordToggle" title="パスワードの表示/非表示">
+                <span class="material-symbols-outlined" id="toggleIcon">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="p-3 bg-light rounded border mb-4">
+            <div class="d-flex gap-2">
+              <span class="material-symbols-outlined text-warning fs-5">warning</span>
+              <p class="card-text text-muted mb-0" style="font-size: 0.75rem; line-height: 1.5;">
+                英大小文字、数字、アルファベット以外の文字（「\」を除く）を組み合わせた、半角6桁以上のパスワードを入力してください。
+              </p>
+            </div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" id="loginBtn" class="btn btn-primary btn-login fw-bold py-2_5 shadow-sm fs-6">
+              ログインする 🚀
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const loginForm = document.getElementById('loginForm');
+      const loginBtn = document.getElementById('loginBtn');
+      const passwordInput = document.getElementById('id_password');
+      const passwordToggle = document.getElementById('passwordToggle');
+      const toggleIcon = document.getElementById('toggleIcon');
+
+      // 1. パスワードの目玉アイコンによる可視化切り替え
+      passwordToggle.addEventListener('click', function() {
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          toggleIcon.textContent = 'visibility_off'; // アイコンを非表示用に変更
+        } else {
+          passwordInput.type = 'password';
+          toggleIcon.textContent = 'visibility'; // アイコンを表示用に戻す
+        }
+      });
+
+      // 2. 連打・二重送信ガード
+      loginForm.addEventListener('submit', function() {
+        if (loginBtn) {
+          loginBtn.disabled = true;
+          loginBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> 認証中...`;
+        }
+      });
+    });
+  </script>
+
+  <style>
+    .py-2_5 {
+      padding-top: 0.65rem !important;
+      padding-bottom: 0.65rem !important;
+    }
+  </style>
+</body>
+
+</html>
