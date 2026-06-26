@@ -14,10 +14,16 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+# メール通知の一時停止フラグ。True に戻すと送信が再開される。
+NOTIFY_ENABLED = False
+
 _FROM = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com')
 
 
 def _send(to: str, subject: str, body: str) -> None:
+    if not NOTIFY_ENABLED:
+        logger.info(f"【通知スキップ】NOTIFY_ENABLED=False のため送信しません。宛先: {to}, 件名: {subject}")
+        return
     send_mail(subject, body, _FROM, [to], fail_silently=False)
 
 

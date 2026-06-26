@@ -125,12 +125,24 @@ class DailyReportSubmitView(MonthLockMixin, AttendanceLoginMixin, View):
                 attendance = Attendance.objects.using(using_db).filter(
                     user_id=user.user_id, work_date=target_date
                 ).first()
-                report = DailyReport(
-                    user_id=user.user_id,
-                    report_date=target_date,
-                    attendance=attendance,
-                    create_user=creator_name,
-                )
+                # 論理削除済みレコードを再利用する。
+                # OneToOneField(attendance) の unique 制約は partial ではないため、
+                # delete_flg=1 のレコードが同一 attendance_id を保持したまま残っていると
+                # 新規 INSERT 時に tr_daily_report_attendance_id_key 違反が発生する。
+                deleted_report = DailyReport.all_objects.using(using_db).select_for_update().filter(
+                    user_id=user.user_id, report_date=target_date, delete_flg=1
+                ).first()
+                if deleted_report:
+                    report = deleted_report
+                    report.delete_flg = 0
+                    report.attendance = attendance
+                else:
+                    report = DailyReport(
+                        user_id=user.user_id,
+                        report_date=target_date,
+                        attendance=attendance,
+                        create_user=creator_name,
+                    )
                 created = True
 
             report.task_summary    = task_summary
