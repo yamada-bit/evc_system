@@ -1,0 +1,41 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}勤怠管理 - 外勤報告書アップロード{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="mb-4 border-bottom pb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="text-dark mb-1 fw-bold">📁 外勤報告書アップロード</h2>
+            <p class="text-muted mb-0">PDF・画像ファイルをアップロードして報告書として登録します。</p>
+        </div>
+        <a href="{% url 'attendance:gaikin_list' %}" class="btn btn-outline-secondary fw-bold">
+            ← 一覧へ戻る
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label fw-bold">アップロードするファイル</label>
+                    <input type="file" name="file" class="form-control" multiple
+                           accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif,.tif,.tiff">
+                    <div class="form-text text-muted mt-1">
+                        対応形式: PDF・JPG・PNG・BMP・GIF・TIF（複数選択可）
+                    </div>
+                    {% if form.file.errors %}
+                        {% for error in form.file.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary fw-bold px-4">
+                    📤 アップロード
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

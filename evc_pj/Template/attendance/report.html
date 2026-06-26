@@ -22,13 +22,26 @@
                 <input type="hidden" name="target_date" value="{{ target_date_str }}">        
 
                 <div class="mb-3">
-                    <label for="work_location" class="form-label fw-bold text-secondary">勤務場所 <span class="badge bg-danger">必須</span></label>
-                    <select class="form-select" id="work_location" name="work_location" required {% if is_locked %}disabled{% endif %}>
+                    <label for="work_location" class="form-label fw-bold text-secondary">勤務区分 <span class="badge bg-danger">必須</span></label>
+                    <select class="form-select" id="work_location" name="work_location" required
+                            {% if is_locked %}disabled{% endif %}
+                            onchange="toggleLocationDetail(this.value)">
                         <option value="" disabled {% if not report %}selected{% endif %}>選択してください</option>
-                        <option value="OFFICE" {% if report.work_location == "OFFICE" %}selected{% endif %}>出社（オフィス）</option>
-                        <option value="REMOTE" {% if report.work_location == "REMOTE" %}selected{% endif %}>リモート（在宅勤務）</option>
+                        <option value="OFFICE"  {% if report.work_location == "OFFICE"  %}selected{% endif %}>出社（オフィス）</option>
+                        <option value="REMOTE"  {% if report.work_location == "REMOTE"  %}selected{% endif %}>リモート（在宅勤務）</option>
                         <option value="OUTSIDE" {% if report.work_location == "OUTSIDE" %}selected{% endif %}>直行・直帰（客先など）</option>
                     </select>
+                </div>
+
+                <div class="mb-3" id="locationDetailBlock"
+                     style="{% if report.work_location != 'OUTSIDE' %}display:none;{% endif %}">
+                    <label for="location_detail" class="form-label fw-bold text-secondary">外出先・勤務場所詳細</label>
+                    <input type="text" class="form-control" id="location_detail" name="location_detail"
+                           maxlength="100"
+                           placeholder="例: 〇〇株式会社 3F 会議室"
+                           value="{{ report.location_detail|default:'' }}"
+                           {% if is_locked %}disabled{% endif %}>
+                    <div class="form-text text-muted">直行・直帰の場合、訪問先を入力してください。勤務表Excelの「場所」欄に反映されます。</div>
                 </div>
 
                 <div class="mb-3">
@@ -82,8 +95,17 @@
 <script>
     const isLocked = {{ is_locked|yesno:"true,false" }};
 
+    function toggleLocationDetail(value) {
+        const block = document.getElementById('locationDetailBlock');
+        if (block) block.style.display = (value === 'OUTSIDE') ? '' : 'none';
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
-        if (isLocked) return; // ロック時はイベントを設定しない
+        // 初期表示時にも区分に合わせて表示制御
+        const sel = document.getElementById('work_location');
+        if (sel) toggleLocationDetail(sel.value);
+
+        if (isLocked) return;
 
         const reportForm = document.getElementById('reportForm');
         const submitBtn = document.getElementById('submitBtn');

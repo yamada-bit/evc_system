@@ -179,6 +179,7 @@ DATABASES = {
 DATABASE_ROUTERS = [
     'config.db_router.KmsDatabaseRouter',
 ]
+
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
@@ -236,8 +237,8 @@ LOGOUT_REDIRECT_URL = '/'
 
 # パスワードリセット機能は、ユーザーにリセット用のリンクをメールで送信する必要があります。
 # メール設定を追加します。
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'    # デバッグでコンソール表示
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'    # デバッグでコンソール表示
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
@@ -277,6 +278,16 @@ GOOGLE_CLOUD_VISION_KEY = os.getenv('GOOGLE_CLOUD_VISION_KEY')
 GOOGLE_OCR = os.getenv('GOOGLE_OCR') == 'True'
 
 KOKUZEI_WEBAPI = os.getenv('KOKUZEI_WEBAPI')
+
+# 勤怠アプリ（attendance）が使用するデータベースエイリアス。
+# 変更時はここだけ直せば全ビュー・管理画面に反映される。
+ATTENDANCE_DB = 'kmsdatabase'
+
+# 外勤報告書ファイルの保存ルートフォルダ
+ATTENDANCE_GAIKIN_ROOT = '/data_root/evc_root/Gaikin'
+
+# 勤務表 Excel テンプレートフォルダ
+ATTENDANCE_EXCEL_TEMPLATE_DIR = '/data_root/data/excel_template'
 
 #Googleの認証情報
 USE_GOOGLE_CALENDAR = True

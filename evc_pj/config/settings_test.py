@@ -83,6 +83,8 @@ PASSWORD_HASHERS = [
 
 AUTH_USER_MODEL = 'users.EvcUser'
 
+ATTENDANCE_DB = 'kmsdatabase'
+
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]

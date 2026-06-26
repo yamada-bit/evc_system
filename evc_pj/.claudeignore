@@ -1,0 +1,13 @@
+# システム・設定関連の除外
+.devcontainer/
+.git/
+.vscode/
+
+# /app 内の Djangoキャッシュ・DBを除外
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/db.sqlite3
+**/staticfiles/
+**/media/
+**/*.log

@@ -12,10 +12,13 @@ from .views import (
     DailyReportSubmitView,
     DashboardView,
     ExportAttendanceCSVView,
+    ExportAttendanceExcelView,
     LeaveBalanceManageView,
+    SchedulePreviewView,
     MonthlyReportView,
     WorkApplicationView,
 )
+from .views.gaikin import GaikinEditView, GaikinListView, GaikinUploadView
 
 # アプリケーションの名前空間を設定（テンプレート内でのURL指定に便利です）
 app_name = 'attendance'
@@ -48,4 +51,19 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(next_page='attendance:alogin'), name='attendance_logout'),
     # 管理者用：有給残日数管理
     path('admin/leave-balance/', LeaveBalanceManageView.as_view(), name='leave_balance_manage'),
+
+    # 勤務表プレビュー（本人用）
+    path('monthly/preview/<int:year>/<int:month>/',
+         SchedulePreviewView.as_view(),
+         name='schedule_preview'),
+
+    # 勤務表 Excel ダウンロード（本人用）
+    path('monthly/export-excel/<int:year>/<int:month>/',
+         ExportAttendanceExcelView.as_view(),
+         name='export_attendance_excel'),
+
+    # 外勤報告書
+    path('gaikin/',                         GaikinListView.as_view(),   name='gaikin_list'),
+    path('gaikin/upload/',                   GaikinUploadView.as_view(), name='gaikin_upload'),
+    path('gaikin/edit/<str:report_id>/',     GaikinEditView.as_view(),   name='gaikin_edit'),
 ]

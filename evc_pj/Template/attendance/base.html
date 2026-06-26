@@ -73,12 +73,18 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link text-white {% if request.resolver_match.url_name == 'work_application' %}active bg-primary fw-bold{% endif %}" 
+                        <a class="nav-link text-white {% if request.resolver_match.url_name == 'work_application' %}active bg-primary fw-bold{% endif %}"
                            href="{% url 'attendance:work_application' %}">
                             📨 申請・履歴
                         </a>
                     </li>
-                    
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white {% if 'gaikin' in request.resolver_match.url_name %}active bg-primary fw-bold{% endif %}"
+                           href="{% url 'attendance:gaikin_list' %}">
+                            📁 外勤報告書
+                        </a>
+                    </li>
+
                     {% if user.is_staff %}
                         <li class="nav-item mt-4 mb-2">
                             <span class="text-white-50 small px-3 fw-bold text-uppercase" style="letter-spacing: 0.05rem;">

@@ -9,16 +9,23 @@
             <h2 class="text-dark mb-1 fw-bold">📅 月報確認・締め提出</h2>
             <p class="text-muted mb-0">対象月: <strong class="text-primary fs-5">{{ target_month }}</strong></p>
         </div>
-        <form id="monthForm" method="GET" action="" class="d-flex align-items-center">
-            <div class="input-group shadow-sm">
-                <a href="?month={{ prev_month_str }}" class="btn btn-outline-dark fw-bold" title="前月へ">◀</a>
-                <input type="month" name="month" value="{{ target_month }}" 
-                       class="form-control text-center fw-bold" 
-                       style="max-width: 160px;"
-                       onchange="this.form.submit();">
-                <a href="?month={{ next_month_str }}" class="btn btn-outline-dark fw-bold" title="次月へ">▶</a>
-            </div>
-        </form>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form id="monthForm" method="GET" action="">
+                <div class="input-group shadow-sm">
+                    <a href="?month={{ prev_month_str }}" class="btn btn-outline-dark fw-bold" title="前月へ">◀</a>
+                    <input type="month" name="month" value="{{ target_month }}"
+                           class="form-control text-center fw-bold"
+                           style="max-width: 160px;"
+                           onchange="this.form.submit();">
+                    <a href="?month={{ next_month_str }}" class="btn btn-outline-dark fw-bold" title="次月へ">▶</a>
+                </div>
+            </form>
+            <a href="{% url 'attendance:schedule_preview' target_year target_month_int %}"
+               class="btn btn-outline-success fw-bold shadow-sm"
+               title="{{ target_month }} の勤務表を確認・Excel出力">
+                📋 勤務表を確認
+            </a>
+        </div>
     </div>
 
     <div class="card mb-4 shadow-sm border-0">
@@ -87,11 +94,13 @@
                                     </a>
                                 {% endif %}
                                 
-                                {% if day.app_status %}
+                                {% if day.applications %}
                                     <div class="mt-1">
-                                        {% if day.app_status == 'PENDING' %}<span class="badge bg-warning text-dark font-sm">⏳申請中</span>
-                                        {% elif day.app_status == 'APPROVED' %}<span class="badge bg-success font-sm">✅承認済</span>
-                                        {% elif day.app_status == 'REJECTED' %}<span class="badge bg-danger font-sm">❌却下</span>{% endif %}
+                                        {% for app in day.applications %}
+                                            {% if app.status == 'PENDING' %}<span class="badge bg-warning text-dark font-sm">⏳申請中</span>
+                                            {% elif app.status == 'APPROVED' %}<span class="badge bg-success font-sm">✅承認済</span>
+                                            {% elif app.status == 'REJECTED' %}<span class="badge bg-danger font-sm">❌却下</span>{% endif %}
+                                        {% endfor %}
                                     </div>
                                 {% endif %}
                             </td>
@@ -147,6 +156,27 @@
         </div>
     </div>
 
+    {% if monthly_report_status == 'REJECTED' %}
+    <div class="mt-4 p-4 bg-white rounded border shadow-sm border-start border-danger border-4">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h5 class="mb-1 fw-bold text-danger">🔄 差し戻し対応が必要です</h5>
+                <p class="text-muted small mb-1">上長からのフィードバック（上の赤枠）を確認し、打刻・日報・申請を修正してください。</p>
+                <p class="text-muted small mb-0">修正完了後、下のボタンで再提出してください。再提出すると上長に再度通知されます。</p>
+            </div>
+            <div>
+                <form action="" method="POST" onsubmit="return confirm('修正内容を確認して再提出してよろしいですか？\n再提出後は当月の打刻修正・日報作成・各種申請がすべてロックされます。');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_type" value="submit_monthly_report">
+                    <input type="hidden" name="month" value="{{ target_month }}">
+                    <button type="submit" class="btn btn-danger fw-bold px-4 py-2 shadow-sm transition-hover">
+                        🔄 修正内容で再提出する
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
     <div class="mt-4 p-4 bg-white rounded border d-flex justify-content-between align-items-center flex-wrap gap-3 shadow-sm border-start border-success border-4">
         <div>
             <h5 class="mb-1 fw-bold text-dark">🔒 月報の締め処理と確定提出</h5>
@@ -165,6 +195,7 @@
                 <form action="" method="POST" onsubmit="return confirm('この月の月報を確定提出してよろしいですか？\n【注意】提出後は当月の打刻修正、日報作成、各種申請がすべてロックされます。');">
                     {% csrf_token %}
                     <input type="hidden" name="action_type" value="submit_monthly_report">
+                    <input type="hidden" name="month" value="{{ target_month }}">
                     <button type="submit" class="btn btn-success fw-bold px-4 py-2 shadow-sm transition-hover">
                         🚀 今月の月報を確定する
                     </button>
@@ -172,6 +203,7 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 </div>
 
 <style>

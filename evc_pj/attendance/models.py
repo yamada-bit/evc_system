@@ -49,10 +49,24 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.db import models
 
 # ロガーの取得（勤怠システムのモデル層専用ログ）
 logger = logging.getLogger(__name__)
+
+
+class ActiveManager(models.Manager):
+    """
+    delete_flg=0（論理削除されていない）レコードのみを返すマネージャー。
+    全モデルの objects に設定することで、クエリへの delete_flg=0 付け忘れを防ぐ。
+
+    論理削除済みレコードを含む全件を取得したい場合は all_objects を使うこと。
+    また Meta.default_manager_name = 'all_objects' を設定しているため、
+    Django 内部処理（refresh_from_db 等）は all_objects を通じて動作する。
+    """
+    def get_queryset(self):
+        return super().get_queryset().filter(delete_flg=0)
 
 
 # =====================================================================
@@ -120,9 +134,23 @@ class Attendance(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
+    all_objects = models.Manager()   # 論理削除済みを含む全件
+    objects = ActiveManager()        # 有効レコードのみ（delete_flg=0）
+
     class Meta:
         db_table = 'tr_attendance'
-        unique_together = ('user', 'work_date')  # 1人1日1レコードを絶対保証
+        default_manager_name = 'all_objects'
+        # delete_flg=0 の有効レコードのみを対象とした部分ユニーク制約。
+        # unique_together だと論理削除済みレコードも制約対象になり、
+        # 削除後の再作成が IntegrityError になるため UniqueConstraint + condition に変更。
+        # ⚠️ condition 付き UniqueConstraint は PostgreSQL のみ対応（SQLite は非サポート）。
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'work_date'],
+                condition=models.Q(delete_flg=0),
+                name='unique_active_attendance',
+            )
+        ]
         verbose_name = '勤務実績'
         verbose_name_plural = '勤務実績一覧'
 
@@ -275,6 +303,12 @@ class DailyReport(models.Model):
     )
 
     # 業務内容・テキストエントリ
+    location_detail = models.CharField(
+        verbose_name='外出先・勤務場所詳細',
+        max_length=100,
+        null=True, blank=True,
+        help_text='例: 〇〇社 3F 会議室、△△ビル など（直行・直帰時に入力）'
+    )
     task_summary = models.TextField(verbose_name='業務内容・進捗')
     comment = models.TextField(verbose_name='所感・連絡事項', null=True, blank=True)
 
@@ -285,9 +319,23 @@ class DailyReport(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
+    all_objects = models.Manager()
+    objects = ActiveManager()
+
     class Meta:
         db_table = 'tr_daily_report'
-        unique_together = ('user', 'report_date')  # 1人1日1日報を絶対保証
+        default_manager_name = 'all_objects'
+        # delete_flg=0 の有効レコードのみを対象とした部分ユニーク制約。
+        # unique_together だと論理削除済みレコードも制約対象になり、
+        # 削除後の再作成が IntegrityError になるため UniqueConstraint + condition に変更。
+        # ⚠️ condition 付き UniqueConstraint は PostgreSQL のみ対応（SQLite は非サポート）。
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'report_date'],
+                condition=models.Q(delete_flg=0),
+                name='unique_active_daily_report',
+            )
+        ]
         verbose_name = '日報'
         verbose_name_plural = '日報一覧'
 
@@ -398,10 +446,23 @@ class WorkApplication(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
+    all_objects = models.Manager()
+    objects = ActiveManager()
+
     class Meta:
         db_table = 'tr_application'
-        # 同一日・同一申請種別の重複申請スパムをデータベースレベルで防止
-        unique_together = ('user', 'target_date', 'apply_type')
+        default_manager_name = 'all_objects'
+        # 有効な申請（delete_flg=0）のみを対象とした部分ユニーク制約。
+        # unique_together では論理削除済みレコードも制約対象になり、
+        # 取り下げ後の再申請が IntegrityError になるため UniqueConstraint + condition に変更。
+        # ⚠️ condition 付き UniqueConstraint は PostgreSQL のみ対応（SQLite は非サポート）。
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'target_date', 'apply_type'],
+                condition=models.Q(delete_flg=0),
+                name='unique_active_application',
+            )
+        ]
         verbose_name = '各種申請'
         verbose_name_plural = '各種申請一覧'
 
@@ -435,21 +496,7 @@ class MonthlyReport(models.Model):
     各ビューが個別に `MonthlyReport...exists()` をチェックする実装に
     なっている点に注意。ロック条件を変える場合は影響範囲が広い）。
 
-    【is_closed / closed_date フィールドについて】
-    確定承認（approve_month）時に is_closed=1 / closed_date=現在日時が
-    セットされ、差し戻し（reject_month）時に is_closed=0 に戻る。
-
-    ただし、打刻・日報・申請のロック判定はすべて `status` フィールドで
-    行っており（status__in=['SUBMITTED', 'APPROVED']）、is_closed を
-    参照している箇所は現状ない。
-
-    is_closed は「APPROVED 確定後はたとえ管理者でも差し戻しできない」
-    といった、status だけでは表現しにくい厳格な締め処理が必要になった
-    場合の拡張ポイントとして意図的に残しているフィールドである。
-    現時点では参照ロジックを持たないため、追加する場合は
-    ApplicationApprovalView の reject_month 分岐に
-    `if report.is_closed: return error` のガードを実装すること。
-    """
+"""
 
     STATUS_CHOICES = [
         ('UNSUBMITTED', '未提出'),
@@ -465,16 +512,16 @@ class MonthlyReport(models.Model):
         db_constraint=False,
         verbose_name='ユーザーID'
     )
-    target_month = models.CharField(verbose_name='対象年月', max_length=7) # フォーマット例: '2026-06'
+    target_month = models.CharField(
+        verbose_name='対象年月',
+        max_length=7,
+        validators=[RegexValidator(r'^\d{4}-\d{2}$', '年月は YYYY-MM 形式で入力してください（例: 2026-06）。')],
+    ) # フォーマット例: '2026-06'
 
     # 月間累計サマリーデータ
     total_work_days = models.IntegerField(verbose_name='総出勤日数', default=0)
     total_work_hours = models.DurationField(verbose_name='総実労働時間', null=True, blank=True)
     total_overtime_hours = models.DurationField(verbose_name='総残業時間', null=True, blank=True)
-
-    # 締め状態管理（is_closed=1 の場合、対象月の打刻・日報への新規登録・変更をビューでロックします）
-    is_closed = models.IntegerField(verbose_name='月次締めフラグ', default=0)
-    closed_date = models.DateTimeField(verbose_name='締め処理日時', null=True, blank=True)
 
     # ワークフロー状態
     status = models.CharField(verbose_name='確定ステータス', max_length=20, choices=STATUS_CHOICES, default='UNSUBMITTED')
@@ -487,9 +534,23 @@ class MonthlyReport(models.Model):
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
+    all_objects = models.Manager()
+    objects = ActiveManager()
+
     class Meta:
         db_table = 'tr_monthly_report'
-        unique_together = ('user', 'target_month') # 1人1ヶ月1レコード
+        default_manager_name = 'all_objects'
+        # delete_flg=0 の有効レコードのみを対象とした部分ユニーク制約。
+        # unique_together だと論理削除済みレコードも制約対象になり、
+        # 削除後の再作成が IntegrityError になるため UniqueConstraint + condition に変更。
+        # ⚠️ condition 付き UniqueConstraint は PostgreSQL のみ対応（SQLite は非サポート）。
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'target_month'],
+                condition=models.Q(delete_flg=0),
+                name='unique_active_monthly_report',
+            )
+        ]
         verbose_name = '月報'
         verbose_name_plural = '月報一覧'
 
@@ -534,14 +595,29 @@ class LeaveBalance(models.Model):
     )
 
     # システム共通管理カラム
+    delete_flg = models.IntegerField(verbose_name='削除フラグ', default=0)
     create_user = models.CharField(verbose_name='作成者', max_length=30, null=True, blank=True)
     create_date = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
     update_user = models.CharField(verbose_name='更新者', max_length=30, null=True, blank=True)
     update_date = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
+    all_objects = models.Manager()
+    objects = ActiveManager()
+
     class Meta:
         db_table = 'mt_leave_balance'
-        unique_together = ('user', 'fiscal_year')
+        default_manager_name = 'all_objects'
+        # delete_flg=0 の有効レコードのみを対象とした部分ユニーク制約。
+        # unique_together だと論理削除済みレコードも制約対象になり、
+        # 削除後の再作成が IntegrityError になるため UniqueConstraint + condition に変更。
+        # ⚠️ condition 付き UniqueConstraint は PostgreSQL のみ対応（SQLite は非サポート）。
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'fiscal_year'],
+                condition=models.Q(delete_flg=0),
+                name='unique_active_leave_balance',
+            )
+        ]
         verbose_name = '有給残日数'
         verbose_name_plural = '有給残日数一覧'
 
@@ -551,3 +627,42 @@ class LeaveBalance(models.Model):
 
     def __str__(self):
         return f"{self.user_id} - {self.fiscal_year}年度 (残: {self.remaining_days}日)"
+
+
+# =====================================================================
+# 6. 外勤報告書管理テーブル（旧 Kms_Calendar.TtGaikinReport）
+# =====================================================================
+class GaikinReport(models.Model):
+    """
+    📁 外勤報告書（PDF / 画像）のメタ情報を管理するテーブル。
+
+    【テーブル名について】
+    Kms_Calendar アプリが管理する tt_gaikin_report とは別の新規テーブル（tr_gaikin_report）。
+    Kms_Calendar の既存データ・運用には一切影響しない。
+
+    【物理削除運用】
+    他テーブルと異なり、削除は delete_flg=1 の論理削除ではなく物理削除
+    (report_obj.delete()) で行う。ただし関連ファイル（PDF / 画像）は
+    services/gaikin.py の physical_delete_report() 内で先に削除すること。
+    """
+    report_id    = models.CharField(primary_key=True, max_length=20, verbose_name='報告書ID')
+    report_name  = models.CharField(max_length=50,  null=True, blank=True, verbose_name='報告書名')
+    owner_id     = models.CharField(max_length=10,  null=True, blank=True, verbose_name='オーナーID')
+    pdf_name     = models.CharField(max_length=50,  null=True, blank=True, verbose_name='PDFファイル名')
+    file_path    = models.CharField(max_length=100, null=True, blank=True, verbose_name='ファイルパス')
+    processed_ym = models.CharField(max_length=6,   null=True, blank=True, verbose_name='処理年月(YYYYMM)')
+    page_count   = models.IntegerField(default=0,   verbose_name='ページ数')
+    delete_flg   = models.IntegerField(default=0,   verbose_name='削除フラグ')
+    notes        = models.CharField(max_length=200, null=True, blank=True, verbose_name='備考')
+    create_user  = models.CharField(max_length=30,  null=True, blank=True, verbose_name='作成者')
+    create_date  = models.DateTimeField(null=True, blank=True, verbose_name='作成日時')
+    update_user  = models.CharField(max_length=30,  null=True, blank=True, verbose_name='更新者')
+    update_date  = models.DateTimeField(null=True, blank=True, verbose_name='更新日時')
+
+    class Meta:
+        db_table = 'tr_gaikin_report'   # tt_gaikin_report (Kms_Calendar) とは別テーブル
+        verbose_name = '外勤報告書'
+        verbose_name_plural = '外勤報告書一覧'
+
+    def __str__(self):
+        return f"{self.report_id}: {self.report_name or ''}"
