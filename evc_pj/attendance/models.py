@@ -456,10 +456,12 @@ class WorkApplication(models.Model):
         # unique_together では論理削除済みレコードも制約対象になり、
         # 取り下げ後の再申請が IntegrityError になるため UniqueConstraint + condition に変更。
         # ⚠️ condition 付き UniqueConstraint は PostgreSQL のみ対応（SQLite は非サポート）。
+        # REJECTED も却下後の再申請を許すため制約対象から除外する
+        # （WorkApplicationView.post() 側の .exclude(status='REJECTED') と対応させる）。
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'target_date', 'apply_type'],
-                condition=models.Q(delete_flg=0),
+                condition=models.Q(delete_flg=0) & ~models.Q(status='REJECTED'),
                 name='unique_active_application',
             )
         ]

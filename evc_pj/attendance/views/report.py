@@ -295,12 +295,20 @@ class MonthlyReportView(AttendanceLoginMixin, TemplateView):
             report_dict = {r.report_date: r for r in reports}
 
             # 申請状況マッピング（1日に複数申請種別がある場合もすべて格納するため dict of list）
-            # apply_type でソートして同日複数申請時の表示順を固定する
+            # apply_type でソートして同日複数申請時の表示順を固定し、
+            # -create_date で同一日・同一種別内は新しい申請を先頭にする。
+            # 却下後の再申請で同一日・同一種別の申請が複数残る場合があるため、
+            # 表示は create_date が最も新しい1件のみとする（古い却下履歴はここでは表示しない）。
             applications = WorkApplication.objects.using(using_db).filter(
                 user_id=user.user_id, target_date__year=year, target_date__month=month
-            ).order_by('target_date', 'apply_type')
+            ).order_by('target_date', 'apply_type', '-create_date')
             application_dict: dict[date, list] = {}
+            seen_apply_types: set[tuple] = set()
             for app in applications:
+                key = (app.target_date, app.apply_type)
+                if key in seen_apply_types:
+                    continue
+                seen_apply_types.add(key)
                 application_dict.setdefault(app.target_date, []).append(app)
 
             # 月報のステータス確認（未提出の場合は UNSUBMITTED として扱う）
