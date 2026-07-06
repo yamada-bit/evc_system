@@ -82,7 +82,7 @@ services:
     ports:
       # STG 用公開ポート(PROD(80/443)と競合しない)
       - "8080:80"
-      # - "8443:443"
+      - "8443:443"
     volumes:
       # nginx 設定
       - ./nginx/stg.conf:/etc/nginx/conf.d/default.conf
@@ -90,7 +90,9 @@ services:
       - ./evc_pj/static_stg:/staticfiles:ro
       # media 配信
       - ./data_root_stg:/data_root
-      # - certbot_conf_stg:/etc/letsencrypt
+      # Prodが使っている実ボリューム(evc_system_certbot_conf)を読み取り専用で参照
+      # stg.sysbevc.com の証明書もこの中に既に存在する
+      - certbot_conf:/etc/letsencrypt:ro
       # - certbot_www_stg:/var/www/certbot
     depends_on:
       - web_stg
@@ -119,3 +121,8 @@ volumes:
   pgdata_stg:
   # certbot_conf_stg:
   # certbot_www_stg:
+  # docker inspect nginx_prod で確認した実ボリューム名を直指定。
+  # プロジェクト名の解決に依存させず、常にProdと同じ実体を参照する。
+  certbot_conf:
+    external: true
+    name: evc_system_certbot_conf

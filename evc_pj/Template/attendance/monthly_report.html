@@ -62,7 +62,7 @@
 
     <div class="card shadow-sm mb-4 border-0">
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="d-none d-md-block table-responsive">
                 <table class="table table-hover text-center mb-0 align-middle">
                     <thead class="table-dark">
                         <tr>
@@ -152,6 +152,84 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <div class="d-md-none">
+                {% for day in days_in_month %}
+                <div class="p-3 border-bottom {% if day.is_holiday or day.weekday == 'Sun' %}bg-danger-subtle{% elif day.weekday == 'Sat' %}bg-primary-subtle{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+                        <div>
+                            {% if monthly_report_status == 'SUBMITTED' or monthly_report_status == 'APPROVED' %}
+                                <span class="fw-bold {% if day.is_holiday or day.weekday == 'Sun' %}text-danger{% elif day.weekday == 'Sat' %}text-primary{% else %}text-dark{% endif %}">
+                                    {{ day.work_date|date:"m/d" }}（{{ day.weekday }}）
+                                </span>
+                            {% else %}
+                                <a href="{% url 'attendance:work_application' %}?date={{ day.work_date|date:'Y-m-d' }}"
+                                   class="fw-bold text-decoration-none {% if day.is_holiday or day.weekday == 'Sun' %}text-danger{% elif day.weekday == 'Sat' %}text-primary{% else %}text-dark{% endif %}"
+                                   title="この日の申請を作成・修正">
+                                    📅 {{ day.work_date|date:"m/d" }}（{{ day.weekday }}）
+                                </a>
+                            {% endif %}
+                            {% if day.applications %}
+                                <div class="mt-1">
+                                    {% for app in day.applications %}
+                                        {% if app.status == 'PENDING' %}<span class="badge bg-warning text-dark font-sm">⏳申請中</span>
+                                        {% elif app.status == 'APPROVED' %}<span class="badge bg-success font-sm">✅承認済</span>
+                                        {% elif app.status == 'REJECTED' %}<span class="badge bg-danger font-sm">❌却下</span>{% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% include "attendance/includes/work_type_badge.html" with type=day.display_work_type %}
+                    </div>
+
+                    <div class="row g-2 small">
+                        <div class="col-6">
+                            <span class="text-muted">出勤</span>
+                            <span class="font-monospace fw-bold">{% if day.clock_in %}{{ day.clock_in|date:"H:i" }}{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">退勤</span>
+                            <span class="font-monospace fw-bold">{% if day.clock_out %}{{ day.clock_out|date:"H:i" }}{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">休憩</span>
+                            <span class="font-monospace">{{ day.display_break_hours|default:"0:00" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">実働</span>
+                            {% if day.display_work_hours != "-" and day.display_work_hours != "0:00" %}
+                                <span class="badge bg-dark font-monospace">{{ day.display_work_hours }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">残業</span>
+                            {% if day.display_overtime_hours != "-" and day.display_overtime_hours != "0:00" %}
+                                <span class="badge bg-danger font-monospace">{{ day.display_overtime_hours }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            {% if day.has_report %}
+                                <a href="{% url 'attendance:daily_report_submit' %}?date={{ day.work_date|date:'Y-m-d' }}"
+                                   class="btn btn-xs btn-outline-secondary fw-bold" title="{{ day.report_summary }}">📄 日報確認</a>
+                            {% else %}
+                                {% if monthly_report_status == 'SUBMITTED' or monthly_report_status == 'APPROVED' %}
+                                    <span class="text-muted small">日報 -</span>
+                                {% else %}
+                                    <a href="{% url 'attendance:daily_report_submit' %}?date={{ day.work_date|date:'Y-m-d' }}"
+                                       class="btn btn-xs btn-outline-warning text-dark fw-bold">＋ 日報作成</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4 fw-bold">対象月の勤務データが存在しません。</div>
+                {% endfor %}
             </div>
         </div>
     </div>
