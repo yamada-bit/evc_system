@@ -29,22 +29,22 @@
             <div class="bg-white p-3 rounded-3 border text-start mb-4 shadow-xs">
                 <h6 class="text-secondary fw-bold border-bottom pb-2 mb-2" style="font-size: 0.85rem;">📌 本日の打刻ログ</h6>
                 <div class="row g-2 font-monospace" style="font-size: 0.9rem;">
-                    <div class="col-6 text-truncate">
+                    <div class="col-6 d-flex flex-wrap align-items-center">
                         出勤: <span class="badge {% if attendance.clock_in %}bg-success{% else %}bg-light text-muted{% endif %} fs-6 ms-1">
                             {% if attendance.clock_in %}{{ attendance.clock_in|date:"H:i:s" }}{% else %}--:--:--{% endif %}
                         </span>
                     </div>
-                    <div class="col-6 text-truncate">
+                    <div class="col-6 d-flex flex-wrap align-items-center">
                         退勤: <span class="badge {% if attendance.clock_out %}bg-danger{% else %}bg-light text-muted{% endif %} fs-6 ms-1">
                             {% if attendance.clock_out %}{{ attendance.clock_out|date:"H:i:s" }}{% else %}--:--:--{% endif %}
                         </span>
                     </div>
-                    <div class="col-6 text-truncate">
+                    <div class="col-6 d-flex flex-wrap align-items-center">
                         休憩始: <span class="badge {% if attendance.break_start %}bg-warning text-dark{% else %}bg-light text-muted{% endif %} fs-6 ms-1">
                             {% if attendance.break_start %}{{ attendance.break_start|date:"H:i:s" }}{% else %}--:--:--{% endif %}
                         </span>
                     </div>
-                    <div class="col-6 text-truncate">
+                    <div class="col-6 d-flex flex-wrap align-items-center">
                         休憩終: <span class="badge {% if attendance.break_end %}bg-info text-dark{% else %}bg-light text-muted{% endif %} fs-6 ms-1">
                             {% if attendance.break_end %}{{ attendance.break_end|date:"H:i:s" }}{% else %}--:--:--{% endif %}
                         </span>
