@@ -634,6 +634,120 @@ class EvcJafyameListForm(forms.Form):
         return shori_date
 
 
+# 福祉手当認定診断書 一覧表示画面
+class EvcKumamotoListForm(forms.Form):
+    pdf_name = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'ファイル名を入力',
+            'type': 'text',
+        })
+    )
+    create_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+        })
+    )
+    page_size = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    page_size_choice = forms.fields.ChoiceField(
+        label='表示件数',
+        choices=(
+            (1, '1'),
+            (5, '5'),
+            (10, '10'),
+            (50, '50'),
+            (100, '100'),
+        ),
+        required=False,
+        widget=forms.widgets.Select
+    )
+
+# 福祉手当認定診断書 検索条件編集画面
+class EvcEditKumamotoForm(forms.Form):
+    ocrdata_id = forms.CharField(widget=forms.HiddenInput)
+    fulltext = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'id': 'shiori_text',
+            'disabled': 'disabled',
+        })
+    )
+    name = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '氏名を入力*',
+            'type': 'search',
+        })
+    )
+    address = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '住所を入力*',
+            'type': 'search',
+        })
+    )
+    birthday = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '生年月日を入力*',
+            'type': 'search',
+        })
+    )
+    disease = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '傷病名を入力*',
+            'type': 'search',
+        })
+    )
+    doctor = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '医師氏名を入力*',
+            'type': 'search',
+        })
+    )
+    first_exam_date = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '初診日を入力*',
+            'type': 'search',
+        })
+    )
+    onset_date = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '傷病発生年月日を入力*',
+            'type': 'search',
+        })
+    )
+    permanent_date = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '永続認定日を入力*',
+            'type': 'search',
+        })
+    )
+    reexam = forms.CharField(
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '将来再認定の要を入力*',
+            'type': 'search',
+        })
+    )
+
 # JAふくおか八女 文書検索条件編集画面
 class EvcEditJafyameForm(forms.Form):
     ocrdata_id = forms.CharField(widget=forms.HiddenInput)

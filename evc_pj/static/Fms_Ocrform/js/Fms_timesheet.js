@@ -96,7 +96,12 @@ $(function() {
                 idx = str.indexOf('ocrdata_edit/ocrdata/');
                 if (idx < 0) {
                     idx = str.indexOf('ocrdata_edit/jafyame/');
-                    if (0 < idx) {
+                    if (idx < 0) {
+                        idx = str.indexOf('ocrdata_edit/kumamoto/');
+                        if (0 < idx) {
+                            str_len = 'ocrdata_edit/kumamoto/'.length
+                        }
+                    } else if (0 < idx) {
                         str_len = 'ocrdata_edit/jafyame/'.length
                     }
                 } else {

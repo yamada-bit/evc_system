@@ -74,7 +74,7 @@
             <li {% if process_title == "フォーム一覧" %}class="active"{% endif %}> 
               <a href="{% url 'Fms_Ocrform:ocrform_list' 1 %}"><span class="material-symbols-outlined">list</span>フォーム一覧</a>
             </li>
-            {% if process_title == "生産履歴票保存" or process_title == "勤務表保存" or process_title == "送り状保存" or process_title == "JAふくおか八女" %}
+            {% if process_title == "生産履歴票保存" or process_title == "勤務表保存" or process_title == "送り状保存" or process_title == "福祉手当認定診断書保存" %}
             <li class="sp-hidden menu-toggle menu-num3 menu-sub open">
             {% else %}
             <li class="sp-hidden menu-toggle menu-num3 menu-sub">
@@ -84,20 +84,20 @@
                 {% comment "下記の部分はコメントアウト" %}
                 <li {% if process_title == "生産履歴票保存" %}class="active"{% endif %}>
                   <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'entry' %}"><span class="material-symbols-outlined">upload_file</span>生産履歴票保存</a>
-                </li> 
+                </li>
                 {% endcomment%}
                 <li {% if process_title == "勤務表保存" %}class="active"{% endif %}>
                   <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'timesheet' %}"><span class="material-symbols-outlined">upload_file</span>勤務表保存</a>
-                </li> 
+                </li>
                 <li {% if process_title == "送り状保存" %}class="active"{% endif %}>
                   <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'ocrdata' %}"><span class="material-symbols-outlined">upload_file</span>送り状保存</a>
-                </li> 
-                <li {% if process_title == "JAふくおか八女" %}class="active"{% endif %}>
-                  <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'jafyame' %}"><span class="material-symbols-outlined">upload_file</span>JAふくおか八女</a>
-                </li> 
+                </li>
+                <li {% if process_title == "福祉手当認定診断書保存" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'kumamoto' %}"><span class="material-symbols-outlined">upload_file</span>福祉手当認定診断書</a>
+                </li>
               </ul>
             </li>
-            {% if process_title == "生産履歴票一覧" or process_title == "勤務表一覧" or process_title == "送り状一覧" or process_title == "JAふくおか八女一覧" %}
+            {% if process_title == "生産履歴票一覧" or process_title == "勤務表一覧" or process_title == "送り状一覧" or process_title == "福祉手当認定診断書一覧" %}
             <li class="sp-hidden menu-toggle menu-num3 menu-sub open">
             {% else %}
             <li class="sp-hidden menu-toggle menu-num3 menu-sub">
@@ -115,8 +115,8 @@
                 <li {% if process_title == "送り状一覧" %}class="active"{% endif %}>
                   <a href="{% url 'Fms_Ocrform:ocrdata_list' 'ocrdata' %}"><span class="material-symbols-outlined">list</span>送り状一覧</a>
                 </li>
-                <li {% if process_title == "JAふくおか八女一覧" %}class="active"{% endif %}>
-                  <a href="{% url 'Fms_Ocrform:ocrdata_list' 'jafyame' %}"><span class="material-symbols-outlined">list</span>JAふくおか八女一覧</a>
+                <li {% if process_title == "福祉手当認定診断書一覧" %}class="active"{% endif %}>
+                  <a href="{% url 'Fms_Ocrform:ocrdata_list' 'kumamoto' %}"><span class="material-symbols-outlined">list</span>福祉手当認定診断書一覧</a>
                 </li>
               </ul>
             </li>

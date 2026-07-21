@@ -1,7 +1,9 @@
 import datetime
+import functools
 import json
 import logging
 import os
+import re
 import shutil
 
 # from PIL import Image
@@ -47,10 +49,58 @@ MODEL_CLASSES = {
     'ocrdata': TtOcrData,
     'timesheet': TtTimesheet,
     'jafyame': TtJafyame,	# JAふくおか八女
+    'kumamoto': TtOcrData,	# 福祉手当認定診断書（tt_ocrdataを流用、ocrform_nameで区分）
 }
 PAGE_MARK_IMAGE = '/data_root/evc_root/jafyame.jpg'   # OCRでテキストを抽出するページを判定する画像
+KUMAMOTO_FORM_NAME_PREFIX = '福祉手当認定診断書'   # このプレフィックスで始まる名前で登録したフォームのみ対象
+KUMAMOTO_KEYWORDS = [
+    '氏名', '生年月日', '住所', '傷病名',
+    '診断を受けた日',    # ⑤④のため初めて医師の診断を受けた日
+    '傷病発生',          # ⑥傷病発生年月日
+    '永続すると判',      # ⑦障害が永続すると判定された日
+    '将来再認定の要',    # ⑧将来再認定の要
+    '医師氏名',
+]   # 仮実装。対象書式が決まり次第見直す
+KEYWORD_SEPARATORS = '：:　 -－\t'   # キーワードの後ろに付く区切り文字
+# search_text(キーワード:値)とフォームフィールド名(半角英数)の対応
+KUMAMOTO_FIELD_MAP = {
+    '氏名': 'name',
+    '生年月日': 'birthday',
+    '住所': 'address',
+    '傷病名': 'disease',
+    '診断を受けた日': 'first_exam_date',
+    '傷病発生': 'onset_date',
+    '永続すると判': 'permanent_date',
+    '将来再認定の要': 'reexam',
+    '医師氏名': 'doctor',
+}
+# 行頭のマッチ判定で無視する飾り文字（丸数字・番号・記号・空白など）。
+# 例:「② 生年月日」「⑥　傷病発生年月日」の先頭の "②　" "⑥　" の部分を取り除くために使う。
+# 丸数字は①(U+2460)〜⑳(U+2473)の範囲。
+_LEADING_MARKER_RE = re.compile(r'^[\s　①-⑳0-9０-９.．、,・]+')
 
 logger = logging.getLogger(__name__)
+
+# KUMAMOTO_KEYWORDS のようなキーワードリストの中に、
+# あるキーワードが別のキーワードの部分文字列になっているものがないか事前にチェックする。
+# (例えば将来「名」のような短いキーワードを追加してしまうと、
+#  「氏名」「傷病名」「医師氏名」すべてに巻き込まれてマッチしてしまう。
+#  そうした「値ではなくキーワード同士が衝突している」事故を、
+#  実データで気づく前にこの関数で検知できるようにしておく)
+# 戻り値: [(短い方のキーワード, それを含む長い方のキーワード), ...]。問題なければ空リスト。
+def svf_check_keyword_collisions(keywords):
+    collisions = []
+    for short in keywords:
+        for long_ in keywords:
+            if short != long_ and short in long_:
+                collisions.append((short, long_))
+    return collisions
+
+# モジュール読み込み時に一度だけチェックし、問題があればログに警告を残す。
+# ここで検知しても処理は止めない（誤字修正漏れなどですぐにアプリが起動できなくなるのを避けるため）。
+_kumamoto_keyword_collisions = svf_check_keyword_collisions(KUMAMOTO_KEYWORDS)
+if _kumamoto_keyword_collisions:
+    logger.warning(f'KUMAMOTO_KEYWORDS に部分文字列の衝突があります: {_kumamoto_keyword_collisions}')
 
 # Ocr文書IDから画像ファイル名を取得
 def get_ocrdata_imagefile(model_name, ocrdata_id, page_no):
@@ -68,6 +118,8 @@ def get_ocrdata_imagefile(model_name, ocrdata_id, page_no):
             q_objects = Q(entry_id=ocrdata_id)
         elif model_name == 'jafyame':   # JAふくおか八女
             q_objects = Q(jafyame_id=ocrdata_id)
+        elif model_name == 'kumamoto':   # 熊本市子育て支援申請
+            q_objects = Q(ocrdata_id=ocrdata_id)
         obj = model_class.objects.get(q_objects)
         processed_ym = obj.processed_ym
     except model_class.DoesNotExist:
@@ -115,7 +167,16 @@ def svf_create_ocrdata(model_name, uploadfiles, user_id, owner_id):
             ocrimages = svt_adjust_image_trapezoid(ocrimages, ocrform_id)
         else:
             # 入力画像をフォーム画像に合わせる（射影変換）
-            ocrimages = svf_adjust_image(ocrimages, ocrform_id)
+            ocrimages, adjust_failed_pages = svf_adjust_image(ocrimages, ocrform_id)
+            if adjust_failed_pages:
+                # 位置合わせに失敗したページがあると、以降のarea抽出でページ番号と
+                # 内容がずれた不完全なデータが登録されてしまう。
+                # そのため黙って残りのページだけで処理を続けず、このファイルは
+                # 他の読み込みエラー(パスワード付きファイル等)と同様にエラー扱いにする。
+                logger.error(f'位置合わせ失敗ページあり {filename=} {adjust_failed_pages=}')
+                error_list.append(filename)
+                sv_delete_file(new_path)    # アップロードファイル削除
+                continue
         areas_dict = {}
         # フォーム情報を取得(分割領域・項目リスト)
         if not ocrform_id:
@@ -195,7 +256,10 @@ def svf_create_ocrdata(model_name, uploadfiles, user_id, owner_id):
         # lists : [{'page_no': '1', 'page_list': [...]}, {'page_no': '2', 'page_list': [...]}]
         # dictのリストをJSON形式の文字列に変換
         json_str = sv_datas2json(lists)
-        search = json.dumps(get_search_text(json_str, page_no)) # 辞書型のオブジェクトをJSON形式の文字列に変換
+        search_dict = get_search_text(json_str, page_no)
+        if model_name == 'kumamoto':   # 福祉手当認定診断書：エリア抽出を優先し、空の項目だけキーワード抽出で補う
+            search_dict = svf_merge_kumamoto_search_text(search_dict, fulltext)
+        search = json.dumps(search_dict) # 辞書型のオブジェクトをJSON形式の文字列に変換
         create_param_dict = {
             'filepath': new_path,
             'page_no': -1,
@@ -261,6 +325,8 @@ def svf_create_ocrdata_page(model_name, ocrdata_id, param_dict):
         save_id = save_entry(ocrdata_id, param_dict)
     elif model_name == 'jafyame':   # JAふくおか八女
         save_id = save_jafyame(ocrdata_id, param_dict)
+    elif model_name == 'kumamoto':   # 熊本市子育て支援申請
+        save_id = save_ocrdata(ocrdata_id, param_dict)
     else:
         save_id = False
     return save_id
@@ -676,6 +742,157 @@ def get_jsontext(ocrform_text, ocrdata_pages):
 
     return json_str
 
+# 行頭の丸数字・番号・記号・空白等の飾り文字を取り除く
+# 例:「② 生年月日」→「生年月日」
+def _strip_leading_marker(line):
+    return _LEADING_MARKER_RE.sub('', line)
+
+# キーワードの各文字の間に半角/全角スペースやタブが入っていても一致する
+# 正規表現パターンを組み立てる。
+# 実際の帳票では「氏　名」「住　所」のように、2文字の項目名を1文字ずつ
+# 均等割り付けする表記がよく使われる。単純な文字列一致(in/find)だと
+# 「氏名」というキーワードは「氏　名」に一致しないため、キーワードの
+# 文字と文字の間に空白が挟まっていても一致するようにしている。
+_KEYWORD_GAP = r'[ \t　]*'
+
+@functools.lru_cache(maxsize=None)
+def _build_keyword_pattern(keyword):
+    escaped_chars = [re.escape(ch) for ch in keyword]
+    return re.compile(_KEYWORD_GAP.join(escaped_chars))
+
+# line内でstart〜endの範囲にマッチしたkeywordが、実はkeywords一覧にある
+# 「別の、より長いキーワード」の一部として出現しているだけなのかどうかを判定する。
+# 例：「医師氏名」というテキスト中の"氏名"は、KUMAMOTO_KEYWORDSに含まれる
+#     "医師氏名"というキーワード自体の一部として出現しているだけなので、
+#     "氏名"というキーワードの一致としては扱わない。
+# (svf_check_keyword_collisions() が事前に検知するのはキーワード一覧同士の
+#  衝突の可能性であり、実際にOCRテキスト中でどちらの意味で出現しているかは
+#  ここで実行時に判定する)
+def _is_part_of_longer_keyword(line, start, end, keyword, keywords):
+    for other in keywords:
+        if other == keyword or keyword not in other:
+            continue
+        # otherキーワード自身も文字間の空白を許容するパターンで、
+        # line内の一致範囲がkeywordの一致範囲を完全に包含していないか確認する
+        for m in _build_keyword_pattern(other).finditer(line):
+            if m.start() <= start and end <= m.end():
+                return True
+    return False
+
+# lines の中から keyword にマッチする行を探し、キーワード以降の値を返す。
+# strict=True  : 行頭（飾り文字を除いた部分）がキーワードそのもので始まる行だけを対象にする
+# strict=False : 行のどこかにキーワードが含まれていればよい（ただし他のより長い
+#                キーワードの一部として出現しているだけの箇所は除く）
+#
+# 一致する行が見つかったら、その時点で確定させて他の行は探しに行かない。
+# （同じ行に値が無い場合だけ、ラベル行と値行が分かれているレイアウトを想定して
+#  直後の1行だけを値として見る。それでも空ならこのキーワードは「値なし」として
+#  諦める）。ここで探索を続けて他の行まで見に行くと、離れた場所にある無関係な
+#  行との部分一致を誤って拾ってしまう恐れがあるため、あえて打ち切っている。
+def _find_keyword_value(lines, keyword, keywords, strict):
+    pattern = _build_keyword_pattern(keyword)
+    for i, line in enumerate(lines):
+        if strict:
+            stripped = _strip_leading_marker(line)
+            m = pattern.match(stripped)   # 行頭(飾り文字除去後)からの一致のみ許可
+            if not m:
+                continue
+            # 飾り文字を取り除く前の元の行における、一致終了位置に補正する
+            offset = len(line) - len(stripped)
+            match_end = offset + m.end()
+        else:
+            # 他のより長いキーワードの一部として出現しているだけの箇所はスキップし、
+            # 独立したキーワードとして出現している箇所だけを探す
+            match_end = None
+            search_from = 0
+            while True:
+                m = pattern.search(line, search_from)
+                if not m:
+                    break
+                if _is_part_of_longer_keyword(line, m.start(), m.end(), keyword, keywords):
+                    search_from = m.start() + 1
+                    continue
+                match_end = m.end()
+                break
+            if match_end is None:
+                continue
+
+        after = line[match_end:].strip(KEYWORD_SEPARATORS)
+        if after:
+            return after
+        if i + 1 < len(lines):
+            next_line = lines[i + 1].strip(KEYWORD_SEPARATORS)
+            if next_line:
+                return next_line
+        return ''
+    return ''
+
+# OCR全文からキーワードを含む行を探し、キーワード以降の文字列を値として抽出
+#
+# 単純に「行のどこかにキーワードを含んでいればよい」という一致条件だけだと、
+# 別項目のラベルの中に今回のキーワードがたまたま部分文字列として
+# 紛れ込んでいるケースを誤って拾ってしまうことがある。
+# 例：キーワード「生年月日」に対して
+#   ② 生年月日                      ← 本来ヒットしてほしい行
+#   ⑥ 傷病発生年月日　　　　年　月　日 ← "生年月日"を含むが別の項目(傷病の発生日)
+# のような書式の場合、⑥の行を誤って「生年月日」の値として拾ってしまうことがあった。
+# 同様に「医師氏名　佐藤一郎」のような行は、"氏名"というキーワードにとって
+# 紛らわしい部分一致になる。
+#
+# これを避けるため、次の2段階で一致する行を探す。
+#   1段階目（strict） : 行頭（先頭の丸数字・番号・空白等を除いた部分）がキーワードで
+#                       始まっている行だけを探す。ラベル単独の行（例:「② 生年月日」）は
+#                       ここでヒットし、⑥のように説明文の途中にキーワードが
+#                       埋もれている行はヒットしない。
+#   2段階目（fallback）: 1段階目で見つからなかった場合のみ、行のどこかにキーワードが
+#                       含まれていればよい、という緩い一致にフォールバックする。
+#                       ただし_is_part_of_longer_keyword()により、他の登録済み
+#                       キーワード（例:「医師氏名」）の一部として出現しているだけの
+#                       箇所は除外する。ラベルが説明文の末尾に付いている行
+#                       （例:「④ 障害の原因となった傷病名」）は行頭一致には
+#                       ならないため、こちらで拾う。
+#
+# fulltext: 改行区切りの全文テキスト、keywords: 抽出したいキーワードのリスト
+# 戻り値: {キーワード: 抽出した値} （見つからない場合は空文字）
+def svf_extract_keywords(fulltext, keywords):
+    if not fulltext:
+        return dict.fromkeys(keywords, '')
+    lines = fulltext.split('\n')
+    result = {}
+    for keyword in keywords:
+        value = _find_keyword_value(lines, keyword, keywords, strict=True)
+        if not value:
+            value = _find_keyword_value(lines, keyword, keywords, strict=False)
+        result[keyword] = value
+    return result
+
+# 福祉手当認定診断書のsearch_text用に、エリア抽出結果とキーワード抽出結果をマージする。
+# area_search_dict: get_search_text()の戻り値（item_json＝半角英数キー、矩形領域からの抽出値）
+# fulltext: OCR全文（キーワード抽出のフォールバック用）
+#
+# 矩形領域は座標で位置を直接指定しているため、キーワードが別の行に紛れ込んで
+# 誤った値を拾うkeyword抽出よりも基本的に信頼度が高い。そのため
+# エリア抽出値を優先し、値が空（未検出・未記入）の項目だけキーワード抽出で補う。
+# 戻り値のキーはKUMAMOTO_KEYWORDS(日本語)に統一する
+# （画面・JSONダウンロードはこのキーだけを参照するため、item_json側の英語キーは
+#  ここで捨てて日本語キーのみのdictにする）。
+def svf_merge_kumamoto_search_text(area_search_dict, fulltext):
+    keyword_dict = svf_extract_keywords(fulltext, KUMAMOTO_KEYWORDS)
+    merged = {}
+    for keyword in KUMAMOTO_KEYWORDS:
+        field_name = KUMAMOTO_FIELD_MAP.get(keyword)
+        area_value = area_search_dict.get(field_name, '') if field_name else ''
+        merged[keyword] = area_value or keyword_dict.get(keyword, '')
+    return merged
+
+# 熊本市子育て支援申請 対象のocrform_idリストを取得（フォーム名がプレフィックスで始まるもの）
+def get_kumamoto_ocrform_ids():
+    return list(
+        TtOcrform.objects
+        .filter(ocrform_name__startswith=KUMAMOTO_FORM_NAME_PREFIX)
+        .values_list('ocrform_id', flat=True)
+    )
+
 # Ocr文書 テキストデータ更新
 def svf_update_shiori(model_name, ocrdata_id, fulltext, user_id):
     model_class = MODEL_CLASSES.get(model_name)
@@ -691,6 +908,8 @@ def svf_update_shiori(model_name, ocrdata_id, fulltext, user_id):
             q_objects = Q(entry_id=ocrdata_id)
         elif model_name == 'jafyame':   # JAふくおか八女
             q_objects = Q(jafyame_id=ocrdata_id)
+        elif model_name == 'kumamoto':   # 熊本市子育て支援申請
+            q_objects = Q(ocrdata_id=ocrdata_id)
         ocrdata_obj = model_class.objects.filter(q_objects).first()
     except model_class.DoesNotExist:
         logger.exception(f'{model_name=} DoesNotExist {ocrdata_id}')
@@ -734,6 +953,8 @@ def svf_delete_ocrdata(model_name, ocrdata_id, user_id, owner_id):
             q_objects = Q(entry_id=ocrdata_id)
         elif model_name == 'jafyame':   # JAふくおか八女
             q_objects = Q(jafyame_id=ocrdata_id)
+        elif model_name == 'kumamoto':   # 熊本市子育て支援申請
+            q_objects = Q(ocrdata_id=ocrdata_id)
         ocrdata_obj = model_class.objects.get(q_objects)
     except model_class.DoesNotExist:
         logger.exception(f'{model_name=} DoesNotExist {ocrdata_id}')

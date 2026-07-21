@@ -17,5 +17,6 @@ urlpatterns = [
     path('ocrdata_list/<str:model_name>/',views_ocrdata.EvcOcrDataListView.as_view(),name='ocrdata_list'),
     path('ocrdata_edit/<str:model_name>/<ocrdata_id>/<int:image_no>/',views_ocrdata.EvcEditOcrDataView.as_view(),name='ocrdata_edit'),
     path('export_zip/<ocrdata_id>/<int:image_no>/', views_ocrdata.export_zip, name='export_zip'),
+    path('export_kumamoto_json/<ocrdata_id>/', views_ocrdata.export_kumamoto_json, name='export_kumamoto_json'),
 
  ]

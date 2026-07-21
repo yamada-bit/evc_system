@@ -1,0 +1,202 @@
+{% extends "commons/Evc_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block link_block %}
+<link rel="stylesheet" type="text/css" href='{% static "Fms_Ocrform/css/FE_SConCreate.css" %}?250515'>
+{% endblock %}
+{% block script_block %}
+<script src='{% static "js/dialog.min.js" %}' defer></script>
+{% endblock %}
+
+{% block title %}{{ process_title }}{% endblock %}
+
+{% block styles %}
+      aside input[type="search"],
+      aside input[type="date"] {
+        color: #333;
+        background-color: white;
+      }
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div class="h1-wrapper">
+      <h1 class="sub-title">{{ process_title }}</h1>
+    </div>
+    <div id="s-toggle" class="sp">
+      <span class="material-symbols-outlined">edit_square</span>
+    </div>
+    <div class="edit-flex">
+      <figure id="pdfimage" class="card">
+        <div class="card-contents">
+          <h2> {{ pdf_name }} </h2>
+          <div class="imagebox" id="imagebox">
+            <canvas id="image_canvas"></canvas>
+            <div style="display:none;">
+              <img id="bk_img" src='{{ imgfile }}'>
+            </div>
+          </div>
+          <button  class="button_image"  onclick="setResize(-1)">ー</button>
+          <button  class="button_image"  onclick="setResize(+1)">＋</button>
+          {% if src_pdffile %}
+          <a href="{{ pdffile }}" target="_blank" rel="noopener noreferrer" class="button_image" >PDF表示</a>
+          {% else %}
+          <a class="button_image" href="{{ imgfile }}" download>画像ダウンロード</a>
+          {% endif %}
+        </div>
+      </figure>
+      <div id="shiori" class="card">
+        <div class="card-contents">
+          <h2>テキスト</h2>
+          <form id="form1" name="form1" method="post">
+            {% csrf_token %}
+            {{ form.ocrdata_id }}
+            {{ form.fulltext }}
+            <div class="btn-area">
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  edit
+                </span>
+                <input type="button" id="edit" value="編集">
+              </div>
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  refresh
+                </span>
+                <input type="button" id="update" value="更新">
+              </div>
+              {% comment "レイアウト調整のため一時的に非表示" %}
+              <div class="btn-container">
+                <span class="material-symbols-outlined">
+                  download
+                </span>
+                <a href="{% url 'Fms_Ocrform:export_kumamoto_json' form.ocrdata_id.value %}">JSONダウンロード</a>
+              </div>
+              {% endcomment %}
+            </div>
+            <input type="hidden" id="submit_action1" name="submit_action" value="update">
+          </form>
+        </div>
+      </div>
+
+      <aside id="serchcon">
+        <h2> 検索条件を編集</h2>
+        <form  id="form2" name="form2" method="post">
+          {% csrf_token %}
+          {{ form.ocrdata_id }}
+          <div class="e-data">
+            <label>氏名</label>
+              {{ form.name }}
+              {{ form.name.errors }}
+          </div>
+          <div class="e-data">
+            <label>生年月日</label>
+              {{ form.birthday }}
+              {{ form.birthday.errors }}
+          </div>
+          <div class="e-data">
+            <label>住所</label>
+              {{ form.address }}
+              {{ form.address.errors }}
+          </div>
+          <div class="e-data">
+            <label>傷病名</label>
+              {{ form.disease }}
+              {{ form.disease.errors }}
+          </div>
+          <div class="e-data">
+            <label>初診日</label>
+              {{ form.first_exam_date }}
+              {{ form.first_exam_date.errors }}
+          </div>
+          <div class="e-data">
+            <label>傷病発生年月日</label>
+              {{ form.onset_date }}
+              {{ form.onset_date.errors }}
+          </div>
+          <div class="e-data">
+            <label>永続認定日</label>
+              {{ form.permanent_date }}
+              {{ form.permanent_date.errors }}
+          </div>
+          <div class="e-data">
+            <label>将来再認定の要</label>
+              {{ form.reexam }}
+              {{ form.reexam.errors }}
+          </div>
+          <div class="e-data">
+            <label>医師氏名</label>
+              {{ form.doctor }}
+              {{ form.doctor.errors }}
+          </div>
+          <input type="hidden" id="submit_action2" name="submit_action" value="commit">
+        </form>
+        <div class="btn-area2 bottom-btn">
+          <div class="btn-container">
+            <span class="material-symbols-outlined">
+              check_circle
+            </span>
+            <input type="button" id="commit" name="commit" onclick="commit()" value="登録">
+          </div>
+          <div class="btn-container">
+            <span class="material-symbols-outlined">
+              delete
+            </span>
+            <input type="submit" id="delete_data" value="削除 ">
+          </div>
+          <div class="btn-container">
+            <span class="material-symbols-outlined">
+              undo
+            </span>
+            <input type="button" id="cancel" value="戻る">
+          </div>
+        </div>
+        <div id="MovePage">
+          {% if page_obj.has_previous %}
+          <a href="{% url 'Fms_Ocrform:ocrdata_edit' 'kumamoto' previous_ocrdata_id 1 %}" id="back_btn">
+            <span class="material-symbols-outlined arrow">
+              arrow_back_ios
+            </span>
+            <span>前頁</span>
+          </a>
+          {% else %}
+          <a id="back_btn" style="color:gray;" disabled=disabled>
+            <span class="material-symbols-outlined">
+              arrow_back_ios
+            </span>
+            <span>前頁</span>
+          </a>
+          {% endif %}
+
+          {% if page_obj.has_next %}
+          <a href="{% url 'Fms_Ocrform:ocrdata_edit' 'kumamoto' next_ocrdata_id 1 %}" id="next_btn">
+            <span>次頁</span>
+            <span class="material-symbols-outlined arrow">
+              arrow_forward_ios
+            </span>
+          </a>
+          {% else %}
+          <a id="next_btn" style="color:gray;text-decoration:none;">
+            <span>次頁</span>
+            <span class="material-symbols-outlined">
+              arrow_forward_ios
+            </span>
+          </a>
+          {% endif %}
+        </div>
+      </aside>
+    </div>
+    <dialog id="del-record">
+      <span class="material-symbols-outlined">
+        warning
+      </span>
+      <p>このレコードを削除します。<br>よろしいですか？</p>
+      <div class="btn-area">
+        <button id="close">キャンセル</button>
+        <button id="scon_delete">削除</button>
+      </div>
+    </dialog>
+  </main>
+  <script src='{% static "Fms_Ocrform/js/Fms_zoom_timesheet.js" %}?250116' defer></script>
+{% endblock %}

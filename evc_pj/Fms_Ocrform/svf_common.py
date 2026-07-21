@@ -34,7 +34,23 @@ ROOT_FOLDER = {
     'ocrdata': 'Evc_OcrData',
     'timesheet': 'Evc_Timesheet',
     'jafyame': 'Evc_Jafyame',   # JAふくおか八女
+    'kumamoto': 'Evc_Kumamoto',   # 熊本市子育て支援申請
 }
+
+# --- align_image() の位置合わせパラメータ ---
+# ホモグラフィ行列は理論上4組の対応点があれば計算できるが、
+# 対応点が少ないと1組の誤マッチだけで変換結果が大きく崩れてしまう。
+# 余裕を持たせて、これ未満の対応点しか得られなかった場合は
+# 「位置合わせできない」ものとして明示的にエラーにする。
+MIN_MATCH_COUNT = 10
+# Lowe の比率テストの閾値。
+# 各特徴点について「1番近い候補」と「2番目に近い候補」への距離を比較し、
+# 1位が2位よりも(この倍率以上)明確に近い場合だけ信頼できるマッチとみなす。
+# 値を小さくするほど厳しく絞り込まれ、誤マッチは減るが対応点数も減る。
+# 0.7〜0.8 が一般的に使われる値。
+LOWE_RATIO = 0.75
+# RANSAC で外れ値（誤マッチ）を除外する際に許容する再投影誤差(px)
+RANSAC_REPROJ_THRESHOLD = 5.0
 
 logger = logging.getLogger(__name__)
 
@@ -421,8 +437,17 @@ def imread_unicode(path, flags=cv2.IMREAD_COLOR):
         return cv2.imdecode(bytes_data, flags)
 
 # 入力画像をフォーム画像に合わせる
+# 戻り値: (adjusts, failed_pages)
+#   adjusts      : 位置合わせに成功したページの画像パスのリスト
+#   failed_pages : 位置合わせに失敗したページ番号(1始まり)のリスト
+# 以前はalign_image()が失敗したページを結果から黙って除外していたため、
+# ページ数が減ったままextract処理に渡り、ページ番号と内容がずれた不完全な
+# データが登録されてしまう不具合があった。
+# そのため失敗したページ番号を明示的に返し、呼び出し元(svf_create_ocrdata)側で
+# 「このファイルはエラー扱いにして登録しない」という判断ができるようにしている。
 def svf_adjust_image(ocrimages, ocrform_id):
     adjusts = []
+    failed_pages = []
     rootfolder = get_ocrform_rootfolder()   # ルートフォルダを取得
     formimg_dir = get_ocrform_image_dir(rootfolder)
     img_dir = get_imgfolder_upload(rootfolder)
@@ -444,19 +469,34 @@ def svf_adjust_image(ocrimages, ocrform_id):
             shutil.move(file_name, imagepath)
             adjusts.append(imagepath)
             # adjusts.append(file_name)
-        except Exception:   # ValueError
-            logger.exception(f'svf_adjust_image exception {imagepath=}')
-    return adjusts
-# 入力画像を変換しフォーム画像に合わせる
+        except Exception:   # ValueError（対応点不足・ホモグラフィ推定失敗など）
+            # ここで例外を握りつぶして次のページへ進むのではなく、
+            # 「何ページ目が失敗したか」を記録して呼び出し元に伝える。
+            logger.exception(f'svf_adjust_image exception {i=} {imagepath=}')
+            failed_pages.append(i)
+    return adjusts, failed_pages
+
+# 入力画像を変換しフォーム画像に合わせる（ORB特徴点マッチング＋射影変換）
+#
+# 処理の流れ:
+#   1. ORBで template(登録済みフォーム画像) と input(アップロード画像) それぞれから特徴点を検出
+#   2. knnMatch(k=2) + Loweの比率テストで「信頼できる対応点」だけに絞り込む
+#   3. 対応点からRANSACでホモグラフィ行列(射影変換行列)を推定
+#      （RANSACは対応点の中に混じった誤マッチ=外れ値を自動的に無視して行列を求める）
+#   4. その行列でinput画像をtemplateと同じ座標系・同じサイズに変形する
+#
+# 対応点が少なすぎる場合や、対応点はあってもホモグラフィが数学的に求まらない場合は
+# ValueErrorを送出する。呼び出し元(svf_adjust_image)はこれを検知してそのページを
+# failed_pagesに積む。
 def align_image(template_path, input_path, draw_matches=False):
-    # 画像読み込み
+    # 画像読み込み（特徴点検出は明暗差だけで十分なためグレースケールで行う）
     template = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
     # OpenCVではファイル名やパスに日本語が含まれていると、画像ファイルが開けない
     # NumPyで画像ファイルを開く
     input_img = imread_unicode(input_path, cv2.IMREAD_GRAYSCALE)
     # input_img = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
 
-    # ORB特徴量抽出
+    # ORB特徴量抽出（画像の「角」や模様の変化点のような特徴的な点を検出する）
     orb = cv2.ORB_create(5000)
     kp1, des1 = orb.detectAndCompute(template, None)
     kp2, des2 = orb.detectAndCompute(input_img, None)
@@ -468,25 +508,61 @@ def align_image(template_path, input_path, draw_matches=False):
     # print(f"des1: {des1.shape}, dtype: {des1.dtype}")
     # print(f"des2: {des2.shape}, dtype: {des2.dtype}")
 
-    # 特徴点マッチング（Brute Force）
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    matches = bf.match(des1, des2)
+    # 特徴点マッチング（k近傍探索）
+    # 以前はcrossCheck=Trueの最近傍マッチ(bf.match)で「距離が近い上位50件」を
+    # 機械的に採用していたが、これだと対応点の「質」を見ていないため、
+    # 罫線や似た形の文字(年・月・日など)が多い帳票では誤マッチが混入しやすかった。
+    # knnMatch(k=2)で各特徴点ごとに「1番目に近い候補」「2番目に近い候補」の
+    # 2つを取得し、この後のLoweの比率テストで質の悪いマッチを除外する。
+    # ※ knnMatchを使う場合、BFMatcherのcrossCheckはTrueにできない(仕様上併用不可)ため外す。
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING)
+    knn_matches = bf.knnMatch(des1, des2, k=2)
 
-    # マッチを距離でソートし、上位を抽出
-    matches = sorted(matches, key=lambda x: x.distance)
-    good_matches = matches[:50]  # 上位50件のみ使用
+    # Loweの比率テスト
+    # 1位の候補との距離が、2位の候補との距離よりも十分に近い(=紛れもなく一番似ている)
+    # 場合だけを「信頼できる対応点」として採用する。
+    # 1位と2位の距離がほぼ同じ(=どちらの候補か区別がつかない)マッチは
+    # 誤マッチである可能性が高いためここで除外する。
+    good_matches = []
+    for match_pair in knn_matches:
+        # 特徴点によっては近傍候補が1つしか見つからず2件揃わないことがあるため件数を確認する
+        if len(match_pair) != 2:
+            continue
+        m, n = match_pair
+        if m.distance < LOWE_RATIO * n.distance:
+            good_matches.append(m)
 
-    # 対応点取得
+    # ホモグラフィ行列の推定には理論上4組の対応点があれば足りるが、
+    # 少数の対応点しかないと1組の誤マッチだけで変換結果が大きく崩れて不安定になる。
+    # そのためMIN_MATCH_COUNT件未満の場合は「位置合わせできない」ものとして
+    # ここで明示的にエラーにする（黙って処理を続けて誤った変換をしない）。
+    if len(good_matches) < MIN_MATCH_COUNT:
+        raise ValueError(
+            f'位置合わせに十分な対応点が見つかりませんでした '
+            f'({len(good_matches)}/{MIN_MATCH_COUNT}件)。'
+            '写真の向き・ピント・書類全体が写っているかを確認してください。'
+        )
+
+    # 対応点座標を取得（input側の座標をtemplate側の座標に変換する行列を求める）
     src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
 
-    # ホモグラフィ行列推定（RANSACで外れ値除去）
-    M, mask = cv2.findHomography(dst_pts, src_pts, cv2.RANSAC, 5.0)
+    # ホモグラフィ行列推定（RANSACで対応点に混じった外れ値=誤マッチを自動的に除外する）
+    M, mask = cv2.findHomography(dst_pts, src_pts, cv2.RANSAC, RANSAC_REPROJ_THRESHOLD)
 
-    # 射影変換で位置合わせ
+    # 対応点の数がMIN_MATCH_COUNT以上あっても、点の配置(ほぼ一直線上に並ぶ等)
+    # によっては解が数学的に求まらずMがNoneで返ってくることがある。
+    # ここでチェックせずにcv2.warpPerspectiveへ渡すと、原因のわかりにくい
+    # OpenCVレベルのエラーになってしまうため、必ず確認してから先に進む。
+    if M is None:
+        raise ValueError('ホモグラフィ行列の推定に失敗しました。位置合わせできません。')
+
+    # 射影変換で位置合わせ（出力サイズはtemplate画像に合わせる）
     h, w = template.shape
 
     # 読み込みと warpPerspective 処理
+    # 特徴点検出はグレースケールで行ったが、出力・以降のOCR処理では
+    # カラー画像のまま扱うためここで改めてカラーで読み込み直す
     input_img = imread_unicode(input_path)
     if input_img is None:
         raise ValueError("画像の読み込みに失敗しました。ファイルパスを確認してください。")
@@ -498,6 +574,13 @@ def align_image(template_path, input_path, draw_matches=False):
     #     cv2.waitKey(0)
     #     cv2.destroyAllWindows()
 
-    # 特徴点の可視化付き
-    cv2.imwrite("aligned_result.jpg", aligned_img)
+    # 位置合わせ結果の確認用画像はDEBUG時のみ書き出す
+    # （以前はcv2.imwrite("aligned_result.jpg", ...)でカレントディレクトリに
+    #   無条件で書き出しており、日本語パス非対応かつ本番でも不要なファイルが
+    #   溜まり続けていたため、入力画像と同じフォルダにDEBUG時のみ出力するよう変更）
+    if settings.DEBUG:
+        debug_dir = os.path.dirname(input_path)
+        debug_name = os.path.join(debug_dir, 'aligned_' + os.path.basename(input_path)).replace(os.sep, '/')
+        sv_imwrite(debug_name, aligned_img)
+
     return aligned_img

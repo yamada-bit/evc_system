@@ -1,5 +1,6 @@
 import datetime
 import json
+from urllib.parse import quote
 
 # import threading
 # import base64
@@ -8,6 +9,7 @@ import os
 import re  # 正規表現操作
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 # from django.conf import settings
@@ -22,6 +24,7 @@ from django.db.models import F, Q
 
 # from django.http import JsonResponse
 # from django.http import HttpResponse,Http404
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import FormView, ListView
@@ -41,10 +44,12 @@ from Evc_App.views import OwnerTestMixin
 from Fms_Ocrform.forms import (
     EvcEditEntryForm,
     EvcEditJafyameForm,
+    EvcEditKumamotoForm,
     EvcEditOcrDataForm,
     EvcEditTimesheetForm,
     EvcEntryListForm,
     EvcJafyameListForm,
+    EvcKumamotoListForm,
     EvcOcrDataListForm,
     EvcTimesheetListForm,
     EvcUploadEntryForm,
@@ -58,6 +63,9 @@ from Fms_Ocrform.svf_common import (
     svf_make_ocrdata_image_dir,
 )
 from Fms_Ocrform.svf_ocrdata import (
+    KUMAMOTO_FIELD_MAP,
+    KUMAMOTO_KEYWORDS,
+    get_kumamoto_ocrform_ids,
     svf_create_ocrdata,
     svf_delete_ocrdata,
     svf_filter_jafyame,
@@ -81,24 +89,28 @@ MODEL_CLASSES = {
     'ocrdata': TtOcrData,
     'timesheet': TtTimesheet,
     'jafyame': TtJafyame,	# JAふくおか八女
+    'kumamoto': TtOcrData,	# 福祉手当認定診断書
 }
 PROCESS_TITLE = {
     'entry': '生産履歴票保存',
     'ocrdata': '送り状保存',
     'timesheet': '勤務表保存',
     'jafyame': 'JAふくおか八女',
+    'kumamoto': '福祉手当認定診断書保存',
 }
 PROCESS_TITLE_LIST = {
     'entry': '生産履歴票一覧',
     'ocrdata': '送り状一覧',
     'timesheet': '勤務表一覧',
     'jafyame': 'JAふくおか八女一覧',
+    'kumamoto': '福祉手当認定診断書一覧',
 }
 PROCESS_TITLE_EDIT = {
     'entry': '検索条件編集',
     'ocrdata': '検索条件編集',
     'timesheet': '検索条件編集',
     'jafyame': '検索条件編集',
+    'kumamoto': '検索条件編集',
 }
 
 logger = logging.getLogger(__name__)
@@ -249,6 +261,8 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             template_name = 'Fms_Ocrform/FE_EntryList.html'
         elif model_name == 'jafyame':   # JAふくおか八女
             template_name = 'Fms_Ocrform/FE_JafyameList.html'
+        elif model_name == 'kumamoto':   # 福祉手当認定診断書
+            template_name = 'Fms_Ocrform/FE_KumamotoList.html'
         else:
             template_name = self.template_name
 
@@ -270,6 +284,8 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
         if model_name == 'ocrdata':
             # request.GET 型でリクエスト　QueryDict型で初期化
             # request.GETは辞書型であり、リクエスト送信時のデータが格納されている
+            # 福祉手当認定診断書のフォームで登録されたものは除外(送り状一覧との混在防止)
+            queryset = queryset.exclude(ocrform_id__in=get_kumamoto_ocrform_ids())
             form = EvcOcrDataListForm(self.request.GET or None)
         elif model_name == 'timesheet':
             form = EvcTimesheetListForm(self.request.GET or None)
@@ -280,6 +296,9 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             form = EvcEntryListForm(self.request.GET or None)
         elif model_name == 'jafyame':   # JAふくおか八女
             form = EvcJafyameListForm(self.request.GET or None)
+        elif model_name == 'kumamoto':   # 福祉手当認定診断書(送り状と区別するためocrform_idで絞り込み)
+            queryset = queryset.filter(ocrform_id__in=get_kumamoto_ocrform_ids())
+            form = EvcKumamotoListForm(self.request.GET or None)
         else:
             logger.error(f'{ut_get_client_ip(self.request)} '
                         'EvcOcrDataListView model_name error')
@@ -404,6 +423,7 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
 
     # HTMLのテーブルに表示するデータを取得
     def set_ocrdata_lists(self, queryset, from_no, to_no):
+        model_name = self.kwargs.get('model_name')
         lists = []
         item_no = 1
         for item in queryset:
@@ -426,7 +446,7 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
                     item_no += 1
                     continue
             # Ocr文書情報を取得
-            data = get_ocrdata_list_info(item)
+            data = get_ocrdata_list_info(item, model_name)
 
             data['item_no'] = str(item_no)
             lists.append(data)
@@ -440,7 +460,7 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
             paginate_by = int(page_size)
         return paginate_by
 # Ocr文書情報を取得
-def get_ocrdata_list_info(ocrdata_obj):
+def get_ocrdata_list_info(ocrdata_obj, model_name=None):
     createday = ut_get_localdate(ocrdata_obj.create_date)
     if createday:
         create_date = createday.strftime('%Y/%m/%d')
@@ -454,7 +474,14 @@ def get_ocrdata_list_info(ocrdata_obj):
     else:
         user_name = ''
     model_class = type(ocrdata_obj)
-    if model_class == TtOcrData:
+    if model_class == TtOcrData and model_name == 'kumamoto':
+        data = {
+            'pdf_name': ocrdata_obj.pdf_name or '',
+            'create_date': create_date,
+            'user_name': user_name,
+            'ocrdata_id': ocrdata_obj.ocrdata_id,
+        }
+    elif model_class == TtOcrData:
         if ocrdata_obj.search_text:
             d = json.loads(ocrdata_obj.search_text)
             tr_no = d.get('tr_no')
@@ -548,6 +575,8 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
             template_name = 'Fms_Ocrform/FE_EditEntry.html'
         elif model_name == 'jafyame':   # JAふくおか八女
             template_name = 'Fms_Ocrform/FE_EditJafyame.html'
+        elif model_name == 'kumamoto':   # 福祉手当認定診断書
+            template_name = 'Fms_Ocrform/FE_EditKumamoto.html'
         else:
             template_name = self.template_name
 
@@ -565,6 +594,8 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
             form_class = EvcEditEntryForm
         elif model_name == 'jafyame':   # JAふくおか八女
             form_class = EvcEditJafyameForm
+        elif model_name == 'kumamoto':   # 福祉手当認定診断書
+            form_class = EvcEditKumamotoForm
         else:
             form_class = self.form_class
         return form_class
@@ -594,6 +625,8 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
                 q_objects = Q(entry_id=ocrdata_id)
             elif model_name == 'jafyame':   # JAふくおか八女
                 q_objects = Q(jafyame_id=ocrdata_id)
+            elif model_name == 'kumamoto':   # 福祉手当認定診断書
+                q_objects = Q(ocrdata_id=ocrdata_id)
             ocrdata_obj = model_class.objects.get(q_objects)
         except model_class.DoesNotExist:
             logger.exception(f'{ut_get_client_ip(self.request)} '
@@ -668,7 +701,7 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
                     context['previous_ocrdata_id'] = ocrdata_lists[page_obj.previous_page_number() - 1]
         context['image_no'] = image_no  # export_zipのパラメータのため設定(エラー時のリダイレクト)
         if 'form' not in kwargs:
-            default_data = get_scon_info(ocrdata_obj)
+            default_data = get_scon_info(ocrdata_obj, model_name)
             if model_name == 'ocrdata':
                 form = EvcEditOcrDataForm(initial = default_data)
             elif model_name == 'timesheet':
@@ -677,6 +710,8 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
                 form = EvcEditEntryForm(initial = default_data)
             elif model_name == 'jafyame':   # JAふくおか八女
                 form = EvcEditJafyameForm(initial = default_data)
+            elif model_name == 'kumamoto':   # 福祉手当認定診断書
+                form = EvcEditKumamotoForm(initial = default_data)
             else:
                 form = None
             context['form'] = form
@@ -745,6 +780,13 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
                 }
                 # JAふくおか八女 情報テーブル更新
                 id = svf_update_jafyame(ocrdata_id, data_dict, user_id)
+            elif model_name == 'kumamoto':   # 福祉手当認定診断書
+                data_dict = {
+                    keyword: form.cleaned_data.get(field_name)
+                    for keyword, field_name in KUMAMOTO_FIELD_MAP.items()
+                }
+                # Ocr文書情報テーブル更新(search_textにキーワード:値で保存)
+                id = svf_update_ocrdata(ocrdata_id, data_dict, user_id)
 
             if id:
                 messages.success(self.request, 'データを登録しました')
@@ -912,9 +954,20 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
             page_obj = paginator.page(paginator.num_pages)
         return page_obj
 # フォーム初期表示のために情報を取得
-def get_scon_info(ocrdata_obj):
+def get_scon_info(ocrdata_obj, model_name=None):
     model_class = type(ocrdata_obj)
-    if model_class == TtOcrData:
+    if model_class == TtOcrData and model_name == 'kumamoto':
+        if ocrdata_obj.search_text:
+            d = json.loads(ocrdata_obj.search_text)
+        else:
+            d = {}
+        default_data = {
+            'ocrdata_id': ocrdata_obj.ocrdata_id,
+            'fulltext': ocrdata_obj.pdf_handbook,
+        }
+        for keyword, field_name in KUMAMOTO_FIELD_MAP.items():
+            default_data[field_name] = d.get(keyword, '')
+    elif model_class == TtOcrData:
         if ocrdata_obj.search_text:
             d = json.loads(ocrdata_obj.search_text)
             tr_no = d.get('tr_no')
@@ -992,6 +1045,38 @@ def get_jsontext_list(json_text, page_no):
         except Exception:
             logger.exception('get_jsontext_list exception ')
     return dicts
+
+# 福祉手当認定診断書：項目名とOCR抽出値のJSONダウンロード
+# search_text は既に {項目名: 抽出値} 形式のJSON文字列で保存されているため、
+# それを元に、キーワードの過不足があってもKUMAMOTO_KEYWORDS全項目が
+# 必ず揃った状態にしてダウンロードさせる。
+@login_required
+def export_kumamoto_json(request, ocrdata_id):
+    try:
+        ocrdata_obj = TtOcrData.objects.get(ocrdata_id=ocrdata_id)
+    except TtOcrData.DoesNotExist:
+        logger.error(f'{ut_get_client_ip(request)} '
+                     f'export_kumamoto_json DoesNotExist {ocrdata_id=}')
+        messages.error(request, 'データが見つかりませんでした')
+        return redirect('Fms_Ocrform:ocrdata_edit',
+                         model_name='kumamoto', ocrdata_id=ocrdata_id, image_no=1)
+
+    if ocrdata_obj.search_text:
+        extracted = json.loads(ocrdata_obj.search_text)
+    else:
+        extracted = {}
+    data = {keyword: extracted.get(keyword, '') for keyword in KUMAMOTO_KEYWORDS}
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+
+    basename = os.path.splitext(ocrdata_obj.pdf_name or ocrdata_id)[0]
+    filename = f'{basename}.json'
+
+    logger.info(f'{ut_get_client_ip(request)} '
+                f'export_kumamoto_json {ocrdata_id=}')
+    response = HttpResponse(json_str, content_type='application/json; charset=utf-8')
+    response['Content-Disposition'] = "attachment;filename*=utf-8''{}".format(
+        quote(filename, safe=''))
+    return response
 
 # 連携ファイルダウンロードリクエスト
 def export_zip(request, ocrdata_id, image_no):
