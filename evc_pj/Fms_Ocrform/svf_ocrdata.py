@@ -30,7 +30,9 @@ from Fms_Ocrform.models import (
     TtTimesheet,
 )
 from Fms_Ocrform.svf_common import (
+    imread_unicode,
     svf_adjust_image,
+    svf_detect_circled_choice,
     svf_draw_area,
     svf_get_areas_dict,
     svf_get_jafyame_imagepath,
@@ -42,6 +44,11 @@ from Fms_Ocrform.svf_common import (
 )
 from Fms_Ocrform.svf_extract_image import pdf_to_image
 from Fms_Ocrform.svf_extract_text import svf_extract_text
+from Fms_Ocrform.svf_ocrform import (
+    get_ocrform_image_dir,
+    get_ocrform_imagefile,
+    get_ocrform_rootfolder,
+)
 from Fms_Ocrform.svt_adjust_image import svt_adjust_image_trapezoid
 
 MODEL_CLASSES = {
@@ -74,6 +81,110 @@ KUMAMOTO_FIELD_MAP = {
     '将来再認定の要': 'reexam',
     '医師氏名': 'doctor',
 }
+
+# 丸で囲む形式の選択肢の自動判定を実行するかどうかのフラグ。
+# Falseにすると位置合わせ済み画像とテンプレート画像の差分比較処理を一切行わない
+# （精度に確信が持てない場合や、処理時間を減らしたい場合はFalseにする）。
+# KUMAMOTO_DETECT_CIRCLED_CHOICES = True
+KUMAMOTO_DETECT_CIRCLED_CHOICES = False
+
+# 丸で囲む形式の選択肢の矩形領域(pt単位、72dpi基準・register_real_form.py等と同じ実座標)。
+# 1つのキーにつき選択肢のリストを持たせ、svf_detect_circled_choice()で
+# テンプレートとの差分が最も大きい選択肢を判定する。
+# 実座標はPyMuPDFのsearch_for()で実PDFから直接取得したもの。
+KUMAMOTO_CIRCLE_FIELDS = {
+    '推定確認': [   # ⑦ 推定・確認
+        {'label': '推定', 'box': (289.9, 180.5, 310.5, 190.8)},
+        {'label': '確認', 'box': (289.9, 191.9, 310.5, 202.2)},
+    ],
+    '将来再認定の要_選択': [   # ⑧ 将来再認定の要 有・無
+        {'label': '有', 'box': (425.2, 186.3, 435.8, 196.6)},
+        {'label': '無', 'box': (521.5, 186.3, 532.1, 196.6)},
+    ],
+    '活動能力の程度': [   # ⑪ ア〜オのいずれかに丸
+        {'label': 'ア', 'box': (103.7, 396.9, 113.2, 407.2)},
+        {'label': 'イ', 'box': (103.7, 408.3, 112.4, 418.6)},
+        {'label': 'ウ', 'box': (103.7, 431.0, 113.7, 441.2)},
+        {'label': 'エ', 'box': (103.7, 476.3, 113.2, 486.6)},
+        {'label': 'オ', 'box': (103.7, 499.0, 113.6, 509.3)},
+    ],
+    '安静を要する程度': [   # ⑬ 1度〜8度のいずれかに丸
+        {'label': '1度', 'box': (344.5, 220.8, 365.2, 231.1)},
+        {'label': '2度', 'box': (344.5, 232.2, 365.2, 242.5)},
+        {'label': '3度', 'box': (344.5, 243.5, 365.2, 253.8)},
+        {'label': '4度', 'box': (344.5, 254.9, 365.2, 265.2)},
+        {'label': '5度', 'box': (344.5, 266.2, 365.2, 276.5)},
+        {'label': '6度', 'box': (344.5, 288.9, 365.2, 299.2)},
+        {'label': '7度', 'box': (344.5, 311.5, 365.2, 321.8)},
+        {'label': '8度', 'box': (344.5, 334.2, 365.2, 344.5)},
+    ],
+    # ⑩ 胸部Ｘ線所見（ア〜カの各項目ごとに なし・軽・中・高 のいずれかに丸）
+    '胸部Ｘ線所見_胸膜癒着': [
+        {'label': 'なし', 'box': (203.7, 249.0, 221.8, 259.3)},
+        {'label': '軽', 'box': (240.6, 249.0, 251.2, 259.3)},
+        {'label': '中', 'box': (267.6, 249.0, 278.2, 259.3)},
+        {'label': '高', 'box': (294.6, 249.0, 305.2, 259.3)},
+    ],
+    '胸部Ｘ線所見_気腫化': [
+        {'label': 'なし', 'box': (203.7, 260.3, 221.8, 270.6)},
+        {'label': '軽', 'box': (240.6, 260.3, 251.2, 270.6)},
+        {'label': '中', 'box': (267.6, 260.3, 278.2, 270.6)},
+        {'label': '高', 'box': (294.6, 260.3, 305.2, 270.6)},
+    ],
+    '胸部Ｘ線所見_線維化': [
+        {'label': 'なし', 'box': (203.7, 271.7, 221.8, 282.0)},
+        {'label': '軽', 'box': (240.6, 271.7, 251.2, 282.0)},
+        {'label': '中', 'box': (267.6, 271.7, 278.2, 282.0)},
+        {'label': '高', 'box': (294.6, 271.7, 305.2, 282.0)},
+    ],
+    '胸部Ｘ線所見_不透明肺': [
+        {'label': 'なし', 'box': (203.7, 283.0, 221.8, 293.3)},
+        {'label': '軽', 'box': (240.6, 283.0, 251.2, 293.3)},
+        {'label': '中', 'box': (267.6, 283.0, 278.2, 293.3)},
+        {'label': '高', 'box': (294.6, 283.0, 305.2, 293.3)},
+    ],
+    '胸部Ｘ線所見_胸郭変形': [
+        {'label': 'なし', 'box': (203.7, 294.4, 221.8, 304.7)},
+        {'label': '軽', 'box': (240.6, 294.4, 251.2, 304.7)},
+        {'label': '中', 'box': (267.6, 294.4, 278.2, 304.7)},
+        {'label': '高', 'box': (294.6, 294.4, 305.2, 304.7)},
+    ],
+    '胸部Ｘ線所見_心縦隔の変形': [
+        {'label': 'なし', 'box': (203.7, 305.7, 221.8, 316.0)},
+        {'label': '軽', 'box': (240.6, 305.7, 251.2, 316.0)},
+        {'label': '中', 'box': (267.6, 305.7, 278.2, 316.0)},
+        {'label': '高', 'box': (294.6, 305.7, 305.2, 316.0)},
+    ],
+}
+# KUMAMOTO_CIRCLE_FIELDS の各キーを画面・JSON側の項目名(半角英数)に対応させる。
+# search_text(キーワード:値)とフォームフィールド名の対応であるKUMAMOTO_FIELD_MAPに
+# 合流させることで、画面表示・登録・JSONダウンロードの各処理を既存の汎用ロジックに乗せる。
+_KUMAMOTO_CIRCLE_FIELD_MAP = {
+    '推定確認': 'suitei_kakunin',
+    '将来再認定の要_選択': 'reexam_choice',
+    '活動能力の程度': 'activity_level',
+    '安静を要する程度': 'rest_level',
+    '胸部Ｘ線所見_胸膜癒着': 'xray_pleural_adhesion',
+    '胸部Ｘ線所見_気腫化': 'xray_emphysema',
+    '胸部Ｘ線所見_線維化': 'xray_fibrosis',
+    '胸部Ｘ線所見_不透明肺': 'xray_opacity',
+    '胸部Ｘ線所見_胸郭変形': 'xray_thorax_deform',
+    '胸部Ｘ線所見_心縦隔の変形': 'xray_mediastinum_deform',
+}
+# フォームからこれらのフィールドを除外する際に使うフィールド名一覧(forms.pyから参照)。
+KUMAMOTO_CIRCLE_FIELD_NAMES = list(_KUMAMOTO_CIRCLE_FIELD_MAP.values())
+
+# KUMAMOTO_DETECT_CIRCLED_CHOICES が True の時だけ、丸で囲む形式の項目を
+# 画面(KUMAMOTO_FIELD_MAP経由)・JSONダウンロード(KUMAMOTO_EXPORT_KEYS)に反映する。
+# Falseの場合は検出処理自体を実行しないだけでなく、画面・JSON側にも一切出さない。
+if KUMAMOTO_DETECT_CIRCLED_CHOICES:
+    KUMAMOTO_FIELD_MAP.update(_KUMAMOTO_CIRCLE_FIELD_MAP)
+    # JSONダウンロード用のキー一覧。KUMAMOTO_KEYWORDSはsvf_extract_keywords()での
+    # 文字列検索にも使われるため、丸で囲む形式の項目(文字列検索の対象ではない)は
+    # 混在させず、JSONダウンロード専用にKUMAMOTO_CIRCLE_FIELDSのキーを追加する。
+    KUMAMOTO_EXPORT_KEYS = KUMAMOTO_KEYWORDS + list(KUMAMOTO_CIRCLE_FIELDS.keys())
+else:
+    KUMAMOTO_EXPORT_KEYS = list(KUMAMOTO_KEYWORDS)
 # 行頭のマッチ判定で無視する飾り文字（丸数字・番号・記号・空白など）。
 # 例:「② 生年月日」「⑥　傷病発生年月日」の先頭の "②　" "⑥　" の部分を取り除くために使う。
 # 丸数字は①(U+2460)〜⑳(U+2473)の範囲。
@@ -98,9 +209,9 @@ def svf_check_keyword_collisions(keywords):
 
 # モジュール読み込み時に一度だけチェックし、問題があればログに警告を残す。
 # ここで検知しても処理は止めない（誤字修正漏れなどですぐにアプリが起動できなくなるのを避けるため）。
-_kumamoto_keyword_collisions = svf_check_keyword_collisions(KUMAMOTO_KEYWORDS)
-if _kumamoto_keyword_collisions:
-    logger.warning(f'KUMAMOTO_KEYWORDS に部分文字列の衝突があります: {_kumamoto_keyword_collisions}')
+# _kumamoto_keyword_collisions = svf_check_keyword_collisions(KUMAMOTO_KEYWORDS)
+# if _kumamoto_keyword_collisions:
+#     logger.warning(f'KUMAMOTO_KEYWORDS に部分文字列の衝突があります: {_kumamoto_keyword_collisions}')
 
 # Ocr文書IDから画像ファイル名を取得
 def get_ocrdata_imagefile(model_name, ocrdata_id, page_no):
@@ -259,6 +370,8 @@ def svf_create_ocrdata(model_name, uploadfiles, user_id, owner_id):
         search_dict = get_search_text(json_str, page_no)
         if model_name == 'kumamoto':   # 福祉手当認定診断書：エリア抽出を優先し、空の項目だけキーワード抽出で補う
             search_dict = svf_merge_kumamoto_search_text(search_dict, fulltext)
+            # 丸で囲む形式の選択肢を、テンプレートとの差分から判定して追加する
+            search_dict.update(svf_detect_kumamoto_circles(ocrform_id, ocrimages))
         search = json.dumps(search_dict) # 辞書型のオブジェクトをJSON形式の文字列に変換
         create_param_dict = {
             'filepath': new_path,
@@ -884,6 +997,34 @@ def svf_merge_kumamoto_search_text(area_search_dict, fulltext):
         area_value = area_search_dict.get(field_name, '') if field_name else ''
         merged[keyword] = area_value or keyword_dict.get(keyword, '')
     return merged
+
+# 丸で囲む形式の選択肢(KUMAMOTO_CIRCLE_FIELDS)を、位置合わせ済み画像と
+# テンプレート画像の差分から判定する。KUMAMOTO_DETECT_CIRCLED_CHOICESがFalseの場合、
+# または画像が読み込めない場合は何もせず全項目を空文字で返す(処理は止めない)。
+#
+# ocrform_id        : 登録済みテンプレートのID(テンプレート画像の特定に使う)
+# aligned_imagepaths: svf_adjust_image()で位置合わせ済みの画像ファイルパスのリスト
+#                     (先頭ページのみを判定対象にする)
+# 戻り値: {KUMAMOTO_CIRCLE_FIELDSのキー: 判定結果のlabel}（判定できない項目は空文字）
+def svf_detect_kumamoto_circles(ocrform_id, aligned_imagepaths):
+    result = dict.fromkeys(KUMAMOTO_CIRCLE_FIELDS, '')
+    if not KUMAMOTO_DETECT_CIRCLED_CHOICES or not aligned_imagepaths:
+        return result
+    try:
+        rootfolder = get_ocrform_rootfolder()
+        formimg_dir = get_ocrform_image_dir(rootfolder)
+        template_path = get_ocrform_imagefile(formimg_dir, ocrform_id, 1)
+        template_img = imread_unicode(template_path)
+        aligned_img = imread_unicode(aligned_imagepaths[0])
+        if template_img is None or aligned_img is None:
+            logger.error(f'svf_detect_kumamoto_circles 画像読み込み失敗 {ocrform_id=}')
+            return result
+        for key, choices in KUMAMOTO_CIRCLE_FIELDS.items():
+            label = svf_detect_circled_choice(template_img, aligned_img, choices)
+            result[key] = label or ''
+    except Exception:
+        logger.exception(f'svf_detect_kumamoto_circles exception {ocrform_id=}')
+    return result
 
 # 熊本市子育て支援申請 対象のocrform_idリストを取得（フォーム名がプレフィックスで始まるもの）
 def get_kumamoto_ocrform_ids():

@@ -130,6 +130,58 @@
               {{ form.doctor }}
               {{ form.doctor.errors }}
           </div>
+          {% if detect_circled_choices %}
+          <div class="e-data">
+            <label>推定・確認</label>
+              {{ form.suitei_kakunin }}
+              {{ form.suitei_kakunin.errors }}
+          </div>
+          <div class="e-data">
+            <label>再認定要否(有・無)</label>
+              {{ form.reexam_choice }}
+              {{ form.reexam_choice.errors }}
+          </div>
+          <div class="e-data">
+            <label>活動能力の程度</label>
+              {{ form.activity_level }}
+              {{ form.activity_level.errors }}
+          </div>
+          <div class="e-data">
+            <label>安静を要する程度</label>
+              {{ form.rest_level }}
+              {{ form.rest_level.errors }}
+          </div>
+          <div class="e-data">
+            <label>胸部Ｘ線所見：胸膜癒着</label>
+              {{ form.xray_pleural_adhesion }}
+              {{ form.xray_pleural_adhesion.errors }}
+          </div>
+          <div class="e-data">
+            <label>胸部Ｘ線所見：気腫化</label>
+              {{ form.xray_emphysema }}
+              {{ form.xray_emphysema.errors }}
+          </div>
+          <div class="e-data">
+            <label>胸部Ｘ線所見：線維化</label>
+              {{ form.xray_fibrosis }}
+              {{ form.xray_fibrosis.errors }}
+          </div>
+          <div class="e-data">
+            <label>胸部Ｘ線所見：不透明肺</label>
+              {{ form.xray_opacity }}
+              {{ form.xray_opacity.errors }}
+          </div>
+          <div class="e-data">
+            <label>胸部Ｘ線所見：胸郭変形</label>
+              {{ form.xray_thorax_deform }}
+              {{ form.xray_thorax_deform.errors }}
+          </div>
+          <div class="e-data">
+            <label>胸部Ｘ線所見：心縦隔の変形</label>
+              {{ form.xray_mediastinum_deform }}
+              {{ form.xray_mediastinum_deform.errors }}
+          </div>
+          {% endif %}
           <input type="hidden" id="submit_action2" name="submit_action" value="commit">
         </form>
         <div class="btn-area2 bottom-btn">

@@ -63,8 +63,9 @@ from Fms_Ocrform.svf_common import (
     svf_make_ocrdata_image_dir,
 )
 from Fms_Ocrform.svf_ocrdata import (
+    KUMAMOTO_DETECT_CIRCLED_CHOICES,
+    KUMAMOTO_EXPORT_KEYS,
     KUMAMOTO_FIELD_MAP,
-    KUMAMOTO_KEYWORDS,
     get_kumamoto_ocrform_ids,
     svf_create_ocrdata,
     svf_delete_ocrdata,
@@ -612,6 +613,8 @@ class EvcEditOcrDataView(LoginRequiredMixin, OwnerTestMixin, FormView):
         owner_id = self.request.session.get('owner_id')
         owner_ryaku_name = sv_get_owner_ryaku_name(owner_id)
         context['owner_ryaku_name'] = owner_ryaku_name
+        if model_name == 'kumamoto':   # 福祉手当認定診断書
+            context['detect_circled_choices'] = KUMAMOTO_DETECT_CIRCLED_CHOICES
 
         areas = ''
         image_no = self.kwargs.get('image_no') or 1
@@ -1048,8 +1051,8 @@ def get_jsontext_list(json_text, page_no):
 
 # 福祉手当認定診断書：項目名とOCR抽出値のJSONダウンロード
 # search_text は既に {項目名: 抽出値} 形式のJSON文字列で保存されているため、
-# それを元に、キーワードの過不足があってもKUMAMOTO_KEYWORDS全項目が
-# 必ず揃った状態にしてダウンロードさせる。
+# それを元に、キーワードの過不足があってもKUMAMOTO_EXPORT_KEYS(文字列キーワード+
+# 丸で囲む形式の項目)全項目が必ず揃った状態にしてダウンロードさせる。
 @login_required
 def export_kumamoto_json(request, ocrdata_id):
     try:
@@ -1065,7 +1068,7 @@ def export_kumamoto_json(request, ocrdata_id):
         extracted = json.loads(ocrdata_obj.search_text)
     else:
         extracted = {}
-    data = {keyword: extracted.get(keyword, '') for keyword in KUMAMOTO_KEYWORDS}
+    data = {keyword: extracted.get(keyword, '') for keyword in KUMAMOTO_EXPORT_KEYS}
     json_str = json.dumps(data, ensure_ascii=False, indent=2)
 
     basename = os.path.splitext(ocrdata_obj.pdf_name or ocrdata_id)[0]

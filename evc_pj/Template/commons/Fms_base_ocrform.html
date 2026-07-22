@@ -68,11 +68,22 @@
         {% if user.is_authenticated %}
         <nav id="g-menu">
           <ul>
-            <li {% if process_title == "フォーム登録" %}class="active"{% endif %}>
+            {% comment %}
+            スマホメニューでは、フォーム登録・フォーム一覧(PC専用)の代わりに
+            福祉手当認定診断書保存・一覧を常時表示する
+            (フォームサービスとしてはこの2つだけで十分なため、ページに関わらず固定表示)。
+            {% endcomment %}
+            <li class="sp-hidden {% if process_title == "フォーム登録" %}active{% endif %}">
               <a href="{% url 'Fms_Ocrform:upload_ocrform' 1 %}"><span class="material-symbols-outlined">upload_file</span>フォーム登録</a>
             </li>
-            <li {% if process_title == "フォーム一覧" %}class="active"{% endif %}> 
+            <li class="sp-hidden {% if process_title == "フォーム一覧" %}active{% endif %}">
               <a href="{% url 'Fms_Ocrform:ocrform_list' 1 %}"><span class="material-symbols-outlined">list</span>フォーム一覧</a>
+            </li>
+            <li class="sp {% if process_title == "福祉手当認定診断書保存" %}active{% endif %}">
+              <a href="{% url 'Fms_Ocrform:upload_ocrdata' 'kumamoto' %}"><span class="material-symbols-outlined">upload_file</span>福祉手当認定診断書保存</a>
+            </li>
+            <li class="sp {% if process_title == "福祉手当認定診断書一覧" %}active{% endif %}">
+              <a href="{% url 'Fms_Ocrform:ocrdata_list' 'kumamoto' %}"><span class="material-symbols-outlined">list</span>福祉手当認定診断書一覧</a>
             </li>
             {% if process_title == "生産履歴票保存" or process_title == "勤務表保存" or process_title == "送り状保存" or process_title == "福祉手当認定診断書保存" %}
             <li class="sp-hidden menu-toggle menu-num3 menu-sub open">
@@ -116,7 +127,7 @@
                   <a href="{% url 'Fms_Ocrform:ocrdata_list' 'ocrdata' %}"><span class="material-symbols-outlined">list</span>送り状一覧</a>
                 </li>
                 <li {% if process_title == "福祉手当認定診断書一覧" %}class="active"{% endif %}>
-                  <a href="{% url 'Fms_Ocrform:ocrdata_list' 'kumamoto' %}"><span class="material-symbols-outlined">list</span>福祉手当認定診断書一覧</a>
+                  <a href="{% url 'Fms_Ocrform:ocrdata_list' 'kumamoto' %}"><span class="material-symbols-outlined">list</span>福祉手当認定診断書</a>
                 </li>
               </ul>
             </li>

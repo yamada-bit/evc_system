@@ -584,3 +584,55 @@ def align_image(template_path, input_path, draw_matches=False):
         sv_imwrite(debug_name, aligned_img)
 
     return aligned_img
+
+# 丸で囲む形式の選択肢から、実際に丸が付けられている選択肢を推定する。
+#
+# OCRは印刷されたテキストを読むだけで「どれに丸が付いているか」は判定できないため、
+# 空欄のテンプレート画像と、位置合わせ済みの入力画像(align_image()の結果)を
+# 選択肢ごとの矩形領域で比較し、差分(＝手書きの丸などの余分なインク)が
+# 最も大きい選択肢を「選ばれたもの」とみなす。
+#
+# template_img, aligned_img : cv2画像(BGR)。両方ともalign_image()と同じ座標系
+#                             (テンプレート画像と同じサイズ)であること。
+# choices    : [{'label': str, 'box': (x1, y1, x2, y2)}, ...]  boxはpt単位(72dpi基準)
+# dpi        : 画像の解像度（座標をpx単位に変換するのに使う。テンプレート登録時と同じ値を渡すこと）
+# margin_pt  : 選択肢の文字そのものより少し外側まで丸が書かれることが多いため、
+#              矩形を上下左右にこの分だけ広げてから比較する
+# min_diff_ratio : 領域内で「差分あり」と判定する画素の割合がこの値未満の場合、
+#                  どの選択肢にも有意な差分がない(＝丸が見つからない/判定不能)として
+#                  Noneを返す。目視で誤検出が多い場合はこの値を上げて厳しくする。
+#
+# 戻り値: 最も差分が大きかった選択肢のlabel。有意な差分がなければNone。
+def svf_detect_circled_choice(template_img, aligned_img, choices, dpi=200, margin_pt=4, min_diff_ratio=0.08):
+    if not choices:
+        return None
+    scale = dpi / 72.0
+    margin_px = round(margin_pt * scale)
+
+    template_gray = cv2.cvtColor(template_img, cv2.COLOR_BGR2GRAY)
+    aligned_gray = cv2.cvtColor(aligned_img, cv2.COLOR_BGR2GRAY)
+    diff = cv2.absdiff(template_gray, aligned_gray)
+    # JPEG圧縮ノイズや1px程度の位置ズレによる微小な差分を無視し、
+    # はっきりした差分(手書きの線など)だけを拾うための二値化
+    _, diff_bin = cv2.threshold(diff, 60, 255, cv2.THRESH_BINARY)
+
+    h, w = diff_bin.shape
+    best_label = None
+    best_ratio = 0.0
+    for choice in choices:
+        x1, y1, x2, y2 = choice['box']
+        px1 = max(0, round(x1 * scale) - margin_px)
+        py1 = max(0, round(y1 * scale) - margin_px)
+        px2 = min(w, round(x2 * scale) + margin_px)
+        py2 = min(h, round(y2 * scale) + margin_px)
+        region = diff_bin[py1:py2, px1:px2]
+        if region.size == 0:
+            continue
+        ratio = float((region > 0).sum()) / region.size
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_label = choice['label']
+
+    if best_ratio < min_diff_ratio:
+        return None
+    return best_label

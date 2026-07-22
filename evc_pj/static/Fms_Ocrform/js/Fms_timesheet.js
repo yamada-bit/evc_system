@@ -50,11 +50,21 @@ function clear_all()
     if (document.getElementById('id_username') != null) {
         document.getElementById('id_username').value = '';
     }
+    if (document.getElementById('id_pdf_name') != null) {
+        document.getElementById('id_pdf_name').value = '';
+    }
+    if (document.getElementById('id_create_date') != null) {
+        document.getElementById('id_create_date').value = '';
+    }
     // document.getElementById('id_category').selectedIndex = 0;
     // document.getElementById('id_partner').value = '';
     // document.getElementById('id_publisher').value = '';
-    document.getElementById('id_process_date1').value = '';
-    document.getElementById('id_process_date2').value = '';
+    if (document.getElementById('id_process_date1') != null) {
+        document.getElementById('id_process_date1').value = '';
+    }
+    if (document.getElementById('id_process_date2') != null) {
+        document.getElementById('id_process_date2').value = '';
+    }
     // change_shori_date();
     // change_create_date();
 }

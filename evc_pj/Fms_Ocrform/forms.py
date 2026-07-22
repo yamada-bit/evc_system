@@ -3,6 +3,11 @@ import os
 
 from django import forms
 
+from Fms_Ocrform.svf_ocrdata import (
+    KUMAMOTO_CIRCLE_FIELD_NAMES,
+    KUMAMOTO_DETECT_CIRCLED_CHOICES,
+)
+
 # from django.core.exceptions import ValidationError
 
 VALID_EXTENSIONS = ['.pdf','.jpg','.jpeg','.png','.bmp','.gif','.tif','.tiff']
@@ -747,6 +752,96 @@ class EvcEditKumamotoForm(forms.Form):
             'type': 'search',
         })
     )
+    # 以下、丸で囲む形式の選択肢(svf_detect_kumamoto_circles()で自動判定)。
+    # OCR誤判定時に手動で修正できるよう、他の項目と同様にテキスト入力とする。
+    suitei_kakunin = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '推定/確認を入力*',
+            'type': 'search',
+        })
+    )
+    reexam_choice = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '有/無を入力*',
+            'type': 'search',
+        })
+    )
+    activity_level = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'ア〜オを入力*',
+            'type': 'search',
+        })
+    )
+    rest_level = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '1度〜8度を入力*',
+            'type': 'search',
+        })
+    )
+    xray_pleural_adhesion = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'なし/軽/中/高を入力*',
+            'type': 'search',
+        })
+    )
+    xray_emphysema = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'なし/軽/中/高を入力*',
+            'type': 'search',
+        })
+    )
+    xray_fibrosis = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'なし/軽/中/高を入力*',
+            'type': 'search',
+        })
+    )
+    xray_opacity = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'なし/軽/中/高を入力*',
+            'type': 'search',
+        })
+    )
+    xray_thorax_deform = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'なし/軽/中/高を入力*',
+            'type': 'search',
+        })
+    )
+    xray_mediastinum_deform = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'なし/軽/中/高を入力*',
+            'type': 'search',
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # KUMAMOTO_DETECT_CIRCLED_CHOICES が False の間は、丸で囲む形式の項目を
+        # フィールドごと除外する(画面に表示させない)。
+        if not KUMAMOTO_DETECT_CIRCLED_CHOICES:
+            for field_name in KUMAMOTO_CIRCLE_FIELD_NAMES:
+                self.fields.pop(field_name, None)
 
 # JAふくおか八女 文書検索条件編集画面
 class EvcEditJafyameForm(forms.Form):

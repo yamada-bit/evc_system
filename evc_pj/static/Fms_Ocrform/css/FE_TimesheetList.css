@@ -490,6 +490,67 @@ tbody tr {
     color: #fff;
     position: fixed;
   }
+  /* 検索パネル(#form-area)の開閉。
+     Evc_App側(FE_PartnerList.css)には既にある仕組みだが、この一覧画面群
+     (勤務表・JAふくおか八女・送り状・福祉手当認定診断書)が使うCSSにはこれが無く、
+     検索パネルが常時全画面表示されたままになり一覧表と重なって見えてしまう。
+     azborn.css(全ページ共通)ではなくこのファイル(一覧画面専用)に追加することで、
+     #s-toggleを別用途で使っている編集画面(FE_SConCreate.css等)に影響しないようにする。 */
+  #s-toggle {
+    position: fixed;
+    top: 6px;
+    right: 14px;
+    height: 40px;
+    width: 40px;
+    cursor: pointer;
+    z-index: 20;
+    background-color: #fff;
+    border-radius: 50%;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .s-open #s-toggle span {
+    display: none;
+  }
+  .s-open #s-toggle::after {
+    content: "";
+    width: 60%;
+    height: 60%;
+    border-top: 1px solid;
+    rotate: 45deg;
+    top: 40%;
+    left: 0%;
+    position: absolute;
+  }
+  .s-open #s-toggle::before {
+    content: "";
+    width: 60%;
+    height: 60%;
+    border-top: 1px solid;
+    rotate: -45deg;
+    top: 40%;
+    right: 0%;
+    position: absolute;
+  }
+  #form-area {
+    z-index: 8;
+    opacity: 0;
+    transition: opacity .4s, right 0s .4s;
+    right: -100%;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  .s-open #form-area {
+    opacity: 1;
+    right: 0;
+    transition: opacity 0.4s;
+  }
+  .s-open #nav-toggle {
+    z-index: 1;
+  }
   .search-header {
     display: block;
     margin: 0;

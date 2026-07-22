@@ -15,6 +15,112 @@
 {% block title %}{{ process_title }}{% endblock %}
 
 {% block styles %}
+      /* No./ファイル名/登録日/登録者の4列構成用の幅指定。
+         共通CSS(FE_TimesheetList.css)の既定値は5列想定のため上書きする。
+         (3列に統合すると、スマホ表示用の共通ルール .ev-table td:last-child が
+          3列目=最終列にも掛かってしまい、内容が全て消えるため4列を維持する) */
+      th:first-child,
+      td:first-child {
+        width: 5%;
+      }
+      th:nth-child(2),
+      td:nth-child(2) {
+        width: 40%;
+      }
+      th:nth-child(3),
+      td:nth-child(3) {
+        width: 25%;
+      }
+      th:last-child,
+      td:last-child {
+        width: 30%;
+      }
+      @media (max-width: 767px) {
+        /* 共通CSS(FE_TimesheetList.css)のスマホ用カード表示は、識別情報を
+           3列目(登録日)だけに絞り、ファイル名(2列目)は非表示にする設計だが、
+           この一覧ではファイル名が主情報のため、明示的に行を組み直して表示する。
+           No.(1列目)は情報価値が低いため非表示のままにする。 */
+        #ev_table thead {
+          display: none;
+        }
+        /* azborn.cssの table{box-shadow:...} は角丸無しのため、各カード(行)に
+           付けた角丸の影と重なって「四角い影」に見えてしまう。行の方に影を
+           付けるので、テーブル自体の影は打ち消す */
+        #ev_table {
+          box-shadow: none;
+        }
+        #ev_table tbody tr:has(:not(:empty)) {
+          display: flex;
+          flex-direction: column;
+          gap: 0.3em;
+          border-radius: 1em;
+          box-shadow: 0 0 10px 3px rgba(0, 0, 0, 0.3);
+          padding: 1em;
+          background-color: #fff;
+        }
+        #ev_table td {
+          display: block;
+          width: 100%;
+          grid-area: auto;
+          position: static;
+          height: auto;
+          padding: 0;
+          font-size: 0.9em;
+        }
+        #ev_table td:first-child {
+          display: none;
+        }
+        #ev_table td:nth-child(2) {
+          font-size: 1.05em;
+          font-weight: 500;
+          color: #333;
+        }
+        #ev_table td:nth-child(2) p {
+          margin: 0;
+          word-break: break-all;
+        }
+        /* PC用のホバー表示削除アイコン(.tooltip.sp-hidden)。
+           共通CSSでは.tooltip{display:inline-block}(FE_TimesheetList.css)が
+           .sp-hidden{display:none}(azborn.css)と詳細度が同じで、かつ後から
+           読み込まれるため.sp-hiddenが効かず、スマホでも表示されてしまう。
+           2つのクラスを組み合わせて詳細度を上げ、確実に非表示にする */
+        #ev_table .tooltip.sp-hidden {
+          display: none;
+        }
+        #ev_table td:nth-child(3) {
+          position: relative;
+          color: #666;
+          box-sizing: border-box;
+          padding-right: 4.5em;
+        }
+        #ev_table td:nth-child(3):not(:empty):before {
+          content: "登録日: ";
+        }
+        /* 日付のdivはブロック要素のため、そのままだと"登録日: "の後ろで
+           改行されてしまう。同じ行に続けて表示されるようにする */
+        #ev_table td:nth-child(3) > div:not(.delete-sp) {
+          display: inline;
+        }
+        #ev_table td:last-child {
+          display: none;
+        }
+        #ev_table .delete-sp {
+          position: absolute;
+          right: 0;
+          top: 0;
+        }
+
+        /* 検索パネル: .s-note(注記)が共通CSSでは入力欄と同じ行(2行目)に
+           配置され重なってしまうため、登録日欄(3行目)の下(4行目)に移動する */
+        .s-note {
+          grid-area: 4/1/5/3;
+        }
+        #searchForm .date-wrapper {
+          grid-row: 3;
+          grid-column: 1/3;
+          width: auto;
+        }
+      }
 {% endblock %}
 
 {% block content %}
@@ -38,7 +144,6 @@
         <div class="read">
           <h3>読取情報</h3>
           <div class="s-flex">
-            <label for="id_pdf_name" class="s-label">ファイル名</label>
             {{ form.pdf_name }}
             <div class="date-wrapper">
               <label for="id_create_date" class="s-label date">登録日</label>
@@ -86,14 +191,14 @@
           </div>
         </td>
         <td>
-          <p>{{item.create_date}}</p>
-        </td>
-        <td>
-          <div>{{item.user_name}}</div>
+          <div>{{item.create_date}}</div>
           <div class="delete-sp sp" id="open">
             <span class="material-symbols-outlined">delete</span>
             <span>削除</span>
           </div>
+        </td>
+        <td>
+          <div>{{item.user_name}}</div>
         </td>
       </tr>
       {% endfor %}

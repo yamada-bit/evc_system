@@ -31,8 +31,8 @@ MAXTHRESHOLD = 80  # 1cm : 100 / 254 * 200
 # YTHRESHOLD = 12  # 1mm : 10 / 254 * 300
 # MAXTHRESHOLD = 120  # 1cm : 100 / 254 * 300
 
-# GOOGLEOCR = True
-GOOGLEOCR = settings.GOOGLE_OCR
+GOOGLEOCR = True
+# GOOGLEOCR = settings.GOOGLE_OCR
 
 logger = logging.getLogger(__name__)
 
