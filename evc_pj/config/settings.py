@@ -216,6 +216,10 @@ USE_L10N = True # 日付フォーマット設定
 USE_TZ = True
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240   #  デフォルト値: 1000 フォーム入力の項目数に対応
+# デフォルト値: 2.5MB。スマホカメラで撮影した写真(福祉手当認定診断書等のアップロード)は
+# 数MB〜10MB程度になることがあるため引き上げる。
+DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
