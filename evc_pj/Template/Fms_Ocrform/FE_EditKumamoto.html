@@ -17,6 +17,64 @@
         color: #333;
         background-color: white;
       }
+      /* 中央「テキスト」カードのタブ(全文テキスト／選択式項目) */
+      .tab-header {
+        display: flex;
+        gap: 0.6em;
+        margin-bottom: 0.8em;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 0.5em 0;
+        border-radius: 2em;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        cursor: pointer;
+        transition: 0.3s;
+        font-weight: 500;
+      }
+      .tab-btn.active {
+        background: var(--btn-secondary);
+      }
+      .tab-panel {
+        display: none;
+        height: 93%;
+        text-align: left;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+      #tab-fulltext #form1 {
+        height: 100%;
+      }
+      #tab-circle,
+      #tab-other {
+        overflow-y: auto;
+        padding-right: 0.6em;
+      }
+      /* aside内のe-data/labelはaside限定のスタイルのため、タブ内では独自に指定する */
+      #tab-circle label,
+      #tab-other label {
+        display: block;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 0.6em;
+      }
+      #tab-circle input[type="search"],
+      #tab-other input[type="search"],
+      #tab-other textarea {
+        display: block;
+        border-radius: 1em;
+        border: 1px solid rgba(225, 225, 225, 0.4);
+        width: 100%;
+        padding: 0.5em 1.2em;
+        margin: 0.2em 0;
+        color: #333;
+        background-color: white;
+      }
+      #tab-other input[type="search"] {
+        border-radius: 2em;
+      }
 {% endblock %}
 
 {% block content %}
@@ -48,35 +106,192 @@
       </figure>
       <div id="shiori" class="card">
         <div class="card-contents">
-          <h2>テキスト</h2>
-          <form id="form1" name="form1" method="post">
-            {% csrf_token %}
-            {{ form.ocrdata_id }}
-            {{ form.fulltext }}
-            <div class="btn-area">
-              <div class="btn-container">
-                <span class="material-symbols-outlined">
-                  edit
-                </span>
-                <input type="button" id="edit" value="編集">
+          <div class="tab-header">
+            <button type="button" class="tab-btn active" data-tab="tab-fulltext">全文テキスト</button>
+            {% if detect_circled_choices %}
+            <button type="button" class="tab-btn" data-tab="tab-circle">選択式項目</button>
+            {% endif %}
+            <button type="button" class="tab-btn" data-tab="tab-other">その他項目</button>
+          </div>
+          <div class="tab-panel active" id="tab-fulltext">
+            <form id="form1" name="form1" method="post">
+              {% csrf_token %}
+              {{ form.ocrdata_id }}
+              {{ form.fulltext }}
+              <div class="btn-area">
+                <div class="btn-container">
+                  <span class="material-symbols-outlined">
+                    edit
+                  </span>
+                  <input type="button" id="edit" value="編集">
+                </div>
+                <div class="btn-container">
+                  <span class="material-symbols-outlined">
+                    refresh
+                  </span>
+                  <input type="button" id="update" value="更新">
+                </div>
+                {% comment "レイアウト調整のため一時的に非表示" %}
+                <div class="btn-container">
+                  <span class="material-symbols-outlined">
+                    download
+                  </span>
+                  <a href="{% url 'Fms_Ocrform:export_kumamoto_json' form.ocrdata_id.value %}">JSONダウンロード</a>
+                </div>
+                {% endcomment %}
               </div>
-              <div class="btn-container">
-                <span class="material-symbols-outlined">
-                  refresh
-                </span>
-                <input type="button" id="update" value="更新">
-              </div>
-              {% comment "レイアウト調整のため一時的に非表示" %}
-              <div class="btn-container">
-                <span class="material-symbols-outlined">
-                  download
-                </span>
-                <a href="{% url 'Fms_Ocrform:export_kumamoto_json' form.ocrdata_id.value %}">JSONダウンロード</a>
-              </div>
-              {% endcomment %}
+              <input type="hidden" id="submit_action1" name="submit_action" value="update">
+            </form>
+          </div>
+          {% if detect_circled_choices %}
+          {% comment %}
+          選択式項目(丸囲み形式)10項目はここに表示するが、保存先はサイドバーの検索条件編集フォーム(form2)。
+          各inputのform="form2"属性(forms.py側で指定)でDOM上の位置に関わらずform2に紐付く。
+          {% endcomment %}
+          <div class="tab-panel" id="tab-circle">
+            <div class="e-data">
+              <label>推定・確認</label>
+              {{ form.suitei_kakunin }}
+              {{ form.suitei_kakunin.errors }}
             </div>
-            <input type="hidden" id="submit_action1" name="submit_action" value="update">
-          </form>
+            <div class="e-data">
+              <label>再認定要否(有・無)</label>
+              {{ form.reexam_choice }}
+              {{ form.reexam_choice.errors }}
+            </div>
+            <div class="e-data">
+              <label>活動能力の程度</label>
+              {{ form.activity_level }}
+              {{ form.activity_level.errors }}
+            </div>
+            <div class="e-data">
+              <label>安静を要する程度</label>
+              {{ form.rest_level }}
+              {{ form.rest_level.errors }}
+            </div>
+            <div class="e-data">
+              <label>胸部Ｘ線所見：胸膜癒着</label>
+              {{ form.xray_pleural_adhesion }}
+              {{ form.xray_pleural_adhesion.errors }}
+            </div>
+            <div class="e-data">
+              <label>胸部Ｘ線所見：気腫化</label>
+              {{ form.xray_emphysema }}
+              {{ form.xray_emphysema.errors }}
+            </div>
+            <div class="e-data">
+              <label>胸部Ｘ線所見：線維化</label>
+              {{ form.xray_fibrosis }}
+              {{ form.xray_fibrosis.errors }}
+            </div>
+            <div class="e-data">
+              <label>胸部Ｘ線所見：不透明肺</label>
+              {{ form.xray_opacity }}
+              {{ form.xray_opacity.errors }}
+            </div>
+            <div class="e-data">
+              <label>胸部Ｘ線所見：胸郭変形</label>
+              {{ form.xray_thorax_deform }}
+              {{ form.xray_thorax_deform.errors }}
+            </div>
+            <div class="e-data">
+              <label>胸部Ｘ線所見：心縦隔の変形</label>
+              {{ form.xray_mediastinum_deform }}
+              {{ form.xray_mediastinum_deform.errors }}
+            </div>
+          </div>
+          {% endif %}
+          {% comment %}
+          ⑨⑫⑭⑮⑯・診断日/病院名/所在地(エリア抽出項目)。選択式項目と同様
+          form="form2"属性でサイドバーの検索条件編集フォーム(form2)に紐付ける。
+          {% endcomment %}
+          <div class="tab-panel" id="tab-other">
+            <div class="e-data">
+              <label>ふりがな</label>
+              {{ form.furigana }}
+              {{ form.furigana.errors }}
+            </div>
+            <div class="e-data">
+              <label>身長</label>
+              {{ form.height_cm }}
+              {{ form.height_cm.errors }}
+            </div>
+            <div class="e-data">
+              <label>体重</label>
+              {{ form.weight_kg }}
+              {{ form.weight_kg.errors }}
+            </div>
+            <div class="e-data">
+              <label>撮影年月日</label>
+              {{ form.xray_date }}
+              {{ form.xray_date.errors }}
+            </div>
+            <div class="e-data">
+              <label>換気機能検査日</label>
+              {{ form.vent_test_date }}
+              {{ form.vent_test_date.errors }}
+            </div>
+            <div class="e-data">
+              <label>肺活量実測値(VC)</label>
+              {{ form.vc_actual }}
+              {{ form.vc_actual.errors }}
+            </div>
+            <div class="e-data">
+              <label>予測肺活量</label>
+              {{ form.vc_predicted }}
+              {{ form.vc_predicted.errors }}
+            </div>
+            <div class="e-data">
+              <label>努力性肺活量(FVC)</label>
+              {{ form.fvc }}
+              {{ form.fvc.errors }}
+            </div>
+            <div class="e-data">
+              <label>1秒量(FEV1.0)</label>
+              {{ form.fev1 }}
+              {{ form.fev1.errors }}
+            </div>
+            <div class="e-data">
+              <label>努力性肺活量1秒率</label>
+              {{ form.fev1_percent }}
+              {{ form.fev1_percent.errors }}
+            </div>
+            <div class="e-data">
+              <label>予測肺活量1秒率</label>
+              {{ form.predicted_fev1_percent }}
+              {{ form.predicted_fev1_percent.errors }}
+            </div>
+            <div class="e-data">
+              <label>現在までの治療内容等</label>
+              {{ form.treatment_history }}
+              {{ form.treatment_history.errors }}
+            </div>
+            <div class="e-data">
+              <label>その他の障害又は病状（臨床所見）</label>
+              {{ form.other_symptoms }}
+              {{ form.other_symptoms.errors }}
+            </div>
+            <div class="e-data">
+              <label>備考</label>
+              {{ form.remarks }}
+              {{ form.remarks.errors }}
+            </div>
+            <div class="e-data">
+              <label>診断日</label>
+              {{ form.diagnosis_date }}
+              {{ form.diagnosis_date.errors }}
+            </div>
+            <div class="e-data">
+              <label>病院又は診療所の名称</label>
+              {{ form.hospital_name }}
+              {{ form.hospital_name.errors }}
+            </div>
+            <div class="e-data">
+              <label>所在地</label>
+              {{ form.hospital_address }}
+              {{ form.hospital_address.errors }}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -130,58 +345,10 @@
               {{ form.doctor }}
               {{ form.doctor.errors }}
           </div>
-          {% if detect_circled_choices %}
-          <div class="e-data">
-            <label>推定・確認</label>
-              {{ form.suitei_kakunin }}
-              {{ form.suitei_kakunin.errors }}
-          </div>
-          <div class="e-data">
-            <label>再認定要否(有・無)</label>
-              {{ form.reexam_choice }}
-              {{ form.reexam_choice.errors }}
-          </div>
-          <div class="e-data">
-            <label>活動能力の程度</label>
-              {{ form.activity_level }}
-              {{ form.activity_level.errors }}
-          </div>
-          <div class="e-data">
-            <label>安静を要する程度</label>
-              {{ form.rest_level }}
-              {{ form.rest_level.errors }}
-          </div>
-          <div class="e-data">
-            <label>胸部Ｘ線所見：胸膜癒着</label>
-              {{ form.xray_pleural_adhesion }}
-              {{ form.xray_pleural_adhesion.errors }}
-          </div>
-          <div class="e-data">
-            <label>胸部Ｘ線所見：気腫化</label>
-              {{ form.xray_emphysema }}
-              {{ form.xray_emphysema.errors }}
-          </div>
-          <div class="e-data">
-            <label>胸部Ｘ線所見：線維化</label>
-              {{ form.xray_fibrosis }}
-              {{ form.xray_fibrosis.errors }}
-          </div>
-          <div class="e-data">
-            <label>胸部Ｘ線所見：不透明肺</label>
-              {{ form.xray_opacity }}
-              {{ form.xray_opacity.errors }}
-          </div>
-          <div class="e-data">
-            <label>胸部Ｘ線所見：胸郭変形</label>
-              {{ form.xray_thorax_deform }}
-              {{ form.xray_thorax_deform.errors }}
-          </div>
-          <div class="e-data">
-            <label>胸部Ｘ線所見：心縦隔の変形</label>
-              {{ form.xray_mediastinum_deform }}
-              {{ form.xray_mediastinum_deform.errors }}
-          </div>
-          {% endif %}
+          {% comment %}
+          選択式項目(丸囲み形式)10項目は中央の「テキスト」カードのタブに移動した
+          （form="form2"属性でこのform2に紐付けているため、保存は引き続きここで行われる）。
+          {% endcomment %}
           <input type="hidden" id="submit_action2" name="submit_action" value="commit">
         </form>
         <div class="btn-area2 bottom-btn">
@@ -251,4 +418,17 @@
     </dialog>
   </main>
   <script src='{% static "Fms_Ocrform/js/Fms_zoom_timesheet.js" %}?250116' defer></script>
+  <script>
+    // 中央「テキスト」カードのタブ切替(全文テキスト／選択式項目)。
+    // KUMAMOTO_DETECT_CIRCLED_CHOICESがFalseの間はタブ自体が描画されないため、
+    // その場合はquerySelectorAllが空になり何もしない。
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+        document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
 {% endblock %}

@@ -53,6 +53,9 @@ function clear_all()
     if (document.getElementById('id_pdf_name') != null) {
         document.getElementById('id_pdf_name').value = '';
     }
+    if (document.getElementById('id_name') != null) {
+        document.getElementById('id_name').value = '';
+    }
     if (document.getElementById('id_create_date') != null) {
         document.getElementById('id_create_date').value = '';
     }

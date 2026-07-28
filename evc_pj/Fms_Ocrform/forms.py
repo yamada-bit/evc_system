@@ -649,6 +649,14 @@ class EvcKumamotoListForm(forms.Form):
             'type': 'text',
         })
     )
+    name = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': '氏名を入力',
+            'type': 'text',
+        })
+    )
     create_date = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={
@@ -754,12 +762,15 @@ class EvcEditKumamotoForm(forms.Form):
     )
     # 以下、丸で囲む形式の選択肢(svf_detect_kumamoto_circles()で自動判定)。
     # OCR誤判定時に手動で修正できるよう、他の項目と同様にテキスト入力とする。
+    # テンプレート側では検索条件編集フォーム(form2)の外、中央カードのタブ内に配置するため
+    # form="form2" 属性でform2に紐付ける(HTML5仕様でDOM上の位置に関わらず登録できる)。
     suitei_kakunin = forms.CharField(
         max_length=10,
         required=False,
         widget=forms.TextInput(attrs={
             'placeholder': '推定/確認を入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     reexam_choice = forms.CharField(
@@ -768,6 +779,7 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': '有/無を入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     activity_level = forms.CharField(
@@ -776,6 +788,7 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': 'ア〜オを入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     rest_level = forms.CharField(
@@ -784,6 +797,7 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': '1度〜8度を入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     xray_pleural_adhesion = forms.CharField(
@@ -792,6 +806,7 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': 'なし/軽/中/高を入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     xray_emphysema = forms.CharField(
@@ -800,6 +815,7 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': 'なし/軽/中/高を入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     xray_fibrosis = forms.CharField(
@@ -808,6 +824,7 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': 'なし/軽/中/高を入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     xray_opacity = forms.CharField(
@@ -816,6 +833,7 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': 'なし/軽/中/高を入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     xray_thorax_deform = forms.CharField(
@@ -824,6 +842,7 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': 'なし/軽/中/高を入力*',
             'type': 'search',
+            'form': 'form2',
         })
     )
     xray_mediastinum_deform = forms.CharField(
@@ -832,7 +851,78 @@ class EvcEditKumamotoForm(forms.Form):
         widget=forms.TextInput(attrs={
             'placeholder': 'なし/軽/中/高を入力*',
             'type': 'search',
+            'form': 'form2',
         })
+    )
+    # 以下、⑨⑫⑭⑮⑯・診断日/病院名/所在地(エリア抽出、中央カードの「その他項目」タブに配置)。
+    # 丸囲み選択肢と同様form="form2"でform2に紐付ける。
+    height_cm = forms.CharField(
+        max_length=10, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '身長(cm)', 'type': 'search', 'form': 'form2'})
+    )
+    weight_kg = forms.CharField(
+        max_length=10, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '体重(kg)', 'type': 'search', 'form': 'form2'})
+    )
+    vent_test_date = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '換気機能検査日を入力', 'type': 'search', 'form': 'form2'})
+    )
+    vc_actual = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '肺活量実測値(VC)を入力', 'type': 'search', 'form': 'form2'})
+    )
+    vc_predicted = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '予測肺活量を入力', 'type': 'search', 'form': 'form2'})
+    )
+    fvc = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '努力性肺活量(FVC)を入力', 'type': 'search', 'form': 'form2'})
+    )
+    fev1 = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '1秒量(FEV1.0)を入力', 'type': 'search', 'form': 'form2'})
+    )
+    fev1_percent = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '努力性肺活量1秒率を入力', 'type': 'search', 'form': 'form2'})
+    )
+    predicted_fev1_percent = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '予測肺活量1秒率を入力', 'type': 'search', 'form': 'form2'})
+    )
+    treatment_history = forms.CharField(
+        max_length=500, required=False,
+        widget=forms.Textarea(attrs={'placeholder': '現在までの治療内容等を入力', 'rows': 3, 'form': 'form2'})
+    )
+    other_symptoms = forms.CharField(
+        max_length=500, required=False,
+        widget=forms.Textarea(attrs={'placeholder': 'その他の障害又は病状(臨床所見)を入力', 'rows': 3, 'form': 'form2'})
+    )
+    remarks = forms.CharField(
+        max_length=500, required=False,
+        widget=forms.Textarea(attrs={'placeholder': '備考を入力', 'rows': 3, 'form': 'form2'})
+    )
+    diagnosis_date = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '診断日を入力', 'type': 'search', 'form': 'form2'})
+    )
+    hospital_name = forms.CharField(
+        max_length=100, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '病院又は診療所の名称を入力', 'type': 'search', 'form': 'form2'})
+    )
+    hospital_address = forms.CharField(
+        max_length=100, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '所在地を入力', 'type': 'search', 'form': 'form2'})
+    )
+    xray_date = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'placeholder': '撮影年月日を入力', 'type': 'search', 'form': 'form2'})
+    )
+    furigana = forms.CharField(
+        max_length=50, required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'ふりがなを入力', 'type': 'search', 'form': 'form2'})
     )
 
     def __init__(self, *args, **kwargs):

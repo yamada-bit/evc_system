@@ -67,6 +67,24 @@ KUMAMOTO_KEYWORDS = [
     '永続すると判',      # ⑦障害が永続すると判定された日
     '将来再認定の要',    # ⑧将来再認定の要
     '医師氏名',
+    # 以下、⑨⑫⑭⑮⑯・診断日/病院名/所在地（area_no 10〜24、エリア抽出専用）
+    '身長',              # ⑨身体計測
+    '体重',              # ⑨身体計測
+    '換気機能検査日',    # ⑫換気機能（平成〇年〇月〇日）
+    '肺活量実測値',      # ⑫ア
+    '予測肺活量',        # ⑫イ
+    '努力性肺活量',      # ⑫ウ
+    '１秒量',            # ⑫エ
+    '努力性肺活量１秒率',  # ⑫オ
+    '予測肺活量１秒率',    # ⑫カ
+    '現在までの治療内容等',  # ⑭
+    'その他の障害又は病状',  # ⑮（臨床所見）
+    '備考',              # ⑯
+    '上記のとおり診断します',  # 診断日
+    '病院又は診療所の名称',
+    '所在地',
+    '撮影',              # ⑩胸部Ｘ線所見の撮影年月日
+    'ふりがな',          # ①氏名の上のふりがな欄
 ]   # 仮実装。対象書式が決まり次第見直す
 KEYWORD_SEPARATORS = '：:　 -－\t'   # キーワードの後ろに付く区切り文字
 # search_text(キーワード:値)とフォームフィールド名(半角英数)の対応
@@ -80,13 +98,39 @@ KUMAMOTO_FIELD_MAP = {
     '永続すると判': 'permanent_date',
     '将来再認定の要': 'reexam',
     '医師氏名': 'doctor',
+    '身長': 'height_cm',
+    '体重': 'weight_kg',
+    '換気機能検査日': 'vent_test_date',
+    '肺活量実測値': 'vc_actual',
+    '予測肺活量': 'vc_predicted',
+    '努力性肺活量': 'fvc',
+    '１秒量': 'fev1',
+    '努力性肺活量１秒率': 'fev1_percent',
+    '予測肺活量１秒率': 'predicted_fev1_percent',
+    '現在までの治療内容等': 'treatment_history',
+    'その他の障害又は病状': 'other_symptoms',
+    '備考': 'remarks',
+    '上記のとおり診断します': 'diagnosis_date',
+    '病院又は診療所の名称': 'hospital_name',
+    '所在地': 'hospital_address',
+    '撮影': 'xray_date',
+    'ふりがな': 'furigana',
 }
+# その他項目タブに表示する項目のフィールド名一覧（forms.py/テンプレートから参照）
+KUMAMOTO_OTHER_FIELD_NAMES = [
+    'furigana',
+    'height_cm', 'weight_kg', 'vent_test_date', 'vc_actual', 'vc_predicted',
+    'fvc', 'fev1', 'fev1_percent', 'predicted_fev1_percent',
+    'treatment_history', 'other_symptoms', 'remarks',
+    'diagnosis_date', 'hospital_name', 'hospital_address',
+    'xray_date',
+]
 
 # 丸で囲む形式の選択肢の自動判定を実行するかどうかのフラグ。
 # Falseにすると位置合わせ済み画像とテンプレート画像の差分比較処理を一切行わない
 # （精度に確信が持てない場合や、処理時間を減らしたい場合はFalseにする）。
-# KUMAMOTO_DETECT_CIRCLED_CHOICES = True
 KUMAMOTO_DETECT_CIRCLED_CHOICES = False
+# KUMAMOTO_DETECT_CIRCLED_CHOICES = True
 
 # 丸で囲む形式の選択肢の矩形領域(pt単位、72dpi基準・register_real_form.py等と同じ実座標)。
 # 1つのキーにつき選択肢のリストを持たせ、svf_detect_circled_choice()で
@@ -372,7 +416,7 @@ def svf_create_ocrdata(model_name, uploadfiles, user_id, owner_id):
             search_dict = svf_merge_kumamoto_search_text(search_dict, fulltext)
             # 丸で囲む形式の選択肢を、テンプレートとの差分から判定して追加する
             search_dict.update(svf_detect_kumamoto_circles(ocrform_id, ocrimages))
-        search = json.dumps(search_dict) # 辞書型のオブジェクトをJSON形式の文字列に変換
+        search = json.dumps(search_dict, ensure_ascii=False) # 辞書型のオブジェクトをJSON形式の文字列に変換
         create_param_dict = {
             'filepath': new_path,
             'page_no': -1,
@@ -732,7 +776,7 @@ def svf_update_ocrdata(ocrdata_id, data_dict, user_id):
         logger.exception(f'TtOcrData DoesNotExist {ocrdata_id=}')
         return False
 
-    search_text = json.dumps(data_dict) # 辞書型のオブジェクトをJSON形式の文字列に変換
+    search_text = json.dumps(data_dict, ensure_ascii=False) # 辞書型のオブジェクトをJSON形式の文字列に変換
 
     ocrdata_obj.search_text = search_text
     ocrdata_obj.create_date = ut_get_localdate(ocrdata_obj.create_date)
@@ -1188,6 +1232,24 @@ def svf_filter_jafyame(request, queryset):
             queryset = queryset.filter(processed_date__lte=date_to).order_by('processed_date')
     except Exception:
         logger.exception('svf_filter_jafyame exception')
+    return queryset
+# 福祉手当認定診断書 検索条件で絞り込み
+def svf_filter_kumamoto(request, queryset):
+    try:
+        pdf_name = request.GET.get('pdf_name')
+        if pdf_name:
+            queryset = queryset.filter(pdf_name__contains=pdf_name)
+        # 氏名はTtOcrDataの専用カラムを持たずsearch_text(JSON文字列)に格納されているため、
+        # 部分一致でsearch_text自体をcontains検索する(氏名以外の項目に偶然一致する可能性はあるが、
+        # 構造化されたJSONField化はしていないため簡易的な対応とする)
+        name = request.GET.get('name')
+        if name:
+            queryset = queryset.filter(search_text__contains=name)
+        create_date = request.GET.get('create_date')
+        if create_date:
+            queryset = queryset.filter(create_date__date=create_date)
+    except Exception:
+        logger.exception('svf_filter_kumamoto exception')
     return queryset
 
 # アクセスログ記録

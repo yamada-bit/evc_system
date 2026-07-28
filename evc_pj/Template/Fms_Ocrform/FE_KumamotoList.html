@@ -15,25 +15,27 @@
 {% block title %}{{ process_title }}{% endblock %}
 
 {% block styles %}
-      /* No./ファイル名/登録日/登録者の4列構成用の幅指定。
-         共通CSS(FE_TimesheetList.css)の既定値は5列想定のため上書きする。
-         (3列に統合すると、スマホ表示用の共通ルール .ev-table td:last-child が
-          3列目=最終列にも掛かってしまい、内容が全て消えるため4列を維持する) */
+      /* No./ファイル名/氏名/登録日/登録者の5列構成用の幅指定。
+         共通CSS(FE_TimesheetList.css)の既定値とは列数が異なるため上書きする。 */
       th:first-child,
       td:first-child {
         width: 5%;
       }
       th:nth-child(2),
       td:nth-child(2) {
-        width: 40%;
+        width: 30%;
       }
       th:nth-child(3),
       td:nth-child(3) {
-        width: 25%;
+        width: 20%;
+      }
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 20%;
       }
       th:last-child,
       td:last-child {
-        width: 30%;
+        width: 25%;
       }
       @media (max-width: 767px) {
         /* 共通CSS(FE_TimesheetList.css)のスマホ用カード表示は、識別情報を
@@ -88,17 +90,29 @@
           display: none;
         }
         #ev_table td:nth-child(3) {
+          color: #333;
+        }
+        #ev_table td:nth-child(3):not(:empty):before {
+          content: "氏名: ";
+          color: #666;
+        }
+        /* 氏名のdivはブロック要素のため、そのままだと"氏名: "の後ろで
+           改行されてしまう。同じ行に続けて表示されるようにする */
+        #ev_table td:nth-child(3) > div {
+          display: inline;
+        }
+        #ev_table td:nth-child(4) {
           position: relative;
           color: #666;
           box-sizing: border-box;
           padding-right: 4.5em;
         }
-        #ev_table td:nth-child(3):not(:empty):before {
+        #ev_table td:nth-child(4):not(:empty):before {
           content: "登録日: ";
         }
         /* 日付のdivはブロック要素のため、そのままだと"登録日: "の後ろで
            改行されてしまう。同じ行に続けて表示されるようにする */
-        #ev_table td:nth-child(3) > div:not(.delete-sp) {
+        #ev_table td:nth-child(4) > div:not(.delete-sp) {
           display: inline;
         }
         #ev_table td:last-child {
@@ -111,14 +125,18 @@
         }
 
         /* 検索パネル: .s-note(注記)が共通CSSでは入力欄と同じ行(2行目)に
-           配置され重なってしまうため、登録日欄(3行目)の下(4行目)に移動する */
-        .s-note {
-          grid-area: 4/1/5/3;
+           配置され重なってしまうため、ファイル名(2行目)→氏名(3行目)→
+           登録日(4行目)→注記(5行目)の順に明示的に行を割り当てる */
+        #id_name {
+          grid-area: 3/1/4/3;
         }
         #searchForm .date-wrapper {
-          grid-row: 3;
+          grid-row: 4;
           grid-column: 1/3;
           width: auto;
+        }
+        .s-note {
+          grid-area: 5/1/6/3;
         }
       }
 {% endblock %}
@@ -145,6 +163,7 @@
           <h3>読取情報</h3>
           <div class="s-flex">
             {{ form.pdf_name }}
+            {{ form.name }}
             <div class="date-wrapper">
               <label for="id_create_date" class="s-label date">登録日</label>
               {{ form.create_date }}
@@ -173,6 +192,7 @@
       <tr>
         <th class="th-pointer">No.<span class="arrow"></span></th>
         <th>ファイル名</th>
+        <th>氏名</th>
         <th>登録日</th>
         <th>登録者</th>
       </tr>
@@ -189,6 +209,9 @@
             </span>
             <p class="description">削除</p>
           </div>
+        </td>
+        <td>
+          <div>{{item.name}}</div>
         </td>
         <td>
           <div>{{item.create_date}}</div>

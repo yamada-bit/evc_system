@@ -70,6 +70,7 @@ from Fms_Ocrform.svf_ocrdata import (
     svf_create_ocrdata,
     svf_delete_ocrdata,
     svf_filter_jafyame,
+    svf_filter_kumamoto,
     svf_filter_timesheet,
     svf_update_entry,
     svf_update_jafyame,
@@ -342,6 +343,11 @@ class EvcOcrDataListView(LoginRequiredMixin, OwnerTestMixin, ListView):
                 queryset = svf_filter_jafyame(self.request, queryset)
                 logger.info(f'{ut_get_client_ip(self.request)} '
                             f'EvcOcrDataListView 検索条件で絞り込み {model_name=}')
+            elif model_name == 'kumamoto':   # 福祉手当認定診断書
+                # 検索条件で絞り込み
+                queryset = svf_filter_kumamoto(self.request, queryset)
+                logger.info(f'{ut_get_client_ip(self.request)} '
+                            f'EvcOcrDataListView 検索条件で絞り込み {model_name=}')
 
             # 検索条件編集からの戻りのurlをセッションデータに
             list_url = self.request.get_full_path()   #build_absolute_uri()
@@ -476,8 +482,14 @@ def get_ocrdata_list_info(ocrdata_obj, model_name=None):
         user_name = ''
     model_class = type(ocrdata_obj)
     if model_class == TtOcrData and model_name == 'kumamoto':
+        if ocrdata_obj.search_text:
+            d = json.loads(ocrdata_obj.search_text)
+            name = d.get('氏名', '')
+        else:
+            name = ''
         data = {
             'pdf_name': ocrdata_obj.pdf_name or '',
+            'name': name,
             'create_date': create_date,
             'user_name': user_name,
             'ocrdata_id': ocrdata_obj.ocrdata_id,
