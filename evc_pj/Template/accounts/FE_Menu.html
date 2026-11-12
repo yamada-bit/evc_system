@@ -47,7 +47,7 @@
                 <li {% if process_title == "共有ファイル" %}class="active"{% endif %}>
                   <a href="{% url 'Fms_fileshare:file_upload' %}" class="op"><span class="material-symbols-outlined">upload_file</span>共有ファイル</a>
                 </li>
-                {% if "system-bridge.jp" in user.user_id %}
+                {% if perms.users.use_kms_calendar %}
                 <li {% if process_title == "勤怠管理" %}class="active"{% endif %}>
                   <a href="{% url 'Kms_Calendar:calendar_model' %}" class="op"><span class="material-symbols-outlined">login</span>勤怠管理</a>
                 </li>

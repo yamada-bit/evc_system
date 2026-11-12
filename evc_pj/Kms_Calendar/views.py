@@ -9,7 +9,6 @@ import jpholiday
 import requests
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
@@ -30,6 +29,10 @@ from Kms_Calendar.google_calendar import (
     credentials_to_dict,
     dict_to_credentials,
     get_calendar_service,
+)
+from Kms_Calendar.mixins import (
+    KmsCalendarPermissionMixin,
+    kms_calendar_permission_required,
 )
 
 FORMAT_DATE = '%Y/%m/%d %H:%M:%S'
@@ -71,6 +74,7 @@ def ensure_authenticated(request):
     # 認証されている
     return None
 # 認証フロー
+@kms_calendar_permission_required
 def google_auth(request):
     # client_secrets.jsonファイルからgoogle_auth_oauthlibのFlowオブジェクトを作成
     # この JSON 形式のファイルには、クライアント ID、クライアント シークレット、
@@ -100,6 +104,7 @@ def google_auth(request):
 """Google認証フローのリダイレクトを処理し、トークンを保存後、元のページに戻る"""
 # OAuth認証の疎通テストではログイン画面とリダイレクト先のホスト名が異なってしまうと、
 # 同一セッションとみなされなくなり上手く動かない
+@kms_calendar_permission_required
 def oauth2callback(request):
     error = request.GET.get("error")  # キャンセルされた場合、"access_denied" になる
     if error == "access_denied":
@@ -157,6 +162,7 @@ def oauth2callback(request):
     return redirect(redirect_url)
     # return JsonResponse({'message': 'Authentication successful!'})
 
+@kms_calendar_permission_required
 def google_logout(request):
     """トークンを無効化してログアウト"""
     try:
@@ -229,7 +235,7 @@ def add_weekday_to_date(date_obj):
 #     return creds
 
 """GoogleカレンダーAPIを使用してイベントを取得"""
-class GoogleCalendarView(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
+class GoogleCalendarView(KmsCalendarPermissionMixin, MonthCalendarMixin, TemplateView):
     template_name = 'Kms_Calendar/Kms_Calendar.html'
     def get(self, request, *args, **kwargs):
         # 認証状態を確認
@@ -392,7 +398,7 @@ def get_monthly_attendance_data(attendance, year, month):
     return calendar_data
 
 """Googleカレンダー連携前表示"""
-class GoogleCalendarModelView(LoginRequiredMixin, MonthCalendarMixin, TemplateView):
+class GoogleCalendarModelView(KmsCalendarPermissionMixin, MonthCalendarMixin, TemplateView):
     template_name = 'Kms_Calendar/Kms_CalendarModel.html'
 
     def get_context_data(self, **kwargs):
@@ -494,6 +500,7 @@ class GoogleCalendarModelView(LoginRequiredMixin, MonthCalendarMixin, TemplateVi
 #     return render(request, 'Kms_Calendar/upload.html')
 
 """勤務表をExcelとしてダウンロード"""
+@kms_calendar_permission_required
 def export_calendar_to_excel(request):
     auth_check = ensure_authenticated(request)
     if auth_check:
@@ -557,6 +564,7 @@ def group_events_by_day(events):
     return grouped_events
 
 """勤務表(未記入)をExcelとしてダウンロード"""
+@kms_calendar_permission_required
 def export_calendar_model_to_excel(request, year, month):
     attendance = {}
     user_name = sv_get_user_name(request.user.user_id)
@@ -577,6 +585,7 @@ def export_calendar_model_to_excel(request, year, month):
     return response
 
 """指定された年月の勤務表をExcelとしてダウンロード"""
+@kms_calendar_permission_required
 def export_work_schedule_to_excel(request, year, month):
     auth_check = ensure_authenticated(request)
     if auth_check:

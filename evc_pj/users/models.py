@@ -117,6 +117,9 @@ class EvcUser(AbstractBaseUser, PermissionsMixin):
         verbose_name = _("user")
         verbose_name_plural = _("users")
         db_table = 'mt_user'
+        permissions = [
+            ('use_kms_calendar', '勤怠カレンダー・外勤報告書を利用できる'),
+        ]
 
     def clean(self):
         super().clean()

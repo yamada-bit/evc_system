@@ -7,9 +7,9 @@ import re  # 正規表現操作
 # import calendar
 # import csv,urllib
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 # from django.http import HttpResponse
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 # from django.utils import timezone
@@ -32,6 +32,7 @@ from Evc_App.sv_file import (
     sv_handle_uploaded_file,
 )
 from Kms_Calendar.forms import EditReportForm, ReportListForm, UploadReportForm
+from Kms_Calendar.mixins import KMS_CALENDAR_PERM, KmsCalendarPermissionMixin
 from Kms_Calendar.models import TtGaikinReport
 from Kms_Calendar.svk_report import (
     svk_create_report,
@@ -52,8 +53,15 @@ IMAGE_EXTENTIONS = ['.jpg','.jpeg','.png']
 
 logger = logging.getLogger(__name__)
 
+# 外勤報告書へのアクセス可否
+# 権限が「一般」のユーザーは自分が作成した報告書のみ。それ以外の権限は全件可。
+def can_access_report(user_id, report_obj):
+    if sv_get_user_authority(user_id) == '一般':
+        return report_obj.create_user == user_id
+    return True
+
 # 外勤報告書ファイルアップロード(ファイル保存)
-class KmsUploadReportView(LoginRequiredMixin, FormView):
+class KmsUploadReportView(KmsCalendarPermissionMixin, FormView):
     template_name = 'Kms_Calendar/Kms_SaveReport.html'
     form_class = UploadReportForm
     def get_context_data(self, **kwargs):
@@ -175,7 +183,7 @@ def delete_report():
 
 """
 # 外勤報告書情報一覧表示
-class KmsReportListView(LoginRequiredMixin, ListView):
+class KmsReportListView(KmsCalendarPermissionMixin, ListView):
     template_name = 'Kms_Calendar/Kms_ReportList.html'
     model = TtGaikinReport
     ordering = '-report_id'
@@ -223,16 +231,22 @@ class KmsReportListView(LoginRequiredMixin, ListView):
                     user_id = self.request.user.user_id
                     # 外勤報告書情報削除/ファイル削除
                     # name = svk_delete_report(report_id, None, None, None, user_id)
-                    name = svk_physical_delete_report(report_id)
-                    if name:
-                        basename = os.path.splitext(name)[0]
-                        messages.success(self.request, basename + '： を削除しました')
-                        logger.info(f'{ut_get_client_ip(self.request)} '
-                                    f'KmsReportListView {report_id}:{basename} を削除しました')
+                    if not can_access_report(user_id, report_obj):
+                        # 他人の報告書は削除させない
+                        messages.error(self.request, 'この報告書を削除する権限がありません')
+                        logger.warning(f'{ut_get_client_ip(self.request)} '
+                                       f'KmsReportListView 削除権限なし {report_id}')
                     else:
-                        messages.error(self.request, 'データ削除に失敗しました')
-                        logger.error(f'{ut_get_client_ip(self.request)} '
-                                        f'KmsReportListView データ削除に失敗しました {report_id}')
+                        name = svk_physical_delete_report(report_id)
+                        if name:
+                            basename = os.path.splitext(name)[0]
+                            messages.success(self.request, basename + '： を削除しました')
+                            logger.info(f'{ut_get_client_ip(self.request)} '
+                                        f'KmsReportListView {report_id}:{basename} を削除しました')
+                        else:
+                            messages.error(self.request, 'データ削除に失敗しました')
+                            logger.error(f'{ut_get_client_ip(self.request)} '
+                                            f'KmsReportListView データ削除に失敗しました {report_id}')
                 except TtGaikinReport.DoesNotExist:
                     logger.error(f'{ut_get_client_ip(self.request)} '
                                     f'KmsReportListView DoesNotExist データ削除に失敗しました {report_id}')
@@ -338,9 +352,21 @@ def filter_report(queryset, report_month):
     return queryset
 
 # 外勤報告書情報編集
-class KmsEditReportView(LoginRequiredMixin, FormView):
+class KmsEditReportView(KmsCalendarPermissionMixin, FormView):
     template_name = 'Kms_Calendar/Kms_EditReport.html'
     form_class = EditReportForm
+
+    def dispatch(self, request, *args, **kwargs):
+        # ログイン・利用権限の判定は KmsCalendarPermissionMixin.dispatch に任せる。
+        # 判定を通るユーザーに限り、他人の報告書への GET/POST（閲覧・更新・削除）を拒否する。
+        user = request.user
+        if user.is_authenticated and user.has_perm(KMS_CALENDAR_PERM):
+            report_obj = TtGaikinReport.objects.filter(report_id=kwargs.get('report_id')).first()
+            if report_obj and not can_access_report(user.user_id, report_obj):
+                logger.warning(f'{ut_get_client_ip(request)} '
+                               f'KmsEditReportView 閲覧権限なし report_id={kwargs.get("report_id")}')
+                raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse('Kms_Calendar:edit_report', kwargs={'report_id': self.kwargs['report_id']})
